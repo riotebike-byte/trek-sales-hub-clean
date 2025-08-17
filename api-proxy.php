@@ -83,8 +83,12 @@ if ($error) {
 
 // Handle BizimHesap XML response
 if ($http_code === 200 && strpos($bizimhesap_endpoint, 'getproductsasxml') !== false) {
-    // Debug: Log raw response
-    error_log("BizimHesap raw response: " . substr($response, 0, 500));
+    // Set higher memory limit for large XML
+    ini_set('memory_limit', '256M');
+    ini_set('max_execution_time', 120);
+    
+    // Debug: Log response info
+    error_log("BizimHesap response length: " . strlen($response) . " bytes");
     
     // Clean response and enable internal errors for better debugging
     libxml_use_internal_errors(true);
@@ -96,8 +100,55 @@ if ($http_code === 200 && strpos($bizimhesap_endpoint, 'getproductsasxml') !== f
         $response = substr($response, 3);
     }
     
-    // Convert XML to JSON for products
-    $xml = simplexml_load_string($response, 'SimpleXMLElement', LIBXML_NOCDATA);
+    // For large XML, use XMLReader for memory efficiency
+    if (strlen($response) > 100000) { // > 100KB
+        $products = [];
+        $reader = new XMLReader();
+        $reader->XML($response);
+        
+        while ($reader->read()) {
+            if ($reader->nodeType == XMLReader::ELEMENT && $reader->localName == 'urun') {
+                $urun_xml = $reader->readOuterXML();
+                $urun = simplexml_load_string($urun_xml, 'SimpleXMLElement', LIBXML_NOCDATA);
+                
+                if ($urun !== false) {
+                    $products[] = [
+                        'id' => (string)$urun->stok_kod,
+                        'title' => (string)$urun->urun_ad,
+                        'category' => (string)$urun->kat_yolu,
+                        'price' => (float)str_replace(',', '.', (string)$urun->satis_fiyat),
+                        'stock' => (int)$urun->stok,
+                        'code' => (string)$urun->stok_kod,
+                        'variant' => (string)$urun->varyant,
+                        'brand' => (string)$urun->marka,
+                        'barcode' => (string)$urun->barkod,
+                        'currency' => (string)$urun->para_birim,
+                        'vatRate' => (float)$urun->kdv,
+                        'image' => (string)$urun->resim
+                    ];
+                }
+                
+                // Limit to 500 products for performance
+                if (count($products) >= 500) {
+                    break;
+                }
+            }
+        }
+        $reader->close();
+        
+        echo json_encode([
+            'success' => true,
+            'data' => [
+                'products' => $products
+            ],
+            'count' => count($products),
+            'method' => 'XMLReader (memory optimized)',
+            'total_response_size' => strlen($response)
+        ]);
+        
+    } else {
+        // Small XML - use simplexml_load_string
+        $xml = simplexml_load_string($response, 'SimpleXMLElement', LIBXML_NOCDATA);
     if ($xml !== false) {
         $products = [];
         
