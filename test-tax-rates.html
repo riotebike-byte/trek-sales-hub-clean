@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Rate Test</title>
+</head>
+<body>
+    <h1>Tax Rate Test</h1>
+    <div id="results"></div>
+
+    <script>
+        // Import the exact same tax schema
+        let categoryMappings = {
+            "dsw-bisiklet": {
+                "name": "DSW BİSİKLET",
+                "categories": [
+                    "FX",
+                    "DS",
+                    "MARLIN"
+                ],
+                "taxRate": 70
+            },
+            "nci-bisiklet": {
+                "name": "NCI BİSİKLET",
+                "categories": [
+                    "MADONE",
+                    "EMONDA",
+                    "DOMANE",
+                    "POWERFLY",
+                    "PROCALIBER",
+                    "CHECKPOINT",
+                    "SPEED CONCEPT",
+                    "RAIL",
+                    "DOMANE+",
+                    "SUPERCALIBER",
+                    "VERVE+",
+                    "FUEL EXE",
+                    "MARLİN+",
+                    "FX+",
+                    "KADRO",
+                    "TOWNIE GO!",
+                    "DS+",
+                    "TOP FUEL"
+                ],
+                "taxRate": 35
+            },
+            "dsw-aksesuar": {
+                "name": "DSW AKSESUAR",
+                "categories": [
+                    "VERVE",
+                    "AYDINLATMA",
+                    "ÇANTA",
+                    "İÇ LASTİK",
+                    "GİDON BOĞAZI",
+                    "BAGAJ-SEPET",
+                    "MATARA-KAFES",
+                    "ELCİK-GİDON BANDI",
+                    "KADRO KULAĞI",
+                    "PEDAL",
+                    "POMPA",
+                    "ZİL",
+                    "KİLİT",
+                    "KASK",
+                    "ELDİVEN",
+                    "DIŞ LASTİK",
+                    "SELE-SELE BORUSU",
+                    "ERKEK AYAKKABI",
+                    "Tanımsız",
+                    "ÇAMURLUK",
+                    "ANAHTAR TAKIMI",
+                    "PARK AYAĞI",
+                    "YEDEK PARÇA",
+                    "ELECTRA KADIN BİSİKLET"
+                ],
+                "taxRate": 60
+            },
+            "nci-aksesuar": {
+                "name": "NCI AKSESUAR",
+                "categories": [
+                    "JANT SETİ",
+                    "GİDON"
+                ],
+                "taxRate": 40
+            },
+            "gobik": {
+                "name": "Gobik",
+                "categories": [
+                    "FORMA",
+                    "ÇORAP",
+                    "TAYT-ŞORT"
+                ],
+                "taxRate": 33
+            },
+            "trieye": {
+                "name": "TriEye",
+                "categories": [
+                    "Gözlük"
+                ],
+                "taxRate": 68
+            },
+            "bryton": {
+                "name": "Bryton",
+                "categories": [
+                    "KM SAATİ"
+                ],
+                "taxRate": 65
+            },
+            "saris": {
+                "name": "Saris",
+                "categories": [
+                    "ARAÇ ARKASI TAŞIYICI"
+                ],
+                "taxRate": 65
+            }
+        };
+
+        // Same getTaxRate function
+        function getTaxRate(product) {
+            console.log(`🔍 Tax rate detection for: ${product.title} (Category: ${product.category})`);
+            
+            if (categoryMappings && product.category) {
+                const productCategory = product.category.toLowerCase();
+                console.log(`🔍 Checking category mappings for: "${productCategory}"`);
+                console.log('Available mappings:', Object.keys(categoryMappings));
+                
+                for (const [upperCat, mapping] of Object.entries(categoryMappings)) {
+                    console.log(`Checking ${upperCat}:`, mapping.categories);
+                    if (mapping.categories) {
+                        const categoryMatch = mapping.categories.some(cat => {
+                            const catLower = cat.toLowerCase();
+                            const match = productCategory.includes(catLower) || catLower.includes(productCategory);
+                            if (match) {
+                                console.log(`📋 Match found: "${productCategory}" ↔ "${catLower}"`);
+                            }
+                            return match;
+                        });
+                        
+                        if (categoryMatch) {
+                            console.log(`✅ Category mapped: ${product.category} → ${mapping.name} (${mapping.taxRate}% vergi)`);
+                            return mapping.taxRate || 20;
+                        }
+                    }
+                }
+                
+                console.log(`❌ No category mapping found for: ${product.category}`);
+            } else {
+                console.log(`⚠️ categoryMappings yüklenmemiş veya ürün kategorisi yok`);
+            }
+            
+            console.log(`⚠️ Varsayılan vergi oranı (%20) kullanılıyor: ${product.title}`);
+            return 20;
+        }
+
+        // Test cases
+        const testProducts = [
+            { title: "MADONE SL 7 2024", category: "MADONE" },
+            { title: "FX 1 STAGGER 2024", category: "FX" },
+            { title: "DS 3 2024", category: "DS" },
+            { title: "EMONDA ALR 5 2024", category: "EMONDA" },
+            { title: "VERVE 2 DISC 2024", category: "VERVE" },
+            { title: "KASK POLİS", category: "KASK" },
+            { title: "Unknown Product", category: "UNKNOWN" }
+        ];
+
+        let resultsHTML = '<h2>Test Results:</h2>';
+        
+        testProducts.forEach(product => {
+            const taxRate = getTaxRate(product);
+            const landedCost = 1000 + (1000 * taxRate / 100);
+            
+            resultsHTML += `
+                <div style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
+                    <h3>${product.title}</h3>
+                    <p><strong>Category:</strong> ${product.category}</p>
+                    <p><strong>Tax Rate:</strong> ${taxRate}%</p>
+                    <p><strong>Landed Cost (1000€ base):</strong> ${landedCost}€</p>
+                </div>
+            `;
+        });
+
+        document.getElementById('results').innerHTML = resultsHTML;
+
+        console.log('🎯 Expected Results:');
+        console.log('MADONE should be 35%');
+        console.log('FX should be 70%');
+        console.log('DS should be 70%');
+        console.log('EMONDA should be 35%');
+        console.log('VERVE should be 60%');
+        console.log('KASK should be 60%');
+        console.log('UNKNOWN should be 20%');
+    </script>
+</body>
+</html>
