@@ -146,9 +146,10 @@ if ($http_code === 200 && strpos($bizimhesap_endpoint, 'getproductsasxml') !== f
             'total_response_size' => strlen($response)
         ]);
         
-    } else {
-        // Small XML - use simplexml_load_string
-        $xml = simplexml_load_string($response, 'SimpleXMLElement', LIBXML_NOCDATA);
+    }
+} else {
+    // Small XML - use simplexml_load_string  
+    $xml = simplexml_load_string($response, 'SimpleXMLElement', LIBXML_NOCDATA);
     if ($xml !== false) {
         $products = [];
         
