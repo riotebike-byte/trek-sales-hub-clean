@@ -16,43 +16,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // API Configuration
 $bizimhesap_api_base = 'https://bizimhesap.com';
-// Token gerekmez - BizimHesap public endpoints kullanıyoruz
+$api_key = '6F4BAF303FA240608A39653824B6C495';
 
 // Get the requested endpoint
 $endpoint = $_GET['endpoint'] ?? '';
 $request_method = $_SERVER['REQUEST_METHOD'];
 
-// Allowed endpoints for security
-$allowed_endpoints = [
-    '/api/b2b/products',
-    '/api/b2b/warehouses',
-    '/api/b2b/inventory',
-    '/api/b2b/orders',
-    '/api/b2b/customers',
-    '/api/v2/Products',
-    '/api/v2/Warehouses',
-    '/api/v2/Inventory',
-    '/api/v2/Orders',
-    '/api/v2/Customers'
+// Map internal endpoints to BizimHesap endpoints
+$endpoint_mapping = [
+    '/api/b2b/products' => '/api/product/getproductsasxml',
+    '/api/v2/Products' => '/api/product/getproductsasxml',
+    'products' => '/api/product/getproductsasxml',
+    '/api/b2b/warehouses' => '/api/warehouse/getwarehouses',
+    '/api/v2/Warehouses' => '/api/warehouse/getwarehouses', 
+    'warehouses' => '/api/warehouse/getwarehouses',
+    '/api/b2b/inventory' => '/api/inventory/getinventory',
+    '/api/v2/Inventory' => '/api/inventory/getinventory',
+    'inventory' => '/api/inventory/getinventory'
 ];
 
-// Security check
-$is_allowed = false;
-foreach ($allowed_endpoints as $allowed) {
-    if (strpos($endpoint, $allowed) === 0) {
-        $is_allowed = true;
-        break;
-    }
-}
+// Convert endpoint
+$bizimhesap_endpoint = $endpoint_mapping[$endpoint] ?? $endpoint;
 
-if (!$is_allowed) {
+// Security check - allow mapped endpoints
+if (!isset($endpoint_mapping[$endpoint])) {
     http_response_code(403);
-    echo json_encode(['error' => 'Endpoint not allowed']);
+    echo json_encode(['error' => 'Endpoint not allowed: ' . $endpoint]);
     exit();
 }
 
-// Build the full URL
-$url = $bizimhesap_api_base . $endpoint;
+// Build the full URL with API key
+$url = $bizimhesap_api_base . $bizimhesap_endpoint . '?apikey=' . $api_key;
 
 // Initialize cURL
 $ch = curl_init();
@@ -87,7 +81,40 @@ if ($error) {
     exit();
 }
 
-// Forward the response
-http_response_code($http_code);
-echo $response;
+// Handle BizimHesap XML response
+if ($http_code === 200 && strpos($bizimhesap_endpoint, 'getproductsasxml') !== false) {
+    // Convert XML to JSON for products
+    $xml = simplexml_load_string($response);
+    if ($xml !== false) {
+        $products = [];
+        
+        if (isset($xml->Table)) {
+            foreach ($xml->Table as $product) {
+                $products[] = [
+                    'id' => (string)$product->Id,
+                    'title' => (string)$product->ProductName,
+                    'category' => (string)$product->CategoryName,
+                    'price' => (float)$product->SalesPrice,
+                    'stock' => (int)$product->Quantity,
+                    'code' => (string)$product->ProductCode,
+                    'warehouseId' => (string)$product->WarehouseId
+                ];
+            }
+        }
+        
+        echo json_encode([
+            'success' => true,
+            'data' => [
+                'products' => $products
+            ],
+            'count' => count($products)
+        ]);
+    } else {
+        echo json_encode(['error' => 'Invalid XML response']);
+    }
+} else {
+    // Forward other responses as-is
+    http_response_code($http_code);
+    echo $response;
+}
 ?>
