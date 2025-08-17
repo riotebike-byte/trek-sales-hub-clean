@@ -145,12 +145,11 @@ if ($http_code === 200 && strpos($bizimhesap_endpoint, 'getproductsasxml') !== f
             'method' => 'XMLReader (memory optimized)',
             'total_response_size' => strlen($response)
         ]);
-        
-    }
-} else {
-    // Small XML - use simplexml_load_string  
-    $xml = simplexml_load_string($response, 'SimpleXMLElement', LIBXML_NOCDATA);
-    if ($xml !== false) {
+        exit(); // Exit after XMLReader processing
+    } else {
+        // Small XML - use simplexml_load_string  
+        $xml = simplexml_load_string($response, 'SimpleXMLElement', LIBXML_NOCDATA);
+        if ($xml !== false) {
         $products = [];
         
         // BizimHesap uses <urun> tags for products
@@ -190,9 +189,15 @@ if ($http_code === 200 && strpos($bizimhesap_endpoint, 'getproductsasxml') !== f
             'response_length' => strlen($response)
         ]);
     }
+    }
+}
 } else {
-    // Forward other responses as-is
+    // Forward other responses as-is or handle errors
     http_response_code($http_code);
-    echo $response;
+    if ($http_code !== 200) {
+        echo json_encode(['error' => 'API returned HTTP code: ' . $http_code]);
+    } else {
+        echo $response;
+    }
 }
 ?>
