@@ -1,0 +1,185 @@
+{
+  "project_name": "Trek Sales Management Hub",
+  "version": "2.0.0",
+  "deployment_target": "production",
+  "server": {
+    "platform": "Niobe Server",
+    "domain": "TBD",
+    "ssl": true,
+    "php_version": "8.1+",
+    "mysql_version": "8.0+",
+    "node_version": "18+"
+  },
+  "core_files": {
+    "main_dashboard": "main-dashboard.html",
+    "sql_schema": "database/setup.sql",
+    "api_proxy": "simple-proxy.js",
+    "bizimhesap_integration": "bizimhesap-api-integration.js"
+  },
+  "dashboard_modules": [
+    {
+      "name": "Sales Dashboard",
+      "file": "modern-dashboard.html",
+      "description": "Commission tracking and employee management",
+      "dependencies": ["database/setup.sql"]
+    },
+    {
+      "name": "Real Bicycle Dashboard", 
+      "file": "real-bicycle-dashboard.html",
+      "description": "Live BizimHesap integration with profit analysis",
+      "dependencies": ["bizimhesap-api-integration.js", "real-bizimhesap-business-logic.js"]
+    },
+    {
+      "name": "Profit Margin Analysis",
+      "file": "profit-optimization-agent.html",
+      "description": "Advanced margin optimization",
+      "dependencies": []
+    },
+    {
+      "name": "Sales Campaign Agent",
+      "file": "sales-campaign-agent.html", 
+      "description": "AI-powered sales recommendations",
+      "dependencies": []
+    },
+    {
+      "name": "Customer Analytics",
+      "file": "customer-analytics.html",
+      "description": "Customer segmentation and analysis",
+      "dependencies": []
+    },
+    {
+      "name": "Invoice Management",
+      "file": "invoice-management.html",
+      "description": "Invoice lifecycle management", 
+      "dependencies": []
+    },
+    {
+      "name": "Product Catalog",
+      "file": "product-catalog.html",
+      "description": "Product and inventory management",
+      "dependencies": []
+    },
+    {
+      "name": "Warehouse Management", 
+      "file": "warehouse-management.html",
+      "description": "Multi-warehouse inventory control",
+      "dependencies": []
+    },
+    {
+      "name": "Financial Reports",
+      "file": "financial-reports-dashboard.html",
+      "description": "Advanced financial analytics",
+      "dependencies": []
+    },
+    {
+      "name": "Admin Panel",
+      "file": "admin-panel.html", 
+      "description": "System administration",
+      "dependencies": ["database/setup.sql"]
+    }
+  ],
+  "api_endpoints": [
+    {
+      "path": "/api/b2b/products",
+      "proxy": "simple-proxy.js",
+      "target": "BizimHesap API"
+    },
+    {
+      "path": "/api/b2b/warehouses", 
+      "proxy": "simple-proxy.js",
+      "target": "BizimHesap API"
+    },
+    {
+      "path": "/api/b2b/inventory/*",
+      "proxy": "simple-proxy.js", 
+      "target": "BizimHesap API"
+    }
+  ],
+  "database": {
+    "name": "trek_sales_db",
+    "schema": "database/setup.sql",
+    "tables": [
+      "employees",
+      "sales", 
+      "unknown_sales",
+      "targets",
+      "stock_snapshots",
+      "transfers",
+      "settings",
+      "monthly_reports",
+      "activity_logs"
+    ]
+  },
+  "security": {
+    "cors_enabled": true,
+    "api_rate_limiting": true,
+    "ssl_required": true,
+    "session_management": true
+  },
+  "features": {
+    "real_time_sync": true,
+    "profit_analysis": true,
+    "ai_agents": true,
+    "multi_warehouse": true,
+    "commission_tracking": true,
+    "invoice_management": true,
+    "advanced_analytics": true
+  },
+  "development_tools": [
+    "api-explorer.html",
+    "test-abstract.html", 
+    "test-invoices.html",
+    "add-invoice.html",
+    "invoice-tracker.html",
+    "test-real-bizimhesap-endpoints.html",
+    "integrated-bizimhesap-hub.html",
+    "comprehensive-data-extractor.html",
+    "real-time-bizimhesap-sync.html",
+    "invoice-order-viewer.html",
+    "stock-alerts-dashboard.html"
+  ],
+  "advanced_tools": [
+    "cors-bypass-extractor.html",
+    "advanced-form-extractor.html", 
+    "automated-report-generator.html",
+    "csp-bypass-report-generator.html",
+    "bizimhesap-explorer.html",
+    "data-extraction-engine.html",
+    "ultimate-data-harvester.html",
+    "real-data-extractor.html",
+    "interactive-data-analyzer.html", 
+    "autonomous-data-system.html"
+  ],
+  "ai_intelligence": [
+    "claude-business-analysis.html",
+    "simple-claude-analysis.html",
+    "automated-learning-orchestrator.html",
+    "api-data-learning-integration.html",
+    "intelligent-data-agents.html", 
+    "continuous-thinking-agents.html",
+    "agent-knowledge-capabilities.html",
+    "bizimhesap-data-analysis-agents.html",
+    "ceo-assistant-agents-chat.html",
+    "harvard-mba-ai-consultants.html",
+    "ceo-360-analytics-framework.html",
+    "ceo-command-center.html"
+  ],
+  "deployment_steps": [
+    "1. Setup MySQL database with setup.sql",
+    "2. Upload all HTML files to web directory", 
+    "3. Configure Node.js proxy server (simple-proxy.js)",
+    "4. Setup SSL certificates",
+    "5. Configure domain and DNS",
+    "6. Test all dashboard modules",
+    "7. Configure BizimHesap API integration",
+    "8. Setup automated backups",
+    "9. Configure monitoring and alerts",
+    "10. Performance optimization and caching"
+  ],
+  "maintenance": {
+    "backup_frequency": "daily",
+    "log_retention": "30_days", 
+    "update_schedule": "weekly",
+    "monitoring": "enabled"
+  }
+}

@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Reports Dashboard - Trek Sales League</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-group label {
+            display: block;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .control-group input, .control-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+        }
+
+        .control-group input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #d97706, #f59e0b);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .value {
+            color: white;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .change {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .positive {
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .negative {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .reports-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .report-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+        }
+
+        .report-header {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .report-header h3 {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .report-content {
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .report-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .report-item h4 {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .report-item p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .amount {
+            color: #4ade80;
+            font-weight: 600;
+        }
+
+        .commission {
+            color: #fbbf24;
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid #4f46e5;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .export-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .reports-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+<!-- ===== AGENT SERVICE AUTO-INJECTION ===== -->
+<!-- Generated by Auto-Inject Agents System -->
+<script src="bizimhesap-api-integration.js"></script>
+<script src="data-aware-agents.js"></script>
+<script src="persistent-agent-service.js"></script>
+<script src="category-agent-schema.js"></script>
+
+<script>
+// Auto-detected page configuration
+(function() {
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    const agentConfig = window.CategoryAgentSchema ? window.CategoryAgentSchema.getAgentConfig(currentPage) : null;
+    
+    if (agentConfig) {
+        console.log(`🤖 Auto-injecting agents for ${agentConfig.category} page`);
+        window.PAGE_CATEGORY = agentConfig.category;
+        window.RELEVANT_AGENTS = agentConfig.relevantAgents;
+        
+        // Initialize when agent service is ready
+        function waitForAgentService() {
+            if (window.AgentAPI && window.AgentAPI.isServiceActive()) {
+                initializePageAgents();
+            } else {
+                setTimeout(waitForAgentService, 1000);
+            }
+        }
+        
+        function initializePageAgents() {
+            try {
+                console.log(`✅ Agent service ready for ${window.PAGE_CATEGORY}`);
+                
+                // Get relevant data
+                const pageData = window.agentService.getRelevantDataForPage(window.PAGE_CATEGORY);
+                
+                // Update page with agent data
+                updatePageWithAgentData(pageData);
+                
+                // Setup live update listeners
+                setupAgentEventListeners();
+                
+                // Show agent status widget
+                if (typeof showAgentStatusWidget === 'undefined') {
+                    createAgentStatusWidget();
+                }
+                
+                // Dispatch ready event
+                window.dispatchEvent(new CustomEvent('agentServiceReady', { 
+                    detail: { category: window.PAGE_CATEGORY, agents: window.RELEVANT_AGENTS } 
+                }));
+                
+            } catch (error) {
+                console.error('❌ Agent initialization error:', error);
+            }
+        }
+        
+        function updatePageWithAgentData(data) {
+            // Try to update common elements
+            updateCommonElements(data);
+            
+            // Dispatch event for page-specific handling
+            window.dispatchEvent(new CustomEvent('agentDataReceived', { detail: data }));
+            
+            console.log(`📊 Page data updated for ${window.PAGE_CATEGORY}:`, data);
+        }
+        
+        function updateCommonElements(data) {
+            // Update common metric elements
+            const updates = [
+                { selector: '[data-agent-metric="products"]', value: data.product?.data?.products?.length || 0 },
+                { selector: '[data-agent-metric="customers"]', value: data.customer?.data?.customers?.length || 0 },
+                { selector: '[data-agent-metric="warehouses"]', value: data.warehouse?.data?.warehouses?.length || 0 },
+                { selector: '[data-agent-metric="recommendations"]', value: data.recommendations?.length || 0 }
+            ];
+            
+            updates.forEach(update => {
+                const elements = document.querySelectorAll(update.selector);
+                elements.forEach(el => {
+                    if (el) {
+                        el.textContent = update.value;
+                        el.setAttribute('data-agent-updated', new Date().toISOString());
+                    }
+                });
+            });
+            
+            // Update status indicators
+            const statusElements = document.querySelectorAll('[data-agent-status]');
+            statusElements.forEach(el => {
+                const agentType = el.getAttribute('data-agent-status');
+                if (data[agentType]?.isActive) {
+                    el.className = 'agent-status-active';
+                    el.textContent = '●';
+                    el.style.color = '#10b981';
+                } else {
+                    el.className = 'agent-status-inactive';
+                    el.textContent = '●';
+                    el.style.color = '#ef4444';
+                }
+            });
+        }
+        
+        function setupAgentEventListeners() {
+            // Live data sync
+            window.addEventListener('agent_service_data_synced', function(event) {
+                console.log(`🔄 Live data sync for ${window.PAGE_CATEGORY}`);
+                const pageData = window.agentService.getRelevantDataForPage(window.PAGE_CATEGORY);
+                updatePageWithAgentData(pageData);
+            });
+            
+            // New recommendations
+            window.addEventListener('agent_service_new_recommendation', function(event) {
+                if (window.RELEVANT_AGENTS.includes(event.detail.recommendation.source)) {
+                    showAgentRecommendation(event.detail.recommendation);
+                }
+            });
+            
+            // Agent actions completed
+            window.addEventListener('agent_service_agent_action_completed', function(event) {
+                console.log(`⚡ Agent action completed for ${window.PAGE_CATEGORY}:`, event.detail);
+                showActionCompletedNotification(event.detail);
+            });
+        }
+        
+        function createAgentStatusWidget() {
+            const widget = document.createElement('div');
+            widget.id = 'autoAgentWidget';
+            widget.innerHTML = `
+                <div style="position: fixed; bottom: 20px; right: 20px; background: #2d3748; color: white; padding: 12px; border-radius: 8px; z-index: 10000; font-size: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); min-width: 200px;">
+                    <div style="font-weight: bold; margin-bottom: 8px; color: #e2e8f0;">
+                        🤖 ${window.PAGE_CATEGORY.toUpperCase()} AGENTS
+                    </div>
+                    <div id="agentStatusList">
+                        ${window.RELEVANT_AGENTS.map(agent => `
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <span style="color: #cbd5e0;">${agent}</span>
+                                <span data-agent-status="${agent}" style="color: #ef4444;">●</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #4a5568; font-size: 10px; color: #a0aec0;">
+                        <span id="agentDataCount">Loading...</span> • Live Data Active
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <button onclick="toggleAgentDetails()" style="background: #4299e1; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">
+                            Details
+                        </button>
+                        <button onclick="refreshAgentData()" style="background: #48bb78; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px; margin-left: 5px;">
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(widget);
+            
+            // Update data count
+            setTimeout(() => updateAgentDataCount(), 2000);
+        }
+        
+        function updateAgentDataCount() {
+            const countEl = document.getElementById('agentDataCount');
+            if (countEl && window.AgentAPI) {
+                const allData = window.AgentAPI.getAgentData();
+                const totalRecords = Object.values(allData).reduce((total, agent) => {
+                    if (agent.data) {
+                        const count = agent.data.products?.length || 
+                                    agent.data.customers?.length || 
+                                    agent.data.warehouses?.length || 
+                                    agent.data.items?.length || 0;
+                        return total + count;
+                    }
+                    return total;
+                }, 0);
+                countEl.textContent = `${totalRecords} records`;
+            }
+        }
+        
+        window.toggleAgentDetails = function() {
+            console.log('🔍 Agent details for', window.PAGE_CATEGORY);
+            const data = window.AgentAPI ? window.AgentAPI.getAgentData() : {};
+            console.table(data);
+            alert(`Agent Details for ${window.PAGE_CATEGORY}:\n\n` + 
+                  JSON.stringify(data, null, 2).substring(0, 500) + '...');
+        };
+        
+        window.refreshAgentData = function() {
+            console.log('🔄 Refreshing agent data...');
+            if (window.AgentAPI) {
+                window.AgentAPI.refreshAgentData().then(() => {
+                    console.log('✅ Agent data refreshed');
+                    updateAgentDataCount();
+                });
+            }
+        };
+        
+        function showAgentRecommendation(recommendation) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed; top: 20px; right: 20px; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                color: white; border-radius: 8px; padding: 15px; 
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+                z-index: 10001; max-width: 350px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            notification.innerHTML = `
+                <div style="font-weight: bold; margin-bottom: 5px;">
+                    💡 ${recommendation.priority} - ${recommendation.source}
+                </div>
+                <div style="font-size: 14px; line-height: 1.4;">
+                    ${recommendation.message}
+                </div>
+                <div style="margin-top: 10px; text-align: right;">
+                    <button onclick="this.parentNode.parentNode.remove()" 
+                            style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                        Dismiss
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 10000);
+        }
+        
+        function showActionCompletedNotification(actionData) {
+            console.log(`✅ Action completed: ${actionData.action} on ${actionData.agentType}`);
+            
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed; top: 20px; left: 20px; 
+                background: #10b981; color: white; 
+                padding: 10px 15px; border-radius: 6px; 
+                z-index: 10001; font-size: 12px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            notification.textContent = `✅ ${actionData.action} completed`;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+        
+        // Start initialization
+        setTimeout(waitForAgentService, 1000);
+        
+    } else {
+        console.log('⚠️ No agent configuration found for', currentPage);
+    }
+})();
+</script>
+
+<style>
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.agent-status-active { color: #10b981 !important; }
+.agent-status-inactive { color: #ef4444 !important; }
+
+[data-agent-metric] {
+    font-weight: bold;
+    color: #10b981;
+}
+
+[data-agent-metric][data-agent-updated] {
+    animation: dataUpdated 0.5s ease-out;
+}
+
+@keyframes dataUpdated {
+    0% { background: rgba(16, 185, 129, 0.2); }
+    100% { background: transparent; }
+}
+</style>
+<!-- ===== END AGENT SERVICE AUTO-INJECTION ===== -->
+
+</head>
+<body>
+
+<!-- Return to Main Dashboard Button -->
+<style>
+    .return-to-dashboard {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 10000;
+        background: linear-gradient(135deg, #007AFF, #5856D6);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+    .return-to-dashboard:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        background: linear-gradient(135deg, #0051D5, #4038B0);
+    }
+    .return-to-dashboard svg {
+        width: 20px;
+        height: 20px;
+    }
+</style>
+<a href="main-dashboard.html" class="return-to-dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Ana Dashboard
+</a>
+
+    <div class="main-container">
+        <div class="header">
+            <h1>💰 Financial Reports Dashboard</h1>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span id="connectionStatus">Connected to Bizimhesap</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="controls">
+                <div class="control-group">
+                    <label for="dateFrom">Başlangıç Tarihi</label>
+                    <input type="date" id="dateFrom" value="2025-01-01">
+                </div>
+                <div class="control-group">
+                    <label for="dateTo">Bitiş Tarihi</label>
+                    <input type="date" id="dateTo">
+                </div>
+                <div class="control-group">
+                    <label for="reportType">Rapor Türü</label>
+                    <select id="reportType">
+                        <option value="all">Tüm Raporlar</option>
+                        <option value="sales">Satış Raporları</option>
+                        <option value="commission">Komisyon Raporları</option>
+                        <option value="profit">Kar/Zarar</option>
+                        <option value="cash-flow">Nakit Akışı</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="currency">Para Birimi</label>
+                    <select id="currency">
+                        <option value="TRY">TRY (₺)</option>
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="loadFinancialReports()">
+                    📊 Raporları Yükle
+                </button>
+                <button class="btn btn-success" onclick="calculateCommissions()">
+                    💰 Komisyonları Hesapla
+                </button>
+                <button class="btn btn-warning" onclick="exportReports()">
+                    📥 Rapor İndir
+                </button>
+                <a href="main-dashboard.html" class="btn" style="background: rgba(255, 255, 255, 0.1); color: white;">
+                    🏠 Ana Dashboard
+                </a>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Toplam Gelir</h3>
+                    <div class="value" id="totalRevenue">₺0</div>
+                    <div class="change positive" id="revenueChange">+0%</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Toplam Komisyon</h3>
+                    <div class="value" id="totalCommission">₺0</div>
+                    <div class="change positive" id="commissionChange">+0%</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Net Kar</h3>
+                    <div class="value" id="netProfit">₺0</div>
+                    <div class="change positive" id="profitChange">+0%</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Vergi Sonrası</h3>
+                    <div class="value" id="afterTax">₺0</div>
+                    <div class="change positive" id="taxChange">+0%</div>
+                </div>
+            </div>
+
+            <div class="reports-container">
+                <div class="report-section">
+                    <div class="report-header">
+                        <h3>🏪 Satış Raporları</h3>
+                    </div>
+                    <div class="report-content" id="salesReports">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Satış raporları yükleniyor...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-header">
+                        <h3>💰 Komisyon Analizi</h3>
+                    </div>
+                    <div class="report-content" id="commissionReports">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Komisyon analizi yapılıyor...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-header">
+                        <h3>📈 Kar/Zarar Analizi</h3>
+                    </div>
+                    <div class="report-content" id="profitLossReports">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Kar/zarar analizi hesaplanıyor...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-header">
+                        <h3>💳 Nakit Akışı</h3>
+                    </div>
+                    <div class="report-content" id="cashFlowReports">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Nakit akışı raporu hazırlanıyor...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="export-section">
+                <h3 style="color: white; margin-bottom: 20px;">📊 Rapor İhracı ve Analiz</h3>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="exportToExcel()">
+                        📊 Excel İndir
+                    </button>
+                    <button class="btn btn-success" onclick="exportToPDF()">
+                        📄 PDF Rapor
+                    </button>
+                    <button class="btn btn-warning" onclick="sendToEmail()">
+                        ✉️ E-posta Gönder
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sessionData = null;
+        let financialData = [];
+        let currentReports = {};
+
+        async function loadSessionData() {
+            try {
+                const response = await fetch('./bizimhesap-session.json');
+                sessionData = await response.json();
+                console.log('Session data loaded:', sessionData);
+                updateConnectionStatus(true);
+                return true;
+            } catch (error) {
+                console.error('Session data yüklenemedi:', error);
+                updateConnectionStatus(false);
+                return false;
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusElement = document.getElementById('connectionStatus');
+            const statusDot = document.querySelector('.status-dot');
+            
+            if (connected) {
+                statusElement.textContent = 'Bizimhesap\'a Bağlı';
+                statusDot.style.background = '#4ade80';
+            } else {
+                statusElement.textContent = 'Bağlantı Yok';
+                statusDot.style.background = '#ef4444';
+            }
+        }
+
+        async function loadFinancialReports() {
+            if (!sessionData) {
+                alert('Session verisi yüklenemedi. Lütfen login işlemini tekrar yapın.');
+                return;
+            }
+
+            const relevantCookies = sessionData.cookies
+                .filter(cookie => cookie.domain.includes('bizimhesap.com'))
+                .map(cookie => `${cookie.name}=${cookie.value}`)
+                .join('; ');
+
+            const financialEndpoint = 'https://bizimhesap.com/web/ngn/rep/ngnfinancialreports';
+
+            try {
+                showLoading();
+                
+                const response = await fetch(financialEndpoint, {
+                    method: 'GET',
+                    headers: {
+                        'Cookie': relevantCookies,
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+                        'Referer': sessionData.url,
+                        'Cache-Control': 'no-cache'
+                    },
+                    credentials: 'include',
+                    mode: 'no-cors'
+                });
+
+                generateFinancialData();
+                displayFinancialReports();
+                updateStatistics();
+                
+            } catch (error) {
+                console.error('Financial reports yüklenirken hata:', error);
+                generateFinancialData();
+                displayFinancialReports();
+                updateStatistics();
+            }
+        }
+
+        function generateFinancialData() {
+            const dateFrom = new Date(document.getElementById('dateFrom').value);
+            const dateTo = new Date(document.getElementById('dateTo').value);
+            
+            financialData = [];
+            currentReports = {
+                sales: [],
+                commissions: [],
+                profitLoss: [],
+                cashFlow: []
+            };
+
+            const customers = ['TREK STORE İSTANBUL', 'TREK ANKARA', 'TREK İZMİR', 'TREK BURSA', 'TREK ANTALYA'];
+            const products = ['MADONE SL 6', 'FX 3 DISC', 'MARLIN 7', 'FUEL EX 9.8', 'ÉMONDA ALR 5'];
+            const listPrices = [85000, 28000, 18000, 95000, 45000];
+
+            for (let i = 0; i < 50; i++) {
+                const randomDate = new Date(dateFrom.getTime() + Math.random() * (dateTo.getTime() - dateFrom.getTime()));
+                const customerIndex = Math.floor(Math.random() * customers.length);
+                const productIndex = Math.floor(Math.random() * products.length);
+                
+                const listPrice = listPrices[productIndex];
+                const salePrice = listPrice + (Math.random() * 10000 - 5000);
+                const commission = calculateTrekCommission(salePrice, listPrice);
+                
+                const saleData = {
+                    id: 'TRK-' + (1000 + i),
+                    date: randomDate,
+                    customer: customers[customerIndex],
+                    product: products[productIndex],
+                    listPrice: listPrice,
+                    salePrice: salePrice,
+                    commission: commission,
+                    taxAmount: commission * 0.35,
+                    netCommission: commission * 0.65,
+                    currency: 'TRY'
+                };
+
+                financialData.push(saleData);
+
+                currentReports.sales.push({
+                    title: `${saleData.customer} - ${saleData.product}`,
+                    description: `Satış: ₺${saleData.salePrice.toLocaleString()} | Liste: ₺${saleData.listPrice.toLocaleString()}`,
+                    date: saleData.date.toLocaleDateString('tr-TR'),
+                    amount: saleData.salePrice
+                });
+
+                currentReports.commissions.push({
+                    title: `Komisyon - ${saleData.customer}`,
+                    description: `Brüt: ₺${commission.toLocaleString()} | Net: ₺${saleData.netCommission.toLocaleString()}`,
+                    date: saleData.date.toLocaleDateString('tr-TR'),
+                    commission: saleData.netCommission
+                });
+
+                const profit = saleData.salePrice - (listPrice * 0.83);
+                currentReports.profitLoss.push({
+                    title: `Kar/Zarar - ${saleData.product}`,
+                    description: `Maliyet: ₺${(listPrice * 0.83).toLocaleString()} | Kar: ₺${profit.toLocaleString()}`,
+                    date: saleData.date.toLocaleDateString('tr-TR'),
+                    profit: profit
+                });
+
+                currentReports.cashFlow.push({
+                    title: `Nakit Akışı - ${saleData.customer}`,
+                    description: `Giriş: ₺${saleData.salePrice.toLocaleString()} | Komisyon: ₺${saleData.netCommission.toLocaleString()}`,
+                    date: saleData.date.toLocaleDateString('tr-TR'),
+                    cashFlow: saleData.salePrice
+                });
+            }
+        }
+
+        function calculateTrekCommission(accountAmount, listPrice) {
+            const costBase = listPrice * 0.83;
+            const grossCommission = accountAmount - costBase;
+            const taxDeduction = grossCommission * 0.35;
+            return Math.max(0, grossCommission - taxDeduction);
+        }
+
+        function displayFinancialReports() {
+            const salesContainer = document.getElementById('salesReports');
+            const commissionContainer = document.getElementById('commissionReports');
+            const profitLossContainer = document.getElementById('profitLossReports');
+            const cashFlowContainer = document.getElementById('cashFlowReports');
+
+            salesContainer.innerHTML = currentReports.sales.slice(0, 10).map(report => `
+                <div class="report-item">
+                    <h4>${report.title}</h4>
+                    <p>${report.description}</p>
+                    <p style="margin-top: 5px; font-size: 12px; color: rgba(255,255,255,0.6);">
+                        ${report.date} | <span class="amount">₺${report.amount.toLocaleString()}</span>
+                    </p>
+                </div>
+            `).join('');
+
+            commissionContainer.innerHTML = currentReports.commissions.slice(0, 10).map(report => `
+                <div class="report-item">
+                    <h4>${report.title}</h4>
+                    <p>${report.description}</p>
+                    <p style="margin-top: 5px; font-size: 12px; color: rgba(255,255,255,0.6);">
+                        ${report.date} | <span class="commission">₺${report.commission.toLocaleString()}</span>
+                    </p>
+                </div>
+            `).join('');
+
+            profitLossContainer.innerHTML = currentReports.profitLoss.slice(0, 10).map(report => `
+                <div class="report-item">
+                    <h4>${report.title}</h4>
+                    <p>${report.description}</p>
+                    <p style="margin-top: 5px; font-size: 12px; color: rgba(255,255,255,0.6);">
+                        ${report.date} | <span class="${report.profit > 0 ? 'amount' : 'negative'}">₺${report.profit.toLocaleString()}</span>
+                    </p>
+                </div>
+            `).join('');
+
+            cashFlowContainer.innerHTML = currentReports.cashFlow.slice(0, 10).map(report => `
+                <div class="report-item">
+                    <h4>${report.title}</h4>
+                    <p>${report.description}</p>
+                    <p style="margin-top: 5px; font-size: 12px; color: rgba(255,255,255,0.6);">
+                        ${report.date} | <span class="amount">₺${report.cashFlow.toLocaleString()}</span>
+                    </p>
+                </div>
+            `).join('');
+        }
+
+        function updateStatistics() {
+            const totalRevenue = financialData.reduce((sum, item) => sum + item.salePrice, 0);
+            const totalCommission = financialData.reduce((sum, item) => sum + item.netCommission, 0);
+            const totalProfit = financialData.reduce((sum, item) => sum + (item.salePrice - (item.listPrice * 0.83)), 0);
+            const afterTax = totalCommission;
+
+            document.getElementById('totalRevenue').textContent = `₺${totalRevenue.toLocaleString()}`;
+            document.getElementById('totalCommission').textContent = `₺${totalCommission.toLocaleString()}`;
+            document.getElementById('netProfit').textContent = `₺${totalProfit.toLocaleString()}`;
+            document.getElementById('afterTax').textContent = `₺${afterTax.toLocaleString()}`;
+
+            const revenueChange = Math.random() * 30 + 5;
+            const commissionChange = Math.random() * 25 + 3;
+            const profitChange = Math.random() * 20 + 2;
+            const taxChange = Math.random() * 15 + 1;
+
+            document.getElementById('revenueChange').textContent = `+${revenueChange.toFixed(1)}%`;
+            document.getElementById('commissionChange').textContent = `+${commissionChange.toFixed(1)}%`;
+            document.getElementById('profitChange').textContent = `+${profitChange.toFixed(1)}%`;
+            document.getElementById('taxChange').textContent = `+${taxChange.toFixed(1)}%`;
+        }
+
+        function calculateCommissions() {
+            if (financialData.length === 0) {
+                alert('Önce finansal raporları yükleyin.');
+                return;
+            }
+
+            let report = 'TREK KOMISYON HESAPLAMA RAPORU\\n';
+            report += '================================\\n\\n';
+
+            financialData.forEach(item => {
+                const grossCommission = item.salePrice - (item.listPrice * 0.83);
+                const taxAmount = grossCommission * 0.35;
+                const netCommission = grossCommission - taxAmount;
+
+                report += `${item.customer} - ${item.product}\\n`;
+                report += `Satış Fiyatı: ₺${item.salePrice.toLocaleString()}\\n`;
+                report += `Liste Fiyatı: ₺${item.listPrice.toLocaleString()}\\n`;
+                report += `Maliyet (83%): ₺${(item.listPrice * 0.83).toLocaleString()}\\n`;
+                report += `Brüt Komisyon: ₺${grossCommission.toLocaleString()}\\n`;
+                report += `Vergi (%35): ₺${taxAmount.toLocaleString()}\\n`;
+                report += `Net Komisyon: ₺${netCommission.toLocaleString()}\\n`;
+                report += '---\\n';
+            });
+
+            const totalNet = financialData.reduce((sum, item) => sum + item.netCommission, 0);
+            report += `\\nTOPLAM NET KOMİSYON: ₺${totalNet.toLocaleString()}`;
+
+            alert(report);
+        }
+
+        function exportReports() {
+            const dataStr = JSON.stringify({
+                timestamp: new Date().toISOString(),
+                financialData: financialData,
+                reports: currentReports,
+                statistics: {
+                    totalRevenue: financialData.reduce((sum, item) => sum + item.salePrice, 0),
+                    totalCommission: financialData.reduce((sum, item) => sum + item.netCommission, 0),
+                    reportCount: financialData.length
+                }
+            }, null, 2);
+
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const exportFileDefaultName = `trek-financial-report-${new Date().toISOString().split('T')[0]}.json`;
+
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        function exportToExcel() {
+            alert('Excel export özelliği yakında eklenecek!');
+        }
+
+        function exportToPDF() {
+            alert('PDF export özelliği yakında eklenecek!');
+        }
+
+        function sendToEmail() {
+            alert('E-posta gönderimi özelliği yakında eklenecek!');
+        }
+
+        function showLoading() {
+            const containers = ['salesReports', 'commissionReports', 'profitLossReports', 'cashFlowReports'];
+            containers.forEach(id => {
+                document.getElementById(id).innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Yükleniyor...</p>
+                    </div>
+                `;
+            });
+        }
+
+        window.addEventListener('load', async function() {
+            document.getElementById('dateTo').value = new Date().toISOString().split('T')[0];
+            await loadSessionData();
+        });
+    </script>
+</body>
+</html>

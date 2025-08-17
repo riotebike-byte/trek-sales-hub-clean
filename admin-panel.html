@@ -1,0 +1,2599 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trek Sales Admin Panel</title>
+    <style>
+        :root {
+            --primary-color: #007AFF;
+            --success-color: #34C759;
+            --warning-color: #FF9500;
+            --danger-color: #FF3B30;
+            --text-primary: #1D1D1F;
+            --text-secondary: #6E6E73;
+            --surface-primary: #FFFFFF;
+            --surface-secondary: #F2F2F7;
+            --border-color: #E5E5EA;
+            --shadow-light: 0 1px 3px rgba(0,0,0,0.1);
+            --gradient-primary: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+            --gradient-success: linear-gradient(135deg, #34C759 0%, #32D74B 100%);
+            --gradient-warning: linear-gradient(135deg, #FF9500 0%, #FFCC02 100%);
+            --gradient-danger: linear-gradient(135deg, #FF3B30 0%, #FF6961 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .admin-card {
+            background: var(--surface-primary);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .admin-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-icon {
+            font-size: 2rem;
+            margin-right: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,122,255,0.3);
+        }
+
+        .btn-success {
+            background: var(--gradient-success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52,199,89,0.3);
+        }
+
+        .btn-danger {
+            background: var(--gradient-danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255,59,48,0.3);
+        }
+
+        .current-settings {
+            background: var(--surface-secondary);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .setting-value {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background: rgba(52,199,89,0.1);
+            border: 1px solid rgba(52,199,89,0.3);
+            color: #28a745;
+        }
+
+        .alert-warning {
+            background: rgba(255,149,0,0.1);
+            border: 1px solid rgba(255,149,0,0.3);
+            color: #fd7e14;
+        }
+
+        .navigation {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+        }
+
+        .nav-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+
+        .commission-calculator {
+            background: var(--surface-secondary);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+
+        .calc-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .calc-result {
+            background: var(--gradient-success);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        /* Tab Styles */
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.7);
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: rgba(255,255,255,0.9);
+            color: var(--text-primary);
+        }
+
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .tab-btn.active:hover {
+            background: rgba(255,255,255,0.9);
+            color: var(--text-primary);
+        }
+
+        .tab-content {
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Employee and Sales Lists */
+        .employee-list, .sales-list {
+            display: grid;
+            gap: 1rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .list-item {
+            background: var(--surface-secondary);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 1rem;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .list-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-light);
+        }
+
+        .item-info {
+            display: grid;
+            gap: 0.25rem;
+        }
+
+        .item-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .item-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+
+<!-- ===== AGENT SERVICE AUTO-INJECTION ===== -->
+<!-- Generated by Auto-Inject Agents System -->
+<script src="bizimhesap-api-integration.js"></script>
+<script src="data-aware-agents.js"></script>
+<script src="persistent-agent-service.js"></script>
+<script src="category-agent-schema.js"></script>
+
+<script>
+// Auto-detected page configuration
+(function() {
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    const agentConfig = window.CategoryAgentSchema ? window.CategoryAgentSchema.getAgentConfig(currentPage) : null;
+    
+    if (agentConfig) {
+        console.log(`🤖 Auto-injecting agents for ${agentConfig.category} page`);
+        window.PAGE_CATEGORY = agentConfig.category;
+        window.RELEVANT_AGENTS = agentConfig.relevantAgents;
+        
+        // Initialize when agent service is ready
+        function waitForAgentService() {
+            if (window.AgentAPI && window.AgentAPI.isServiceActive()) {
+                initializePageAgents();
+            } else {
+                setTimeout(waitForAgentService, 1000);
+            }
+        }
+        
+        function initializePageAgents() {
+            try {
+                console.log(`✅ Agent service ready for ${window.PAGE_CATEGORY}`);
+                
+                // Get relevant data
+                const pageData = window.agentService.getRelevantDataForPage(window.PAGE_CATEGORY);
+                
+                // Update page with agent data
+                updatePageWithAgentData(pageData);
+                
+                // Setup live update listeners
+                setupAgentEventListeners();
+                
+                // Show agent status widget
+                if (typeof showAgentStatusWidget === 'undefined') {
+                    createAgentStatusWidget();
+                }
+                
+                // Dispatch ready event
+                window.dispatchEvent(new CustomEvent('agentServiceReady', { 
+                    detail: { category: window.PAGE_CATEGORY, agents: window.RELEVANT_AGENTS } 
+                }));
+                
+            } catch (error) {
+                console.error('❌ Agent initialization error:', error);
+            }
+        }
+        
+        function updatePageWithAgentData(data) {
+            // Try to update common elements
+            updateCommonElements(data);
+            
+            // Dispatch event for page-specific handling
+            window.dispatchEvent(new CustomEvent('agentDataReceived', { detail: data }));
+            
+            console.log(`📊 Page data updated for ${window.PAGE_CATEGORY}:`, data);
+        }
+        
+        function updateCommonElements(data) {
+            // Update common metric elements
+            const updates = [
+                { selector: '[data-agent-metric="products"]', value: data.product?.data?.products?.length || 0 },
+                { selector: '[data-agent-metric="customers"]', value: data.customer?.data?.customers?.length || 0 },
+                { selector: '[data-agent-metric="warehouses"]', value: data.warehouse?.data?.warehouses?.length || 0 },
+                { selector: '[data-agent-metric="recommendations"]', value: data.recommendations?.length || 0 }
+            ];
+            
+            updates.forEach(update => {
+                const elements = document.querySelectorAll(update.selector);
+                elements.forEach(el => {
+                    if (el) {
+                        el.textContent = update.value;
+                        el.setAttribute('data-agent-updated', new Date().toISOString());
+                    }
+                });
+            });
+            
+            // Update status indicators
+            const statusElements = document.querySelectorAll('[data-agent-status]');
+            statusElements.forEach(el => {
+                const agentType = el.getAttribute('data-agent-status');
+                if (data[agentType]?.isActive) {
+                    el.className = 'agent-status-active';
+                    el.textContent = '●';
+                    el.style.color = '#10b981';
+                } else {
+                    el.className = 'agent-status-inactive';
+                    el.textContent = '●';
+                    el.style.color = '#ef4444';
+                }
+            });
+        }
+        
+        function setupAgentEventListeners() {
+            // Live data sync
+            window.addEventListener('agent_service_data_synced', function(event) {
+                console.log(`🔄 Live data sync for ${window.PAGE_CATEGORY}`);
+                const pageData = window.agentService.getRelevantDataForPage(window.PAGE_CATEGORY);
+                updatePageWithAgentData(pageData);
+            });
+            
+            // New recommendations
+            window.addEventListener('agent_service_new_recommendation', function(event) {
+                if (window.RELEVANT_AGENTS.includes(event.detail.recommendation.source)) {
+                    showAgentRecommendation(event.detail.recommendation);
+                }
+            });
+            
+            // Agent actions completed
+            window.addEventListener('agent_service_agent_action_completed', function(event) {
+                console.log(`⚡ Agent action completed for ${window.PAGE_CATEGORY}:`, event.detail);
+                showActionCompletedNotification(event.detail);
+            });
+        }
+        
+        function createAgentStatusWidget() {
+            const widget = document.createElement('div');
+            widget.id = 'autoAgentWidget';
+            widget.innerHTML = `
+                <div style="position: fixed; bottom: 20px; right: 20px; background: #2d3748; color: white; padding: 12px; border-radius: 8px; z-index: 10000; font-size: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); min-width: 200px;">
+                    <div style="font-weight: bold; margin-bottom: 8px; color: #e2e8f0;">
+                        🤖 ${window.PAGE_CATEGORY.toUpperCase()} AGENTS
+                    </div>
+                    <div id="agentStatusList">
+                        ${window.RELEVANT_AGENTS.map(agent => `
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <span style="color: #cbd5e0;">${agent}</span>
+                                <span data-agent-status="${agent}" style="color: #ef4444;">●</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #4a5568; font-size: 10px; color: #a0aec0;">
+                        <span id="agentDataCount">Loading...</span> • Live Data Active
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <button onclick="toggleAgentDetails()" style="background: #4299e1; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">
+                            Details
+                        </button>
+                        <button onclick="refreshAgentData()" style="background: #48bb78; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px; margin-left: 5px;">
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(widget);
+            
+            // Update data count
+            setTimeout(() => updateAgentDataCount(), 2000);
+        }
+        
+        function updateAgentDataCount() {
+            const countEl = document.getElementById('agentDataCount');
+            if (countEl && window.AgentAPI) {
+                const allData = window.AgentAPI.getAgentData();
+                const totalRecords = Object.values(allData).reduce((total, agent) => {
+                    if (agent.data) {
+                        const count = agent.data.products?.length || 
+                                    agent.data.customers?.length || 
+                                    agent.data.warehouses?.length || 
+                                    agent.data.items?.length || 0;
+                        return total + count;
+                    }
+                    return total;
+                }, 0);
+                countEl.textContent = `${totalRecords} records`;
+            }
+        }
+        
+        window.toggleAgentDetails = function() {
+            console.log('🔍 Agent details for', window.PAGE_CATEGORY);
+            const data = window.AgentAPI ? window.AgentAPI.getAgentData() : {};
+            console.table(data);
+            alert(`Agent Details for ${window.PAGE_CATEGORY}:\n\n` + 
+                  JSON.stringify(data, null, 2).substring(0, 500) + '...');
+        };
+        
+        window.refreshAgentData = function() {
+            console.log('🔄 Refreshing agent data...');
+            if (window.AgentAPI) {
+                window.AgentAPI.refreshAgentData().then(() => {
+                    console.log('✅ Agent data refreshed');
+                    updateAgentDataCount();
+                });
+            }
+        };
+        
+        function showAgentRecommendation(recommendation) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed; top: 20px; right: 20px; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                color: white; border-radius: 8px; padding: 15px; 
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+                z-index: 10001; max-width: 350px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            notification.innerHTML = `
+                <div style="font-weight: bold; margin-bottom: 5px;">
+                    💡 ${recommendation.priority} - ${recommendation.source}
+                </div>
+                <div style="font-size: 14px; line-height: 1.4;">
+                    ${recommendation.message}
+                </div>
+                <div style="margin-top: 10px; text-align: right;">
+                    <button onclick="this.parentNode.parentNode.remove()" 
+                            style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                        Dismiss
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 10000);
+        }
+        
+        function showActionCompletedNotification(actionData) {
+            console.log(`✅ Action completed: ${actionData.action} on ${actionData.agentType}`);
+            
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed; top: 20px; left: 20px; 
+                background: #10b981; color: white; 
+                padding: 10px 15px; border-radius: 6px; 
+                z-index: 10001; font-size: 12px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            notification.textContent = `✅ ${actionData.action} completed`;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+        
+        // Start initialization
+        setTimeout(waitForAgentService, 1000);
+        
+    } else {
+        console.log('⚠️ No agent configuration found for', currentPage);
+    }
+})();
+</script>
+
+<style>
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.agent-status-active { color: #10b981 !important; }
+.agent-status-inactive { color: #ef4444 !important; }
+
+[data-agent-metric] {
+    font-weight: bold;
+    color: #10b981;
+}
+
+[data-agent-metric][data-agent-updated] {
+    animation: dataUpdated 0.5s ease-out;
+}
+
+@keyframes dataUpdated {
+    0% { background: rgba(16, 185, 129, 0.2); }
+    100% { background: transparent; }
+}
+</style>
+<!-- ===== END AGENT SERVICE AUTO-INJECTION ===== -->
+
+</head>
+<body>
+
+<!-- Return to Main Dashboard Button -->
+<style>
+    .return-to-dashboard {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 10000;
+        background: linear-gradient(135deg, #007AFF, #5856D6);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+    .return-to-dashboard:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        background: linear-gradient(135deg, #0051D5, #4038B0);
+    }
+    .return-to-dashboard svg {
+        width: 20px;
+        height: 20px;
+    }
+</style>
+<a href="main-dashboard.html" class="return-to-dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Ana Dashboard
+</a>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+        <div style="background: rgba(255,255,255,0.95); padding: 3rem; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); backdrop-filter: blur(10px); text-align: center; min-width: 400px;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🔐</div>
+            <h2 style="color: var(--text-primary); margin-bottom: 0.5rem;">Admin Panel Girişi</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">Yetkilendirilmiş personel girişi</p>
+            
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">🔑 Şifre</label>
+                    <input type="password" id="adminPassword" class="form-input" placeholder="Admin şifresi girin" autocomplete="off" style="font-size: 1.1rem; padding: 1rem;">
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 1.1rem; padding: 1rem;">
+                    🚀 Giriş Yap
+                </button>
+                
+                <div id="loginError" style="margin-top: 1rem; padding: 0.75rem; background: rgba(255,59,48,0.1); border: 1px solid rgba(255,59,48,0.3); color: #FF3B30; border-radius: 8px; display: none;">
+                    ❌ Hatalı şifre! Tekrar deneyin.
+                </div>
+            </form>
+            
+            <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+                <a href="modern-dashboard.html" class="btn nav-btn" style="background: rgba(102,126,234,0.2); color: #667eea; border: 2px solid rgba(102,126,234,0.3);">
+                    ← Ana Dashboard'a Dön
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="navigation">
+        <a href="modern-dashboard.html" class="btn nav-btn">
+            ← Ana Dashboard'a Dön
+        </a>
+    </div>
+
+    <div class="admin-container">
+        <div class="header">
+            <h1>🛠️ Trek Sales Admin Panel</h1>
+            <p>Prim hesaplama formüllerini ve sistem ayarlarını yönetin</p>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div style="display: flex; justify-content: center; margin-bottom: 2rem;">
+            <div style="background: rgba(255,255,255,0.2); padding: 0.5rem; border-radius: 12px; backdrop-filter: blur(10px);">
+                <button onclick="showTab('settings')" id="settingsTab" class="tab-btn active" style="margin-right: 0.5rem;">🛠️ Ayarlar</button>
+                <button onclick="showTab('employees')" id="employeesTab" class="tab-btn" style="margin-right: 0.5rem;">👥 Çalışanlar</button>
+                <button onclick="showTab('sales')" id="salesTab" class="tab-btn" style="margin-right: 0.5rem;">📊 Satışlar</button>
+                <button onclick="showTab('system')" id="systemTab" class="tab-btn">💻 İşletim Sistemi</button>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settingsContent" class="tab-content">
+            <div class="admin-grid">
+                <!-- Commission Settings -->
+            <div class="admin-card">
+                <div class="card-header">
+                    <div class="card-icon">💰</div>
+                    <div>
+                        <div class="card-title">Prim Formül Ayarları</div>
+                        <div class="card-subtitle">İndirim yüzdesini ve prim hesaplama formülünü düzenleyin</div>
+                    </div>
+                </div>
+
+                <div class="current-settings">
+                    <div class="setting-item">
+                        <span class="setting-label">Mevcut İndirim Çarpanı:</span>
+                        <span class="setting-value" id="currentMultiplier">0.83</span>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">İndirim Yüzdesi:</span>
+                        <span class="setting-value" id="currentDiscount">%17</span>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">Gelir Vergisi Oranı:</span>
+                        <span class="setting-value" id="currentTaxRate">%35</span>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">Formül:</span>
+                        <span class="setting-value">Hesaba Geçen - (Liste Fiyatı × <span id="formulaMultiplier">0.83</span>) - [(Fatura × <span id="formulaTaxRate">0.35</span>) - (İndirimli Liste × <span id="formulaTaxRate2">0.35</span>)]</span>
+                    </div>
+                </div>
+
+                <form id="commissionForm">
+                    <div class="form-group">
+                        <label class="form-label">💱 Yeni İndirim Çarpanı</label>
+                        <input type="number" id="newMultiplier" class="form-input" step="0.01" min="0.1" max="1.0" value="0.83" placeholder="Örn: 0.80, 0.85, 0.90">
+                        <small style="color: var(--text-secondary); font-size: 0.8rem;">
+                            0.83 = %17 indirim, 0.80 = %20 indirim, 0.90 = %10 indirim
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">📊 Gelir Vergisi Oranı (%)</label>
+                        <input type="number" id="newTaxRate" class="form-input" step="1" min="0" max="50" value="35" placeholder="35">
+                        <small style="color: var(--text-secondary); font-size: 0.8rem;">
+                            Kazancınız üzerinden ödediğiniz gelir vergisi oranı
+                        </small>
+                    </div>
+
+                    <button type="button" onclick="updateCommissionSettings()" class="btn btn-primary" style="width: 100%;">
+                        ✅ Prim Formülünü Güncelle
+                    </button>
+                </form>
+
+            </div>
+
+            <!-- System Actions -->
+            <div class="admin-card">
+                <div class="card-header">
+                    <div class="card-icon">⚙️</div>
+                    <div>
+                        <div class="card-title">Sistem İşlemleri</div>
+                        <div class="card-subtitle">Veri yönetimi ve sistem kontrolü</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <button onclick="recalculateAllCommissions()" class="btn btn-success" style="width: 100%; margin-bottom: 1rem;">
+                        🔄 Tüm Primleri Yeniden Hesapla
+                    </button>
+                    <small style="color: var(--text-secondary); font-size: 0.8rem;">
+                        Yeni formül ile mevcut tüm satış verilerindeki primleri günceller
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <button onclick="exportSettings()" class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">
+                        📤 Ayarları Dışa Aktar
+                    </button>
+                    <small style="color: var(--text-secondary); font-size: 0.8rem;">
+                        Mevcut ayarları JSON dosyası olarak indir
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <input type="file" id="settingsFile" accept=".json" style="display: none;" onchange="importSettings(event)">
+                    <button onclick="document.getElementById('settingsFile').click()" class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">
+                        📥 Ayarları İçe Aktar
+                    </button>
+                    <small style="color: var(--text-secondary); font-size: 0.8rem;">
+                        JSON ayar dosyasını yükle
+                    </small>
+                </div>
+
+                <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
+
+                <div class="alert alert-warning">
+                    <strong>⚠️ Dikkat:</strong> Prim formülü değişiklikleri mevcut tüm hesaplamaları etkileyecektir. Değişiklik yapmadan önce verileri yedeklemeniz önerilir.
+                </div>
+
+                <button onclick="resetToDefaults()" class="btn btn-danger" style="width: 100%;">
+                    🔄 Varsayılan Ayarlara Dön
+                </button>
+            </div>
+
+            <!-- Statistics -->
+            <div class="admin-card">
+                <div class="card-header">
+                    <div class="card-icon">📊</div>
+                    <div>
+                        <div class="card-title">Sistem İstatistikleri</div>
+                        <div class="card-subtitle">Mevcut sistem durumu ve veriler</div>
+                    </div>
+                </div>
+
+                <div class="current-settings">
+                    <div class="setting-item">
+                        <span class="setting-label">Toplam Çalışan:</span>
+                        <span class="setting-value" id="totalEmployees">0</span>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">Bu Ay Satış:</span>
+                        <span class="setting-value" id="totalSales">0 adet</span>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">Toplam Prim:</span>
+                        <span class="setting-value" id="totalCommissions">₺0</span>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">Son Güncelleme:</span>
+                        <span class="setting-value" id="lastUpdate">-</span>
+                    </div>
+                </div>
+
+                <button onclick="refreshStats()" class="btn btn-primary" style="width: 100%;">
+                    🔄 İstatistikleri Yenile
+                </button>
+            </div>
+            </div>
+        </div>
+
+        <!-- Employees Tab -->
+        <div id="employeesContent" class="tab-content" style="display: none;">
+            <div class="admin-grid">
+                <!-- Employee Management -->
+                <div class="admin-card">
+                    <div class="card-header">
+                        <div class="card-icon">👥</div>
+                        <div>
+                            <div class="card-title">Çalışan Yönetimi</div>
+                            <div class="card-subtitle">Çalışan ekle, düzenle veya sil</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">👤 Çalışan Adı</label>
+                        <input type="text" id="employeeName" class="form-input" placeholder="Örn: Ahmet Yılmaz">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">🏪 Depo</label>
+                        <select id="employeeDepot" class="form-input">
+                            <option value="">Depo Seçin</option>
+                            <option value="Alsancak">Alsancak</option>
+                            <option value="Alaçatı">Alaçatı</option>
+                            <option value="Caddebostan">Caddebostan</option>
+                            <option value="Bahçeköy">Bahçeköy</option>
+                            <option value="Ortaköy">Ortaköy</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">⭐ Uzmanlık</label>
+                        <select id="employeeSpecialty" class="form-input">
+                            <option value="Genel">Genel</option>
+                            <option value="Madone Uzmanı">Madone Uzmanı</option>
+                            <option value="FX Uzmanı">FX Uzmanı</option>
+                            <option value="Marlin Uzmanı">Marlin Uzmanı</option>
+                            <option value="Domane Uzmanı">Domane Uzmanı</option>
+                            <option value="Checkpoint Uzmanı">Checkpoint Uzmanı</option>
+                            <option value="Elektrikli Bisiklet Uzmanı">Elektrikli Bisiklet Uzmanı</option>
+                            <option value="Dağ Bisikleti Uzmanı">Dağ Bisikleti Uzmanı</option>
+                        </select>
+                    </div>
+
+                    <button onclick="addEmployee()" class="btn btn-success" style="width: 100%; margin-bottom: 1rem;">
+                        ➕ Çalışan Ekle
+                    </button>
+
+                    <div class="alert alert-success" id="employeeAlert" style="display: none;"></div>
+                </div>
+
+                <!-- Employee List -->
+                <div class="admin-card" style="grid-column: 1 / -1;">
+                    <div class="card-header">
+                        <div class="card-icon">📋</div>
+                        <div>
+                            <div class="card-title">Mevcut Çalışanlar</div>
+                            <div class="card-subtitle">Çalışanları düzenle veya sil</div>
+                        </div>
+                        <button onclick="refreshEmployeeList()" class="btn btn-primary">🔄 Yenile</button>
+                    </div>
+
+                    <div class="employee-list" id="employeeList">
+                        <!-- Employee list will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales Tab -->
+        <div id="salesContent" class="tab-content" style="display: none;">
+            <div class="admin-grid">
+                <!-- Unknown Sales Management -->
+                <div class="admin-card" style="grid-column: 1 / -1;">
+                    <div class="card-header">
+                        <div class="card-icon">❓</div>
+                        <div>
+                            <div class="card-title">Bilinmeyen Satışlar</div>
+                            <div class="card-subtitle">Otomatik stok kontrolü ile tespit edilen satışlar</div>
+                        </div>
+                        <button onclick="refreshUnknownSales()" class="btn btn-secondary">🔄 Yenile</button>
+                    </div>
+
+                    <div id="unknownSalesList" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Unknown sales will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Transfer History -->
+                <div class="admin-card" style="grid-column: 1 / -1;">
+                    <div class="card-header">
+                        <div class="card-icon">🔄</div>
+                        <div>
+                            <div class="card-title">Depo Transferleri</div>
+                            <div class="card-subtitle">Otomatik tespit edilen depo arası transferler</div>
+                        </div>
+                        <button onclick="refreshTransferHistory()" class="btn btn-secondary">🔄 Yenile</button>
+                    </div>
+
+                    <div id="transferHistoryList" style="max-height: 300px; overflow-y: auto;">
+                        <!-- Transfer history will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Sales Management -->
+                <div class="admin-card">
+                    <div class="card-header">
+                        <div class="card-icon">📊</div>
+                        <div>
+                            <div class="card-title">Satış Yönetimi</div>
+                            <div class="card-subtitle">Satış ekle, düzenle veya sil</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">👤 Çalışan</label>
+                        <select id="salesEmployee" class="form-input">
+                            <option value="">Çalışan Seçin</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">🏷️ Kategori</label>
+                        <select id="salesCategory" class="form-input">
+                            <option value="">Kategori Seçin</option>
+                            <option value="madone">🚴 Madone</option>
+                            <option value="fx">🌟 FX</option>
+                            <option value="marlin">🐟 Marlin</option>
+                            <option value="domane">🛣️ Domane</option>
+                            <option value="checkpoint">🚵 Checkpoint</option>
+                            <option value="elektrikli">⚡ Elektrikli</option>
+                            <option value="dag">⛰️ Dağ Bisikleti</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">💰 Liste Fiyatı (₺)</label>
+                        <input type="number" id="salesListPrice" class="form-input" placeholder="10000">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">🧾 Fatura Tutarı (₺)</label>
+                        <input type="number" id="salesInvoiceAmount" class="form-input" placeholder="12000">
+                        <small style="color: var(--text-secondary); font-size: 0.8rem;">
+                            Müşteriye kesilen fatura tutarı
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">💳 Hesaba Geçen (₺)</label>
+                        <input type="number" id="salesAccountPrice" class="form-input" placeholder="11500">
+                        <small style="color: var(--text-secondary); font-size: 0.8rem;">
+                            Gerçekte aldığınız tutar (gelir vergisi düşülmüş)
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">🔢 Adet</label>
+                        <input type="number" id="salesAmount" class="form-input" value="1" min="1">
+                    </div>
+
+                    <!-- Commission Preview -->
+                    <div class="commission-calculator" style="margin-bottom: 1rem;">
+                        <h4>💰 Prim Hesaplama Detayı</h4>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                            <div class="calc-row">
+                                <span>İndirimli Liste Fiyatı:</span>
+                                <span id="previewDiscountedPrice">₺0</span>
+                            </div>
+                            <div class="calc-row">
+                                <span>Brüt Prim:</span>
+                                <span id="previewGrossCommission">₺0</span>
+                            </div>
+                            <div class="calc-row" style="color: #FF3B30;">
+                                <span>📊 Vergi Farkı (Fatura-İndirimli Liste):</span>
+                                <span id="previewTaxDifference">₺0</span>
+                            </div>
+                        </div>
+                        <div class="calc-result">
+                            <div>Net Prim (Vergi Düşülmüş)</div>
+                            <div style="font-size: 1.5rem;" id="previewCommission">₺0</div>
+                        </div>
+                    </div>
+
+                    <button onclick="addSale()" class="btn btn-success" style="width: 100%; margin-bottom: 1rem;">
+                        ➕ Satış Ekle
+                    </button>
+
+                    <div class="alert alert-success" id="salesAlert" style="display: none;"></div>
+                </div>
+
+                <!-- Sales List -->
+                <div class="admin-card" style="grid-column: 1 / -1;">
+                    <div class="card-header">
+                        <div class="card-icon">📊</div>
+                        <div>
+                            <div class="card-title">Satış Geçmişi</div>
+                            <div class="card-subtitle">Tüm satışları görüntüle, düzenle veya sil</div>
+                        </div>
+                        <button onclick="refreshSalesList()" class="btn btn-primary">🔄 Yenile</button>
+                    </div>
+
+                    <div class="sales-list" id="salesList">
+                        <!-- Sales list will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Tab -->
+        <div id="systemContent" class="tab-content" style="display: none;">
+            <div class="admin-grid">
+                <!-- System Information -->
+                <div class="admin-card">
+                    <div class="card-header">
+                        <div class="card-icon">💻</div>
+                        <div>
+                            <div class="card-title">Sistem Bilgileri</div>
+                            <div class="card-subtitle">İşletim sistemi ve donanım bilgileri</div>
+                        </div>
+                    </div>
+
+                    <div class="current-settings">
+                        <div class="setting-item">
+                            <span class="setting-label">🖥️ İşletim Sistemi:</span>
+                            <span class="setting-value" id="systemOS">-</span>
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">🌐 Tarayıcı:</span>
+                            <span class="setting-value" id="systemBrowser">-</span>
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">📱 Platform:</span>
+                            <span class="setting-value" id="systemPlatform">-</span>
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">🕒 Yerel Saat:</span>
+                            <span class="setting-value" id="systemTime">-</span>
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">🌍 Dil:</span>
+                            <span class="setting-value" id="systemLanguage">-</span>
+                        </div>
+                    </div>
+
+                    <button onclick="refreshSystemInfo()" class="btn btn-primary" style="width: 100%;">
+                        🔄 Bilgileri Yenile
+                    </button>
+                </div>
+
+                <!-- Performance Monitor -->
+                <div class="admin-card">
+                    <div class="card-header">
+                        <div class="card-icon">📊</div>
+                        <div>
+                            <div class="card-title">Performans İzleme</div>
+                            <div class="card-subtitle">Sistem kaynak kullanımı</div>
+                        </div>
+                    </div>
+
+                    <div class="current-settings">
+                        <div class="setting-item">
+                            <span class="setting-label">💾 Bellek Kullanımı:</span>
+                            <span class="setting-value" id="memoryUsage">-</span>
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">🔥 CPU Çekirdek:</span>
+                            <span class="setting-value" id="cpuCores">-</span>
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">🖼️ Ekran Çözünürlük:</span>
+                            <span class="setting-value" id="screenResolution">-</span>
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">⚡ Bağlantı Türü:</span>
+                            <span class="setting-value" id="connectionType">-</span>
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">🔋 Pil Durumu:</span>
+                            <span class="setting-value" id="batteryStatus">-</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button onclick="checkPerformance()" class="btn btn-success" style="flex: 1;">
+                            🚀 Performans Testi
+                        </button>
+                        <button onclick="clearCache()" class="btn btn-warning" style="flex: 1;">
+                            🧹 Önbellek Temizle
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Local Storage Management -->
+                <div class="admin-card">
+                    <div class="card-header">
+                        <div class="card-icon">💾</div>
+                        <div>
+                            <div class="card-title">Veri Yönetimi</div>
+                            <div class="card-subtitle">LocalStorage ve uygulama verileri</div>
+                        </div>
+                    </div>
+
+                    <div class="current-settings">
+                        <div class="setting-item">
+                            <span class="setting-label">📦 Toplam Veri:</span>
+                            <span class="setting-value" id="storageSize">-</span>
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">👥 Çalışan Verileri:</span>
+                            <span class="setting-value" id="employeeDataSize">-</span>
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">📊 Satış Verileri:</span>
+                            <span class="setting-value" id="salesDataSize">-</span>
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">🎯 Hedef Verileri:</span>
+                            <span class="setting-value" id="targetDataSize">-</span>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning" style="margin: 1rem 0;">
+                        <strong>⚠️ Dikkat:</strong> Veri silme işlemi geri alınamaz. Lütfen önceden yedek alın.
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                        <button onclick="exportAllData()" class="btn btn-primary">
+                            📤 Veri Yedekle
+                        </button>
+                        <button onclick="importAllData()" class="btn btn-primary">
+                            📥 Veri Geri Yükle
+                        </button>
+                        <button onclick="clearSpecificData()" class="btn btn-warning">
+                            🗑️ Seçili Veri Sil
+                        </button>
+                        <button onclick="clearAllData()" class="btn btn-danger">
+                            💥 Tümünü Sil
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Debug Information -->
+                <div class="admin-card" style="grid-column: 1 / -1;">
+                    <div class="card-header">
+                        <div class="card-icon">🐛</div>
+                        <div>
+                            <div class="card-title">Debug Konsolu</div>
+                            <div class="card-subtitle">Sistem logları ve hata ayıklama</div>
+                        </div>
+                        <button onclick="clearConsole()" class="btn btn-secondary">🧹 Temizle</button>
+                    </div>
+
+                    <div style="background: #1e1e1e; color: #00ff00; padding: 1rem; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.8rem; height: 200px; overflow-y: auto; border: 1px solid #333;" id="debugConsole">
+                        <div style="color: #888;">[SYSTEM] Debug konsolu başlatıldı...</div>
+                    </div>
+
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                        <button onclick="testSystem()" class="btn btn-success">🧪 Sistem Testi</button>
+                        <button onclick="generateReport()" class="btn btn-primary">📋 Rapor Oluştur</button>
+                        <button onclick="downloadLogs()" class="btn btn-secondary">💾 Logları İndir</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let commissionMultiplier = 0.83;
+        let incomeTaxRate = 0.35;
+        const ADMIN_PASSWORD = 'trek2025'; // Admin password
+        let isLoggedIn = false;
+        let currentStocks = { madone: 0, fx: 0, marlin: 0, domane: 0, checkpoint: 0, elektrikli: 0, dag: 0 };
+        
+        // Load settings on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+            loadStockData();
+            refreshStats();
+            
+            // Add real-time updates for tax rate
+            document.getElementById('newTaxRate').addEventListener('input', updateDisplayedSettings);
+            
+            // Add real-time sales preview updates
+            const salesInputs = ['salesListPrice', 'salesInvoiceAmount', 'salesAccountPrice', 'salesAmount'];
+            salesInputs.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', updateSalesPreview);
+                }
+            });
+            
+            // Check login status
+            checkLoginStatus();
+        });
+
+        function loadSettings() {
+            const savedMultiplier = localStorage.getItem('commissionMultiplier');
+            if (savedMultiplier) {
+                commissionMultiplier = parseFloat(savedMultiplier);
+                document.getElementById('newMultiplier').value = commissionMultiplier;
+            }
+            
+            const savedTaxRate = localStorage.getItem('incomeTaxRate');
+            if (savedTaxRate) {
+                incomeTaxRate = parseFloat(savedTaxRate);
+                document.getElementById('newTaxRate').value = incomeTaxRate * 100; // Convert to percentage for display
+            }
+            
+            updateDisplayedSettings();
+        }
+
+        function updateDisplayedSettings() {
+            const discountPercentage = Math.round((1 - commissionMultiplier) * 100);
+            const taxPercentage = Math.round(incomeTaxRate * 100);
+            
+            document.getElementById('currentMultiplier').textContent = commissionMultiplier.toFixed(2);
+            document.getElementById('currentDiscount').textContent = `%${discountPercentage}`;
+            document.getElementById('currentTaxRate').textContent = `%${taxPercentage}`;
+            document.getElementById('formulaMultiplier').textContent = commissionMultiplier.toFixed(2);
+            document.getElementById('formulaTaxRate').textContent = incomeTaxRate.toFixed(2);
+            document.getElementById('formulaTaxRate2').textContent = incomeTaxRate.toFixed(2);
+        }
+
+        function updateCommissionSettings() {
+            const newValue = parseFloat(document.getElementById('newMultiplier').value);
+            const newTaxRatePercent = parseFloat(document.getElementById('newTaxRate').value);
+            
+            if (isNaN(newValue) || newValue < 0.1 || newValue > 1.0) {
+                alert('⚠️ Geçersiz indirim çarpanı! 0.1 ile 1.0 arasında bir değer girin.');
+                return;
+            }
+            
+            if (isNaN(newTaxRatePercent) || newTaxRatePercent < 0 || newTaxRatePercent > 50) {
+                alert('⚠️ Geçersiz vergi oranı! 0 ile 50 arasında bir değer girin.');
+                return;
+            }
+
+            if (confirm(`Ayarları güncellemek istediğinize emin misiniz?\n- İndirim Çarpanı: ${newValue.toFixed(2)}\n- Gelir Vergisi Oranı: %${newTaxRatePercent}`)) {
+                commissionMultiplier = newValue;
+                incomeTaxRate = newTaxRatePercent / 100; // Convert percentage to decimal
+                
+                localStorage.setItem('commissionMultiplier', commissionMultiplier.toString());
+                localStorage.setItem('incomeTaxRate', incomeTaxRate.toString());
+                
+                updateDisplayedSettings();
+                
+                // Show success message
+                showAlert('✅ Prim formülü başarıyla güncellendi!', 'success');
+                
+            }
+        }
+
+
+        function recalculateAllCommissions() {
+            if (!confirm('Tüm mevcut primleri yeniden hesaplamak istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
+                return;
+            }
+
+            const employeeData = JSON.parse(localStorage.getItem('employeeData') || '[]');
+            let updatedCount = 0;
+
+            employeeData.forEach(employee => {
+                if (employee.commissionHistory && employee.commissionHistory.length > 0) {
+                    let newTotalCommission = 0;
+                    
+                    employee.commissionHistory.forEach(commission => {
+                        if (commission.listPrice && commission.accountAmount) {
+                            // Use new tax calculation formula
+                            const discountedListPrice = commission.listPrice * commissionMultiplier;
+                            const grossCommission = Math.max(0, commission.accountAmount - discountedListPrice);
+                            
+                            // Calculate tax difference using current rates
+                            const invoiceAmount = commission.invoiceAmount || commission.accountAmount; // Fallback for old data
+                            const invoiceTax = invoiceAmount * incomeTaxRate;
+                            const discountedListTax = discountedListPrice * incomeTaxRate;
+                            const taxDifference = Math.max(0, invoiceTax - discountedListTax);
+                            
+                            const netCommission = Math.max(0, grossCommission - taxDifference);
+                            const quantity = commission.quantity || 1;
+                            const totalCommission = netCommission * quantity;
+                            
+                            // Update commission record with new calculated values
+                            commission.grossCommission = grossCommission;
+                            commission.taxDifference = taxDifference;
+                            commission.netCommission = netCommission;
+                            commission.amount = totalCommission;
+                            
+                            newTotalCommission += totalCommission;
+                        }
+                    });
+                    
+                    employee.totalCommission = newTotalCommission;
+                    updatedCount++;
+                }
+            });
+
+            localStorage.setItem('employeeData', JSON.stringify(employeeData));
+            showAlert(`✅ ${updatedCount} çalışanın prim verileri güncellendi!`, 'success');
+            refreshStats();
+            refreshEmployeeList(); // Refresh employee list to show updated values
+        }
+
+        function refreshStats() {
+            const employeeData = JSON.parse(localStorage.getItem('employeeData') || '[]');
+            const salesData = JSON.parse(localStorage.getItem('salesData') || '{}');
+            
+            const totalEmployees = employeeData.length;
+            const totalSales = Object.values(salesData).reduce((sum, val) => sum + val, 0);
+            const totalCommissions = employeeData.reduce((sum, emp) => sum + (emp.totalCommission || 0), 0);
+            
+            document.getElementById('totalEmployees').textContent = totalEmployees;
+            document.getElementById('totalSales').textContent = `${totalSales} adet`;
+            document.getElementById('totalCommissions').textContent = `₺${totalCommissions.toLocaleString('tr-TR')}`;
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleString('tr-TR');
+        }
+
+        function exportSettings() {
+            const settings = {
+                commissionMultiplier: commissionMultiplier,
+                timestamp: new Date().toISOString(),
+                version: '1.0'
+            };
+
+            const dataStr = JSON.stringify(settings, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `trek-admin-settings-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            showAlert('📤 Ayarlar başarıyla dışa aktarıldı!', 'success');
+        }
+
+        function importSettings(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const settings = JSON.parse(e.target.result);
+                    
+                    if (settings.commissionMultiplier && typeof settings.commissionMultiplier === 'number') {
+                        if (confirm('Ayarları içe aktarmak istediğinize emin misiniz? Mevcut ayarlar üzerine yazılacak.')) {
+                            commissionMultiplier = settings.commissionMultiplier;
+                            localStorage.setItem('commissionMultiplier', commissionMultiplier.toString());
+                            document.getElementById('newMultiplier').value = commissionMultiplier;
+                            updateDisplayedSettings();
+                            showAlert('📥 Ayarlar başarıyla içe aktarıldı!', 'success');
+                        }
+                    } else {
+                        throw new Error('Geçersiz ayar dosyası');
+                    }
+                } catch (error) {
+                    showAlert('❌ Geçersiz dosya formatı!', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetToDefaults() {
+            if (confirm('Tüm ayarları varsayılan değerlere sıfırlamak istediğinize emin misiniz?')) {
+                commissionMultiplier = 0.83;
+                localStorage.setItem('commissionMultiplier', '0.83');
+                document.getElementById('newMultiplier').value = 0.83;
+                updateDisplayedSettings();
+                updateCalculator();
+                showAlert('🔄 Ayarlar varsayılan değerlere sıfırlandı!', 'success');
+            }
+        }
+
+        // Tab Management
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + 'Content').style.display = 'block';
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            // Load tab-specific data
+            if (tabName === 'employees') {
+                refreshEmployeeList();
+            } else if (tabName === 'sales') {
+                refreshSalesList();
+                loadSalesEmployees();
+            } else if (tabName === 'system') {
+                if (isLoggedIn) {
+                    refreshSystemInfo();
+                    updateStorageInfo();
+                }
+            }
+        }
+
+        // Employee Management
+        function addEmployee() {
+            const name = document.getElementById('employeeName').value.trim();
+            const depot = document.getElementById('employeeDepot').value;
+            const specialty = document.getElementById('employeeSpecialty').value;
+            
+            if (!name || !depot) {
+                showAlert('❌ Lütfen çalışan adı ve depo seçin!', 'error');
+                return;
+            }
+            
+            const employeeData = JSON.parse(localStorage.getItem('employeeData') || '[]');
+            
+            // Check if employee already exists
+            if (employeeData.find(emp => emp.name.toLowerCase() === name.toLowerCase())) {
+                showAlert('⚠️ Bu çalışan zaten mevcut!', 'error');
+                return;
+            }
+            
+            // Create new employee
+            const newEmployee = {
+                id: Date.now(),
+                name: name,
+                depot: depot,
+                specialty: specialty,
+                sales: 0,
+                avatar: name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase(),
+                totalCommission: 0,
+                commissionHistory: []
+            };
+            
+            employeeData.push(newEmployee);
+            localStorage.setItem('employeeData', JSON.stringify(employeeData));
+            
+            // Clear form
+            document.getElementById('employeeName').value = '';
+            document.getElementById('employeeDepot').value = '';
+            document.getElementById('employeeSpecialty').value = 'Genel';
+            
+            showAlert(`✅ ${name} başarıyla eklendi!`, 'success');
+            refreshEmployeeList();
+        }
+
+        function refreshEmployeeList() {
+            const employeeData = JSON.parse(localStorage.getItem('employeeData') || '[]');
+            const container = document.getElementById('employeeList');
+            
+            if (employeeData.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Henüz çalışan bulunmuyor.</div>';
+                return;
+            }
+            
+            container.innerHTML = employeeData.map(employee => {
+                const salesHistory = employee.commissionHistory || [];
+                const salesList = salesHistory.length > 0 ? salesHistory.map((sale, index) => {
+                    const taxInfo = sale.taxDifference ? ` (Vergi: ₺${sale.taxDifference.toLocaleString('tr-TR')})` : '';
+                    const invoiceInfo = sale.invoiceAmount ? ` | Fatura: ₺${sale.invoiceAmount.toLocaleString('tr-TR')}` : '';
+                    
+                    return `
+                        <div class="sale-item" style="background: #f8f9fa; padding: 0.75rem; border-radius: 8px; margin: 0.25rem 0; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
+                            <div>
+                                <strong>💰 ₺${sale.amount ? sale.amount.toLocaleString('tr-TR') : '0'} prim</strong> • 
+                                🏷️ ${sale.category} • 
+                                📅 ${new Date(sale.date).toLocaleDateString('tr-TR')} • 
+                                🔢 ${sale.quantity || 1} adet<br>
+                                <small style="color: #666;">
+                                    Liste: ₺${sale.listPrice ? sale.listPrice.toLocaleString('tr-TR') : '0'}${invoiceInfo} • 
+                                    Hesap: ₺${sale.accountAmount ? sale.accountAmount.toLocaleString('tr-TR') : '0'}${taxInfo}
+                                </small>
+                            </div>
+                            <button onclick="deleteEmployeeSale(${employee.id}, ${index})" class="btn btn-danger btn-small">🗑️</button>
+                        </div>
+                    `;
+                }).join('') : '<div style="color: #666; font-style: italic; padding: 0.5rem;">Henüz satış bulunmuyor</div>';
+
+                return `
+                    <div class="list-item" style="flex-direction: column; align-items: stretch;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <div class="item-info">
+                                <div class="item-title">👤 ${employee.name}</div>
+                                <div class="item-subtitle">🏪 ${employee.depot} • ⭐ ${employee.specialty}</div>
+                                <div class="item-subtitle">📊 ${employee.sales || 0} satış • 💰 ₺${(employee.totalCommission || 0).toLocaleString('tr-TR')} prim</div>
+                            </div>
+                            <div class="item-actions">
+                                <button onclick="editEmployee(${employee.id})" class="btn btn-primary btn-small">✏️ Düzenle</button>
+                                <button onclick="deleteEmployee(${employee.id})" class="btn btn-danger btn-small">🗑️ Sil</button>
+                                <button onclick="toggleEmployeeSales(${employee.id})" class="btn btn-success btn-small" id="toggleBtn${employee.id}">📊 Satışları Göster</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Sales List (Initially Hidden) -->
+                        <div id="salesList${employee.id}" style="display: none; border-top: 2px solid #e9ecef; padding-top: 1rem; margin-top: 1rem;">
+                            <h5 style="margin-bottom: 0.75rem; color: #495057;">📋 Satış Geçmişi (${salesHistory.length} adet)</h5>
+                            <div style="max-height: 300px; overflow-y: auto;">
+                                ${salesList}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function editEmployee(employeeId) {
+            const employeeData = JSON.parse(localStorage.getItem('employeeData') || '[]');
+            const employee = employeeData.find(emp => emp.id === employeeId);
+            
+            if (!employee) return;
+            
+            const newName = prompt('Yeni ad:', employee.name);
+            const newDepot = prompt('Yeni depo (Alsancak, Alaçatı, Caddebostan, Bahçeköy, Ortaköy):', employee.depot);
+            const newSpecialty = prompt('Yeni uzmanlık:', employee.specialty);
+            
+            if (newName && newDepot) {
+                employee.name = newName.trim();
+                employee.depot = newDepot.trim();
+                employee.specialty = newSpecialty ? newSpecialty.trim() : 'Genel';
+                employee.avatar = newName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                
+                localStorage.setItem('employeeData', JSON.stringify(employeeData));
+                showAlert(`✅ ${employee.name} güncellendi!`, 'success');
+                refreshEmployeeList();
+            }
+        }
+
+        function deleteEmployee(employeeId) {
+            const employeeData = JSON.parse(localStorage.getItem('employeeData') || '[]');
+            const employee = employeeData.find(emp => emp.id === employeeId);
+            
+            if (!employee) return;
+            
+            if (confirm(`${employee.name} adlı çalışanı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) {
+                const newEmployeeData = employeeData.filter(emp => emp.id !== employeeId);
+                localStorage.setItem('employeeData', JSON.stringify(newEmployeeData));
+                showAlert(`✅ ${employee.name} silindi!`, 'success');
+                refreshEmployeeList();
+            }
+        }
+
+        // Toggle employee sales display
+        function toggleEmployeeSales(employeeId) {
+            const salesList = document.getElementById(`salesList${employeeId}`);
+            const toggleBtn = document.getElementById(`toggleBtn${employeeId}`);
+            
+            if (salesList.style.display === 'none') {
+                salesList.style.display = 'block';
+                toggleBtn.textContent = '📊 Satışları Gizle';
+                toggleBtn.className = 'btn btn-warning btn-small';
+            } else {
+                salesList.style.display = 'none';
+                toggleBtn.textContent = '📊 Satışları Göster';
+                toggleBtn.className = 'btn btn-success btn-small';
+            }
+        }
+
+        // Delete specific employee sale
+        function deleteEmployeeSale(employeeId, saleIndex) {
+            if (!confirm('Bu satışı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
+                return;
+            }
+            
+            const employeeData = JSON.parse(localStorage.getItem('employeeData') || '[]');
+            const employee = employeeData.find(emp => emp.id === employeeId);
+            
+            if (!employee || !employee.commissionHistory || !employee.commissionHistory[saleIndex]) {
+                showAlert('❌ Satış bulunamadı!', 'error');
+                return;
+            }
+            
+            const sale = employee.commissionHistory[saleIndex];
+            
+            // Remove from commission history
+            employee.commissionHistory.splice(saleIndex, 1);
+            
+            // Update totals
+            employee.sales = Math.max(0, (employee.sales || 0) - (sale.quantity || 1));
+            employee.totalCommission = Math.max(0, (employee.totalCommission || 0) - (sale.amount || 0));
+            
+            // Update sales data
+            const salesData = JSON.parse(localStorage.getItem('salesData') || '{}');
+            if (salesData[sale.category]) {
+                salesData[sale.category] = Math.max(0, salesData[sale.category] - (sale.quantity || 1));
+            }
+            
+            // Save data
+            localStorage.setItem('employeeData', JSON.stringify(employeeData));
+            localStorage.setItem('salesData', JSON.stringify(salesData));
+            
+            showAlert('✅ Satış silindi!', 'success');
+            refreshEmployeeList(); // Refresh to update the display
+        }
+
+        // Sales Management
+        function loadSalesEmployees() {
+            const employeeData = JSON.parse(localStorage.getItem('employeeData') || '[]');
+            const select = document.getElementById('salesEmployee');
+            
+            select.innerHTML = '<option value="">Çalışan Seçin</option>' +
+                employeeData.map(emp => `<option value="${emp.id}">${emp.name} (${emp.depot})</option>`).join('');
+        }
+
+        function addSale() {
+            const employeeId = parseInt(document.getElementById('salesEmployee').value);
+            const category = document.getElementById('salesCategory').value;
+            const listPrice = parseFloat(document.getElementById('salesListPrice').value);
+            const invoiceAmount = parseFloat(document.getElementById('salesInvoiceAmount').value);
+            const accountPrice = parseFloat(document.getElementById('salesAccountPrice').value);
+            const amount = parseInt(document.getElementById('salesAmount').value) || 1;
+            
+            if (!employeeId || !category || !listPrice || !invoiceAmount || !accountPrice) {
+                showAlert('❌ Lütfen tüm alanları doldurun!', 'error');
+                return;
+            }
+            
+            const employeeData = JSON.parse(localStorage.getItem('employeeData') || '[]');
+            const employee = employeeData.find(emp => emp.id === employeeId);
+            
+            if (!employee) {
+                showAlert('❌ Çalışan bulunamadı!', 'error');
+                return;
+            }
+
+            // Check stock availability
+            if (!checkStockAvailabilityAdmin(category, amount)) {
+                showAlert(`❌ ${employee.depot} deposunda yetersiz stok!\n${category} kategorisinde sadece ${currentStocks[category] || 0} adet mevcut.`, 'error');
+                return;
+            }
+            
+            // Calculate commission with tax deduction
+            const discountedListPrice = listPrice * commissionMultiplier;
+            const grossCommission = Math.max(0, accountPrice - discountedListPrice);
+            
+            // Tax difference: (Fatura × 35%) - (İndirimli Liste × 35%)
+            const invoiceTax = invoiceAmount * incomeTaxRate;
+            const discountedListTax = discountedListPrice * incomeTaxRate;
+            const taxDifference = Math.max(0, invoiceTax - discountedListTax);
+            
+            const netCommission = Math.max(0, grossCommission - taxDifference);
+            const totalCommission = netCommission * amount;
+            
+            // Add to employee data
+            if (!employee.commissionHistory) employee.commissionHistory = [];
+            employee.commissionHistory.push({
+                date: new Date().toISOString(),
+                category: category,
+                listPrice: listPrice,
+                invoiceAmount: invoiceAmount,
+                accountAmount: accountPrice,
+                grossCommission: grossCommission,
+                taxDifference: taxDifference,
+                netCommission: netCommission,
+                amount: totalCommission,
+                quantity: amount
+            });
+            
+            employee.sales = (employee.sales || 0) + amount;
+            employee.totalCommission = (employee.totalCommission || 0) + totalCommission;
+            
+            // Decrease stock
+            if (!decreaseStockAdmin(category, amount, employeeId)) {
+                showAlert(`❌ Stok güncellenirken hata oluştu!`, 'error');
+                return;
+            }
+            
+            // Update sales data
+            const salesData = JSON.parse(localStorage.getItem('salesData') || '{}');
+            if (!salesData[category]) salesData[category] = 0;
+            salesData[category] += amount;
+            
+            // Save data
+            localStorage.setItem('employeeData', JSON.stringify(employeeData));
+            localStorage.setItem('salesData', JSON.stringify(salesData));
+            
+            // Clear form
+            document.getElementById('salesCategory').value = '';
+            document.getElementById('salesListPrice').value = '';
+            document.getElementById('salesInvoiceAmount').value = '';
+            document.getElementById('salesAccountPrice').value = '';
+            document.getElementById('salesAmount').value = '1';
+            
+            showAlert(`✅ ${employee.name} için ${amount} adet ${category} satışı eklendi! (₺${totalCommission.toLocaleString('tr-TR')} prim)\n📦 ${employee.depot} deposundan stok düştü\n📊 Toplam stok kaldı: ${currentStocks[category]} adet`, 'success');
+            refreshSalesList();
+        }
+
+        function refreshSalesList() {
+            const employeeData = JSON.parse(localStorage.getItem('employeeData') || '[]');
+            const container = document.getElementById('salesList');
+            
+            let allSales = [];
+            
+            employeeData.forEach(employee => {
+                if (employee.commissionHistory && employee.commissionHistory.length > 0) {
+                    employee.commissionHistory.forEach((sale, index) => {
+                        allSales.push({
+                            ...sale,
+                            employeeName: employee.name,
+                            employeeId: employee.id,
+                            saleIndex: index
+                        });
+                    });
+                }
+            });
+            
+            // Sort by date (newest first)
+            allSales.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if (allSales.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Henüz satış bulunmuyor.</div>';
+                return;
+            }
+            
+            container.innerHTML = allSales.map(sale => {
+                const taxInfo = sale.taxDifference ? ` • 📊 Vergi: ₺${sale.taxDifference.toLocaleString('tr-TR')}` : '';
+                const invoiceInfo = sale.invoiceAmount ? ` • Fatura: ₺${sale.invoiceAmount.toLocaleString('tr-TR')}` : '';
+                
+                return `
+                <div class="list-item">
+                    <div class="item-info">
+                        <div class="item-title">💰 ₺${sale.amount.toLocaleString('tr-TR')} Net Prim</div>
+                        <div class="item-subtitle">👤 ${sale.employeeName} • 🏷️ ${sale.category} • 🔢 ${sale.quantity || 1} adet</div>
+                        <div class="item-subtitle">📅 ${new Date(sale.date).toLocaleString('tr-TR')} • Liste: ₺${sale.listPrice.toLocaleString('tr-TR')}${invoiceInfo} • Hesap: ₺${sale.accountAmount.toLocaleString('tr-TR')}${taxInfo}</div>
+                    </div>
+                    <div class="item-actions">
+                        <button onclick="deleteSale(${sale.employeeId}, ${sale.saleIndex})" class="btn btn-danger btn-small">🗑️ Sil</button>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        function deleteSale(employeeId, saleIndex) {
+            if (!confirm('Bu satışı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
+                return;
+            }
+            
+            const employeeData = JSON.parse(localStorage.getItem('employeeData') || '[]');
+            const employee = employeeData.find(emp => emp.id === employeeId);
+            
+            if (!employee || !employee.commissionHistory || !employee.commissionHistory[saleIndex]) {
+                showAlert('❌ Satış bulunamadı!', 'error');
+                return;
+            }
+            
+            const sale = employee.commissionHistory[saleIndex];
+            
+            // Remove from commission history
+            employee.commissionHistory.splice(saleIndex, 1);
+            
+            // Update totals
+            employee.sales = Math.max(0, (employee.sales || 0) - (sale.quantity || 1));
+            employee.totalCommission = Math.max(0, (employee.totalCommission || 0) - sale.amount);
+            
+            // Update sales data
+            const salesData = JSON.parse(localStorage.getItem('salesData') || '{}');
+            if (salesData[sale.category]) {
+                salesData[sale.category] = Math.max(0, salesData[sale.category] - (sale.quantity || 1));
+            }
+            
+            // Save data
+            localStorage.setItem('employeeData', JSON.stringify(employeeData));
+            localStorage.setItem('salesData', JSON.stringify(salesData));
+            
+            showAlert('✅ Satış silindi!', 'success');
+            refreshSalesList();
+        }
+
+        // Update preview commission
+        function updateSalesPreview() {
+            const listPrice = parseFloat(document.getElementById('salesListPrice').value) || 0;
+            const invoiceAmount = parseFloat(document.getElementById('salesInvoiceAmount').value) || 0;
+            const accountPrice = parseFloat(document.getElementById('salesAccountPrice').value) || 0;
+            const amount = parseInt(document.getElementById('salesAmount').value) || 1;
+            
+            if (listPrice > 0 && accountPrice > 0) {
+                const discountedListPrice = listPrice * commissionMultiplier;
+                const grossCommission = Math.max(0, accountPrice - discountedListPrice);
+                
+                // Tax difference: (Fatura × 35%) - (İndirimli Liste × 35%)
+                const invoiceTax = invoiceAmount * incomeTaxRate;
+                const discountedListTax = discountedListPrice * incomeTaxRate;
+                const taxDifference = Math.max(0, invoiceTax - discountedListTax);
+                
+                const netCommission = Math.max(0, grossCommission - taxDifference);
+                const totalCommission = netCommission * amount;
+                
+                // Update preview elements
+                document.getElementById('previewDiscountedPrice').textContent = `₺${discountedListPrice.toLocaleString('tr-TR')}`;
+                document.getElementById('previewGrossCommission').textContent = `₺${grossCommission.toLocaleString('tr-TR')}`;
+                document.getElementById('previewTaxDifference').textContent = `₺${taxDifference.toLocaleString('tr-TR')}`;
+                document.getElementById('previewCommission').textContent = `₺${totalCommission.toLocaleString('tr-TR')}`;
+            } else {
+                document.getElementById('previewDiscountedPrice').textContent = '₺0';
+                document.getElementById('previewGrossCommission').textContent = '₺0';
+                document.getElementById('previewTaxDifference').textContent = '₺0';
+                document.getElementById('previewCommission').textContent = '₺0';
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = message;
+            alertDiv.style.position = 'fixed';
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.zIndex = '9999';
+            alertDiv.style.maxWidth = '400px';
+            alertDiv.style.animation = 'slideIn 0.3s ease';
+            
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => alertDiv.remove(), 300);
+            }, 3000);
+        }
+
+        // Login Functions
+        function handleLogin(event) {
+            event.preventDefault();
+            const password = document.getElementById('adminPassword').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (password === ADMIN_PASSWORD) {
+                isLoggedIn = true;
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                
+                // Hide login screen with animation
+                const loginScreen = document.getElementById('loginScreen');
+                loginScreen.style.transition = 'all 0.5s ease';
+                loginScreen.style.opacity = '0';
+                loginScreen.style.transform = 'scale(0.9)';
+                
+                setTimeout(() => {
+                    loginScreen.style.display = 'none';
+                }, 500);
+                
+                showAlert('✅ Giriş başarılı! Admin paneline hoş geldiniz.', 'success');
+                initializeSystemTab();
+            } else {
+                errorDiv.style.display = 'block';
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('adminPassword').focus();
+                
+                // Shake animation
+                const form = document.getElementById('loginForm');
+                form.style.animation = 'shake 0.5s ease';
+                setTimeout(() => form.style.animation = '', 500);
+            }
+        }
+
+        function checkLoginStatus() {
+            const loggedIn = sessionStorage.getItem('adminLoggedIn');
+            if (loggedIn === 'true') {
+                isLoggedIn = true;
+                document.getElementById('loginScreen').style.display = 'none';
+                initializeSystemTab();
+            }
+        }
+
+        // System Tab Functions
+        function initializeSystemTab() {
+            refreshSystemInfo();
+            updateStorageInfo();
+            logToConsole('[SYSTEM] Admin panel başlatıldı');
+        }
+
+        function refreshSystemInfo() {
+            // Get system information using navigator API
+            const ua = navigator.userAgent;
+            let os = 'Bilinmeyen';
+            let browser = 'Bilinmeyen';
+            
+            // Detect OS
+            if (ua.includes('Windows')) os = 'Windows';
+            else if (ua.includes('Mac')) os = 'macOS';
+            else if (ua.includes('Linux')) os = 'Linux';
+            else if (ua.includes('Android')) os = 'Android';
+            else if (ua.includes('iOS')) os = 'iOS';
+            
+            // Detect Browser
+            if (ua.includes('Chrome')) browser = 'Chrome';
+            else if (ua.includes('Firefox')) browser = 'Firefox';
+            else if (ua.includes('Safari')) browser = 'Safari';
+            else if (ua.includes('Edge')) browser = 'Edge';
+            
+            // Update UI
+            document.getElementById('systemOS').textContent = os;
+            document.getElementById('systemBrowser').textContent = browser;
+            document.getElementById('systemPlatform').textContent = navigator.platform;
+            document.getElementById('systemTime').textContent = new Date().toLocaleString('tr-TR');
+            document.getElementById('systemLanguage').textContent = navigator.language;
+            
+            // Performance info
+            document.getElementById('cpuCores').textContent = navigator.hardwareConcurrency || 'Bilinmeyen';
+            document.getElementById('screenResolution').textContent = `${screen.width}×${screen.height}`;
+            
+            // Memory info (if available)
+            if (navigator.deviceMemory) {
+                document.getElementById('memoryUsage').textContent = navigator.deviceMemory + ' GB';
+            } else {
+                document.getElementById('memoryUsage').textContent = 'Bilinmeyen';
+            }
+            
+            // Connection info
+            if (navigator.connection) {
+                document.getElementById('connectionType').textContent = navigator.connection.effectiveType || 'Bilinmeyen';
+            } else {
+                document.getElementById('connectionType').textContent = 'Bilinmeyen';
+            }
+            
+            // Battery info
+            if (navigator.getBattery) {
+                navigator.getBattery().then(battery => {
+                    const level = Math.round(battery.level * 100);
+                    const charging = battery.charging ? '⚡ Şarj oluyor' : '🔋 Pil';
+                    document.getElementById('batteryStatus').textContent = `${charging} ${level}%`;
+                });
+            } else {
+                document.getElementById('batteryStatus').textContent = 'Desteklenmiyor';
+            }
+            
+            logToConsole('[INFO] Sistem bilgileri güncellendi');
+        }
+
+        function updateStorageInfo() {
+            let totalSize = 0;
+            let employeeSize = 0;
+            let salesSize = 0;
+            let targetSize = 0;
+            
+            // Calculate storage sizes
+            for (let key in localStorage) {
+                if (localStorage.hasOwnProperty(key)) {
+                    const size = localStorage[key].length;
+                    totalSize += size;
+                    
+                    if (key.includes('employee')) employeeSize += size;
+                    else if (key.includes('sales')) salesSize += size;
+                    else if (key.includes('target')) targetSize += size;
+                }
+            }
+            
+            // Convert to KB
+            const formatSize = (bytes) => {
+                if (bytes < 1024) return bytes + ' B';
+                return Math.round(bytes / 1024) + ' KB';
+            };
+            
+            document.getElementById('storageSize').textContent = formatSize(totalSize);
+            document.getElementById('employeeDataSize').textContent = formatSize(employeeSize);
+            document.getElementById('salesDataSize').textContent = formatSize(salesSize);
+            document.getElementById('targetDataSize').textContent = formatSize(targetSize);
+        }
+
+        function logToConsole(message) {
+            const console = document.getElementById('debugConsole');
+            if (!console) return;
+            
+            const timestamp = new Date().toLocaleTimeString('tr-TR');
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            console.appendChild(logEntry);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function clearConsole() {
+            const console = document.getElementById('debugConsole');
+            if (console) {
+                console.innerHTML = '<div style="color: #888;">[SYSTEM] Debug konsolu temizlendi...</div>';
+            }
+        }
+
+        function checkPerformance() {
+            logToConsole('[TEST] Performans testi başlatılıyor...');
+            
+            const startTime = performance.now();
+            let operations = 0;
+            
+            // Simple performance test
+            for (let i = 0; i < 100000; i++) {
+                operations++;
+            }
+            
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            
+            logToConsole(`[TEST] ${operations} işlem ${duration.toFixed(2)}ms'de tamamlandı`);
+            showAlert(`✅ Performans testi tamamlandı! ${operations} işlem ${duration.toFixed(2)}ms`, 'success');
+        }
+
+        function clearCache() {
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => {
+                        caches.delete(name);
+                    });
+                });
+            }
+            logToConsole('[SYSTEM] Tarayıcı önbelleği temizlendi');
+            showAlert('🧹 Önbellek temizlendi!', 'success');
+        }
+
+        function exportAllData() {
+            const allData = {};
+            for (let key in localStorage) {
+                if (localStorage.hasOwnProperty(key)) {
+                    allData[key] = localStorage[key];
+                }
+            }
+            
+            const dataStr = JSON.stringify(allData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `trek-admin-backup-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            logToConsole('[EXPORT] Tüm veriler dışa aktarıldı');
+            showAlert('📤 Veriler başarıyla yedeklendi!', 'success');
+        }
+
+        function clearAllData() {
+            if (confirm('⚠️ Tüm verileri silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')) {
+                localStorage.clear();
+                sessionStorage.clear();
+                logToConsole('[DANGER] Tüm veriler silindi');
+                showAlert('💥 Tüm veriler silindi!', 'success');
+                updateStorageInfo();
+            }
+        }
+
+        function testSystem() {
+            logToConsole('[TEST] Sistem testi başlatılıyor...');
+            
+            // Test localStorage
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                logToConsole('[TEST] ✅ LocalStorage çalışıyor');
+            } catch (e) {
+                logToConsole('[TEST] ❌ LocalStorage hatası: ' + e.message);
+            }
+            
+            // Test memory
+            const memTest = new Array(1000).fill('test');
+            logToConsole('[TEST] ✅ Bellek tahsisi başarılı');
+            
+            logToConsole('[TEST] Sistem testi tamamlandı');
+            showAlert('🧪 Sistem testi başarıyla tamamlandı!', 'success');
+        }
+
+        // Missing system functions
+        function importAllData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            for (let key in data) {
+                                localStorage.setItem(key, data[key]);
+                            }
+                            logToConsole('[IMPORT] Veriler geri yüklendi');
+                            showAlert('📥 Veriler başarıyla geri yüklendi!', 'success');
+                            updateStorageInfo();
+                        } catch (err) {
+                            logToConsole('[ERROR] Veri yükleme hatası: ' + err.message);
+                            showAlert('❌ Dosya geçersiz!', 'error');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+
+        function clearSpecificData() {
+            const options = `
+                <div style="margin: 1rem 0;">
+                    <label><input type="checkbox" id="clearEmployees"> Çalışan Verileri</label><br>
+                    <label><input type="checkbox" id="clearSales"> Satış Verileri</label><br>
+                    <label><input type="checkbox" id="clearTargets"> Hedef Verileri</label><br>
+                    <label><input type="checkbox" id="clearSettings"> Ayar Verileri</label>
+                </div>
+            `;
+            
+            if (confirm('Hangi verileri silmek istiyorsunuz?\n\n- Çalışan Verileri\n- Satış Verileri\n- Hedef Verileri\n- Ayar Verileri\n\nDevam etmek için OK\'e tıklayın.')) {
+                // Simple implementation - could be enhanced with a modal
+                const toDelete = [];
+                if (confirm('Çalışan verilerini sil?')) toDelete.push('employeeData');
+                if (confirm('Satış verilerini sil?')) toDelete.push('salesData');
+                if (confirm('Hedef verilerini sil?')) toDelete.push('targetData');
+                if (confirm('Ayar verilerini sil?')) toDelete.push('commissionMultiplier', 'incomeTaxRate');
+                
+                toDelete.forEach(key => localStorage.removeItem(key));
+                logToConsole(`[DELETE] ${toDelete.length} veri türü silindi`);
+                showAlert(`🗑️ ${toDelete.length} veri türü silindi!`, 'success');
+                updateStorageInfo();
+            }
+        }
+
+        function generateReport() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                system: {
+                    os: document.getElementById('systemOS').textContent,
+                    browser: document.getElementById('systemBrowser').textContent,
+                    platform: navigator.platform,
+                    language: navigator.language
+                },
+                storage: {
+                    total: document.getElementById('storageSize').textContent,
+                    employees: document.getElementById('employeeDataSize').textContent,
+                    sales: document.getElementById('salesDataSize').textContent,
+                    targets: document.getElementById('targetDataSize').textContent
+                },
+                performance: {
+                    cores: navigator.hardwareConcurrency,
+                    memory: navigator.deviceMemory,
+                    connection: navigator.connection?.effectiveType
+                }
+            };
+
+            const reportStr = JSON.stringify(report, null, 2);
+            const blob = new Blob([reportStr], {type: 'application/json'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `system-report-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            logToConsole('[REPORT] Sistem raporu oluşturuldu');
+            showAlert('📋 Sistem raporu indirildi!', 'success');
+        }
+
+        function downloadLogs() {
+            const console = document.getElementById('debugConsole');
+            const logs = console.innerText || console.textContent;
+            
+            const blob = new Blob([logs], {type: 'text/plain'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `debug-logs-${new Date().toISOString().split('T')[0]}.txt`;
+            link.click();
+            
+            logToConsole('[EXPORT] Debug logları indirildi');
+            showAlert('💾 Loglar başarıyla indirildi!', 'success');
+        }
+
+        // Stock management functions
+        function loadStockData() {
+            // Try to get stock data from localStorage or default values
+            const savedStocks = localStorage.getItem('currentStocks');
+            if (savedStocks) {
+                currentStocks = JSON.parse(savedStocks);
+            }
+        }
+
+        function saveStockData() {
+            localStorage.setItem('currentStocks', JSON.stringify(currentStocks));
+        }
+
+        function decreaseStockAdmin(category, amount, employeeId) {
+            const employeeData = JSON.parse(localStorage.getItem('employeeData') || '[]');
+            const employee = employeeData.find(emp => emp.id === employeeId);
+            
+            if (!employee || !employee.depot) {
+                logToConsole(`[ERROR] Çalışan veya depo bulunamadı: ${employeeId}`);
+                return false;
+            }
+            
+            // For admin panel, we simulate depot-based stock decrease
+            if (!currentStocks[category]) {
+                currentStocks[category] = 0;
+            }
+            
+            if (currentStocks[category] < amount) {
+                return false; // Insufficient stock
+            }
+            
+            currentStocks[category] -= amount;
+            saveStockData();
+            logToConsole(`[STOCK] ${employee.depot} > ${category} stok düştü: -${amount} (Toplam kalan: ${currentStocks[category]})`);
+            
+            return true; // Success
+        }
+
+        function checkStockAvailabilityAdmin(category, amount) {
+            return currentStocks[category] && currentStocks[category] >= amount;
+        }
+
+        // Unknown Sales Management
+        function loadUnknownSales() {
+            return JSON.parse(localStorage.getItem('unknownSales') || '[]');
+        }
+
+        function saveUnknownSales(unknownSales) {
+            localStorage.setItem('unknownSales', JSON.stringify(unknownSales));
+        }
+
+        function refreshUnknownSales() {
+            const unknownSales = loadUnknownSales();
+            const container = document.getElementById('unknownSalesList');
+            
+            if (unknownSales.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                        <div style="font-size: 2rem; margin-bottom: 1rem;">✅</div>
+                        <div>Bilinmeyen satış bulunamadı</div>
+                        <small>Otomatik stok kontrolü ile tespit edilen satışlar burada görünecek</small>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            unknownSales.forEach(sale => {
+                const statusColor = sale.status === 'pending' ? '#ff9800' : sale.status === 'assigned' ? '#4caf50' : '#f44336';
+                const statusText = sale.status === 'pending' ? '⏳ Bekliyor' : sale.status === 'assigned' ? '✅ Atandı' : '❌ İptal';
+                
+                html += `
+                    <div class="unknown-sale-card" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; background: var(--card-bg);">
+                        <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 1rem;">
+                            <div>
+                                <div style="font-weight: 600; color: var(--text-primary);">
+                                    📦 ${sale.depot} - ${sale.category.charAt(0).toUpperCase() + sale.category.slice(1)}
+                                </div>
+                                <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                                    🕐 ${new Date(sale.detectedAt).toLocaleString('tr-TR')}
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="color: ${statusColor}; font-weight: 600; font-size: 0.9rem;">
+                                    ${statusText}
+                                </div>
+                                <div style="color: var(--text-secondary); font-size: 0.8rem;">
+                                    ${sale.quantity} adet
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${sale.status === 'pending' ? `
+                            <div class="assignment-form" style="background: var(--hover-bg); padding: 1rem; border-radius: 6px; margin-top: 1rem;">
+                                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 0.5rem; align-items: end;">
+                                    <div>
+                                        <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: block;">👤 Çalışan</label>
+                                        <select id="employee_${sale.id}" class="form-input" style="font-size: 0.9rem; padding: 0.5rem;">
+                                            <option value="">Çalışan Seçin</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: block;">💰 Liste Fiyatı</label>
+                                        <input type="number" id="listPrice_${sale.id}" class="form-input" placeholder="10000" style="font-size: 0.9rem; padding: 0.5rem;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: block;">🧾 Fatura Tutarı</label>
+                                        <input type="number" id="invoiceAmount_${sale.id}" class="form-input" placeholder="12000" style="font-size: 0.9rem; padding: 0.5rem;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: block;">💳 Hesaba Geçen</label>
+                                        <input type="number" id="accountPrice_${sale.id}" class="form-input" placeholder="11500" style="font-size: 0.9rem; padding: 0.5rem;">
+                                    </div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
+                                    <button onclick="assignUnknownSale('${sale.id}')" class="btn btn-success" style="font-size: 0.9rem; padding: 0.5rem;">
+                                        ✅ Ata
+                                    </button>
+                                    <button onclick="cancelUnknownSale('${sale.id}')" class="btn btn-danger" style="font-size: 0.9rem; padding: 0.5rem;">
+                                        ❌ İptal Et
+                                    </button>
+                                </div>
+                            </div>
+                        ` : `
+                            <div style="background: var(--hover-bg); padding: 0.75rem; border-radius: 6px; margin-top: 1rem;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; font-size: 0.8rem;">
+                                    <div>👤 <strong>${sale.employeeName}</strong></div>
+                                    <div>💰 <strong>${sale.listPrice ? sale.listPrice.toLocaleString() + ' ₺' : '-'}</strong></div>
+                                    <div>🎯 <strong>+${sale.commission ? sale.commission.toLocaleString() + ' ₺' : '0 ₺'}</strong></div>
+                                </div>
+                            </div>
+                        `}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Populate employee dropdowns
+            const employeeData = JSON.parse(localStorage.getItem('employeeData') || '[]');
+            unknownSales.filter(sale => sale.status === 'pending').forEach(sale => {
+                const select = document.getElementById(`employee_${sale.id}`);
+                if (select) {
+                    // Filter employees by depot
+                    const relevantEmployees = employeeData.filter(emp => 
+                        emp.depot && emp.depot.toLowerCase().includes(sale.depot.toLowerCase().split(' ')[0])
+                    );
+                    
+                    relevantEmployees.forEach(emp => {
+                        const option = document.createElement('option');
+                        option.value = emp.id;
+                        option.textContent = `${emp.name} (${emp.depot})`;
+                        select.appendChild(option);
+                    });
+                }
+            });
+        }
+
+        function assignUnknownSale(saleId) {
+            const employeeId = document.getElementById(`employee_${saleId}`).value;
+            const listPrice = parseFloat(document.getElementById(`listPrice_${saleId}`).value) || 0;
+            const invoiceAmount = parseFloat(document.getElementById(`invoiceAmount_${saleId}`).value) || 0;
+            const accountPrice = parseFloat(document.getElementById(`accountPrice_${saleId}`).value) || 0;
+            
+            console.log('🔍 Assignment data:', { saleId, employeeId, listPrice, invoiceAmount, accountPrice });
+            
+            if (!employeeId) {
+                showAlert('❌ Lütfen çalışan seçin!', 'error');
+                return;
+            }
+            
+            if (listPrice <= 0) {
+                showAlert('❌ Lütfen geçerli liste fiyatı girin!', 'error');
+                return;
+            }
+            
+            if (invoiceAmount <= 0) {
+                showAlert('❌ Lütfen geçerli fatura tutarı girin!', 'error');
+                return;
+            }
+            
+            if (accountPrice <= 0) {
+                showAlert('❌ Lütfen geçerli hesaba geçen tutarı girin!', 'error');
+                return;
+            }
+            
+            const unknownSales = loadUnknownSales();
+            const sale = unknownSales.find(s => s.id === saleId);
+            
+            if (!sale) {
+                showAlert('❌ Satış bulunamadı!', 'error');
+                return;
+            }
+            
+            // Get employee data
+            const employeeData = JSON.parse(localStorage.getItem('employeeData') || '[]');
+            const employee = employeeData.find(emp => emp.id === employeeId);
+            
+            if (!employee) {
+                showAlert('❌ Çalışan bulunamadı!', 'error');
+                return;
+            }
+            
+            // Calculate commission with invoice amount
+            const discountedListPrice = listPrice * commissionMultiplier;
+            const grossCommission = accountPrice - discountedListPrice;
+            const taxAmount = (invoiceAmount * incomeTaxRate) - (discountedListPrice * incomeTaxRate);
+            const netCommission = grossCommission - taxAmount;
+            
+            console.log('💰 Commission calculation:', {
+                listPrice,
+                discountedListPrice,
+                accountPrice,
+                invoiceAmount,
+                grossCommission,
+                taxAmount,
+                netCommission
+            });
+            
+            // Update sale status
+            sale.status = 'assigned';
+            sale.employeeId = employeeId;
+            sale.employeeName = employee.name;
+            sale.listPrice = listPrice;
+            sale.invoiceAmount = invoiceAmount;
+            sale.accountPrice = accountPrice;
+            sale.commission = netCommission;
+            sale.assignedAt = new Date().toISOString();
+            
+            // Add to employee sales data
+            const salesData = JSON.parse(localStorage.getItem('salesData') || '{}');
+            if (!salesData[sale.category]) {
+                salesData[sale.category] = 0;
+            }
+            salesData[sale.category] += sale.quantity;
+            
+            // Update employee data
+            employee.sales = (employee.sales || 0) + sale.quantity;
+            employee.totalCommission = (employee.totalCommission || 0) + netCommission;
+            
+            if (!employee.commissionHistory) {
+                employee.commissionHistory = [];
+            }
+            
+            employee.commissionHistory.push({
+                date: new Date().toISOString(),
+                category: sale.category,
+                amount: sale.quantity,
+                listPrice: listPrice,
+                invoiceAmount: invoiceAmount,
+                accountPrice: accountPrice,
+                commission: netCommission,
+                source: 'unknown-sale-assignment'
+            });
+            
+            // Save all data
+            saveUnknownSales(unknownSales);
+            localStorage.setItem('salesData', JSON.stringify(salesData));
+            localStorage.setItem('employeeData', JSON.stringify(employeeData));
+            
+            logToConsole(`[ASSIGN] Bilinmeyen satış atandı: ${employee.name} - ${sale.category} (${sale.quantity} adet, +${netCommission.toFixed(2)} ₺)`);
+            showAlert(`✅ Satış ${employee.name}'e atandı! (+${netCommission.toFixed(2)} ₺ prim)`, 'success');
+            
+            // Refresh the display
+            refreshUnknownSales();
+        }
+
+        function cancelUnknownSale(saleId) {
+            if (!confirm('Bu satışı iptal etmek istediğinizden emin misiniz?')) {
+                return;
+            }
+            
+            const unknownSales = loadUnknownSales();
+            const saleIndex = unknownSales.findIndex(s => s.id === saleId);
+            
+            if (saleIndex === -1) {
+                showAlert('❌ Satış bulunamadı!', 'error');
+                return;
+            }
+            
+            unknownSales.splice(saleIndex, 1);
+            saveUnknownSales(unknownSales);
+            
+            logToConsole(`[CANCEL] Bilinmeyen satış iptal edildi: ${saleId}`);
+            showAlert('❌ Satış iptal edildi!', 'warning');
+            
+            refreshUnknownSales();
+        }
+
+        // Transfer History Management
+        function loadTransferHistory() {
+            return JSON.parse(localStorage.getItem('detectedTransfers') || '[]');
+        }
+
+        function refreshTransferHistory() {
+            const transfers = loadTransferHistory();
+            const container = document.getElementById('transferHistoryList');
+            
+            if (transfers.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                        <div style="font-size: 2rem; margin-bottom: 1rem;">📦</div>
+                        <div>Henüz transfer tespit edilmedi</div>
+                        <small>Depo arası transferler otomatik olarak burada görünecek</small>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort by timestamp (newest first)
+            const sortedTransfers = transfers.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            let html = '';
+            sortedTransfers.forEach(transfer => {
+                html += `
+                    <div class="transfer-card" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; background: var(--card-bg); border-left: 4px solid #2196f3;">
+                        <div style="display: flex; justify-content: between; align-items: center;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    🔄 ${transfer.fromDepot} → ${transfer.toDepot}
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; font-size: 0.9rem;">
+                                    <div style="color: var(--text-secondary);">
+                                        📦 <strong>${transfer.category.charAt(0).toUpperCase() + transfer.category.slice(1)}</strong>
+                                    </div>
+                                    <div style="color: var(--text-secondary);">
+                                        📊 <strong>${transfer.quantity} adet</strong>
+                                    </div>
+                                    <div style="color: var(--text-secondary);">
+                                        🕐 <strong>${new Date(transfer.timestamp).toLocaleString('tr-TR')}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="margin-left: 1rem;">
+                                <div style="background: #e3f2fd; color: #1976d2; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                                    TRANSFER
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function clearTransferHistory() {
+            if (confirm('Tüm transfer geçmişini silmek istediğinizden emin misiniz?')) {
+                localStorage.removeItem('detectedTransfers');
+                refreshTransferHistory();
+                logToConsole('[CLEAR] Transfer geçmişi temizlendi');
+                showAlert('🗑️ Transfer geçmişi temizlendi!', 'success');
+            }
+        }
+
+        // Load unknown sales when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // ... existing code ...
+            setTimeout(() => {
+                refreshUnknownSales();
+                refreshTransferHistory();
+            }, 100);
+        });
+    </script>
+
+    <style>
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        }
+    </style>
+</body>
+</html>

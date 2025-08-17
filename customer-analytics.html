@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Analytics - Trek Sales Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #007AFF;
+            --secondary-color: #5856D6;
+            --success-color: #34C759;
+            --warning-color: #FF9500;
+            --danger-color: #FF3B30;
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --surface-primary: #FFFFFF;
+            --surface-secondary: #F2F2F7;
+            --surface-tertiary: #FAFAFA;
+            --border-color: #E5E5EA;
+            --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --shadow-heavy: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --gradient-primary: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--surface-tertiary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: var(--shadow-medium);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--surface-primary);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-light);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .analytics-card {
+            background: var(--surface-primary);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-light);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 1rem;
+        }
+
+        .analysis-list {
+            list-style: none;
+        }
+
+        .analysis-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .analysis-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .item-value {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .controls {
+            background: var(--surface-primary);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-light);
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-input, .form-select {
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .customer-table {
+            background: var(--surface-primary);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-light);
+            overflow: hidden;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--text-primary);
+            background: var(--surface-secondary);
+        }
+
+        tr:hover {
+            background: var(--surface-secondary);
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+<!-- ===== AGENT SERVICE AUTO-INJECTION ===== -->
+<!-- Generated by Auto-Inject Agents System -->
+<script src="bizimhesap-api-integration.js"></script>
+<script src="data-aware-agents.js"></script>
+<script src="persistent-agent-service.js"></script>
+<script src="category-agent-schema.js"></script>
+
+<script>
+// Auto-detected page configuration
+(function() {
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    const agentConfig = window.CategoryAgentSchema ? window.CategoryAgentSchema.getAgentConfig(currentPage) : null;
+    
+    if (agentConfig) {
+        console.log(`🤖 Auto-injecting agents for ${agentConfig.category} page`);
+        window.PAGE_CATEGORY = agentConfig.category;
+        window.RELEVANT_AGENTS = agentConfig.relevantAgents;
+        
+        // Initialize when agent service is ready
+        function waitForAgentService() {
+            if (window.AgentAPI && window.AgentAPI.isServiceActive()) {
+                initializePageAgents();
+            } else {
+                setTimeout(waitForAgentService, 1000);
+            }
+        }
+        
+        function initializePageAgents() {
+            try {
+                console.log(`✅ Agent service ready for ${window.PAGE_CATEGORY}`);
+                
+                // Get relevant data
+                const pageData = window.agentService.getRelevantDataForPage(window.PAGE_CATEGORY);
+                
+                // Update page with agent data
+                updatePageWithAgentData(pageData);
+                
+                // Setup live update listeners
+                setupAgentEventListeners();
+                
+                // Show agent status widget
+                if (typeof showAgentStatusWidget === 'undefined') {
+                    createAgentStatusWidget();
+                }
+                
+                // Dispatch ready event
+                window.dispatchEvent(new CustomEvent('agentServiceReady', { 
+                    detail: { category: window.PAGE_CATEGORY, agents: window.RELEVANT_AGENTS } 
+                }));
+                
+            } catch (error) {
+                console.error('❌ Agent initialization error:', error);
+            }
+        }
+        
+        function updatePageWithAgentData(data) {
+            // Try to update common elements
+            updateCommonElements(data);
+            
+            // Dispatch event for page-specific handling
+            window.dispatchEvent(new CustomEvent('agentDataReceived', { detail: data }));
+            
+            console.log(`📊 Page data updated for ${window.PAGE_CATEGORY}:`, data);
+        }
+        
+        function updateCommonElements(data) {
+            // Update common metric elements
+            const updates = [
+                { selector: '[data-agent-metric="products"]', value: data.product?.data?.products?.length || 0 },
+                { selector: '[data-agent-metric="customers"]', value: data.customer?.data?.customers?.length || 0 },
+                { selector: '[data-agent-metric="warehouses"]', value: data.warehouse?.data?.warehouses?.length || 0 },
+                { selector: '[data-agent-metric="recommendations"]', value: data.recommendations?.length || 0 }
+            ];
+            
+            updates.forEach(update => {
+                const elements = document.querySelectorAll(update.selector);
+                elements.forEach(el => {
+                    if (el) {
+                        el.textContent = update.value;
+                        el.setAttribute('data-agent-updated', new Date().toISOString());
+                    }
+                });
+            });
+            
+            // Update status indicators
+            const statusElements = document.querySelectorAll('[data-agent-status]');
+            statusElements.forEach(el => {
+                const agentType = el.getAttribute('data-agent-status');
+                if (data[agentType]?.isActive) {
+                    el.className = 'agent-status-active';
+                    el.textContent = '●';
+                    el.style.color = '#10b981';
+                } else {
+                    el.className = 'agent-status-inactive';
+                    el.textContent = '●';
+                    el.style.color = '#ef4444';
+                }
+            });
+        }
+        
+        function setupAgentEventListeners() {
+            // Live data sync
+            window.addEventListener('agent_service_data_synced', function(event) {
+                console.log(`🔄 Live data sync for ${window.PAGE_CATEGORY}`);
+                const pageData = window.agentService.getRelevantDataForPage(window.PAGE_CATEGORY);
+                updatePageWithAgentData(pageData);
+            });
+            
+            // New recommendations
+            window.addEventListener('agent_service_new_recommendation', function(event) {
+                if (window.RELEVANT_AGENTS.includes(event.detail.recommendation.source)) {
+                    showAgentRecommendation(event.detail.recommendation);
+                }
+            });
+            
+            // Agent actions completed
+            window.addEventListener('agent_service_agent_action_completed', function(event) {
+                console.log(`⚡ Agent action completed for ${window.PAGE_CATEGORY}:`, event.detail);
+                showActionCompletedNotification(event.detail);
+            });
+        }
+        
+        function createAgentStatusWidget() {
+            const widget = document.createElement('div');
+            widget.id = 'autoAgentWidget';
+            widget.innerHTML = `
+                <div style="position: fixed; bottom: 20px; right: 20px; background: #2d3748; color: white; padding: 12px; border-radius: 8px; z-index: 10000; font-size: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); min-width: 200px;">
+                    <div style="font-weight: bold; margin-bottom: 8px; color: #e2e8f0;">
+                        🤖 ${window.PAGE_CATEGORY.toUpperCase()} AGENTS
+                    </div>
+                    <div id="agentStatusList">
+                        ${window.RELEVANT_AGENTS.map(agent => `
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <span style="color: #cbd5e0;">${agent}</span>
+                                <span data-agent-status="${agent}" style="color: #ef4444;">●</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #4a5568; font-size: 10px; color: #a0aec0;">
+                        <span id="agentDataCount">Loading...</span> • Live Data Active
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <button onclick="toggleAgentDetails()" style="background: #4299e1; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">
+                            Details
+                        </button>
+                        <button onclick="refreshAgentData()" style="background: #48bb78; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px; margin-left: 5px;">
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(widget);
+            
+            // Update data count
+            setTimeout(() => updateAgentDataCount(), 2000);
+        }
+        
+        function updateAgentDataCount() {
+            const countEl = document.getElementById('agentDataCount');
+            if (countEl && window.AgentAPI) {
+                const allData = window.AgentAPI.getAgentData();
+                const totalRecords = Object.values(allData).reduce((total, agent) => {
+                    if (agent.data) {
+                        const count = agent.data.products?.length || 
+                                    agent.data.customers?.length || 
+                                    agent.data.warehouses?.length || 
+                                    agent.data.items?.length || 0;
+                        return total + count;
+                    }
+                    return total;
+                }, 0);
+                countEl.textContent = `${totalRecords} records`;
+            }
+        }
+        
+        window.toggleAgentDetails = function() {
+            console.log('🔍 Agent details for', window.PAGE_CATEGORY);
+            const data = window.AgentAPI ? window.AgentAPI.getAgentData() : {};
+            console.table(data);
+            alert(`Agent Details for ${window.PAGE_CATEGORY}:\n\n` + 
+                  JSON.stringify(data, null, 2).substring(0, 500) + '...');
+        };
+        
+        window.refreshAgentData = function() {
+            console.log('🔄 Refreshing agent data...');
+            if (window.AgentAPI) {
+                window.AgentAPI.refreshAgentData().then(() => {
+                    console.log('✅ Agent data refreshed');
+                    updateAgentDataCount();
+                });
+            }
+        };
+        
+        function showAgentRecommendation(recommendation) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed; top: 20px; right: 20px; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                color: white; border-radius: 8px; padding: 15px; 
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+                z-index: 10001; max-width: 350px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            notification.innerHTML = `
+                <div style="font-weight: bold; margin-bottom: 5px;">
+                    💡 ${recommendation.priority} - ${recommendation.source}
+                </div>
+                <div style="font-size: 14px; line-height: 1.4;">
+                    ${recommendation.message}
+                </div>
+                <div style="margin-top: 10px; text-align: right;">
+                    <button onclick="this.parentNode.parentNode.remove()" 
+                            style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                        Dismiss
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 10000);
+        }
+        
+        function showActionCompletedNotification(actionData) {
+            console.log(`✅ Action completed: ${actionData.action} on ${actionData.agentType}`);
+            
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed; top: 20px; left: 20px; 
+                background: #10b981; color: white; 
+                padding: 10px 15px; border-radius: 6px; 
+                z-index: 10001; font-size: 12px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            notification.textContent = `✅ ${actionData.action} completed`;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+        
+        // Start initialization
+        setTimeout(waitForAgentService, 1000);
+        
+    } else {
+        console.log('⚠️ No agent configuration found for', currentPage);
+    }
+})();
+</script>
+
+<style>
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.agent-status-active { color: #10b981 !important; }
+.agent-status-inactive { color: #ef4444 !important; }
+
+[data-agent-metric] {
+    font-weight: bold;
+    color: #10b981;
+}
+
+[data-agent-metric][data-agent-updated] {
+    animation: dataUpdated 0.5s ease-out;
+}
+
+@keyframes dataUpdated {
+    0% { background: rgba(16, 185, 129, 0.2); }
+    100% { background: transparent; }
+}
+</style>
+<!-- ===== END AGENT SERVICE AUTO-INJECTION ===== -->
+
+</head>
+<body>
+
+<!-- Return to Main Dashboard Button -->
+<style>
+    .return-to-dashboard {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 10000;
+        background: linear-gradient(135deg, #007AFF, #5856D6);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+    .return-to-dashboard:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        background: linear-gradient(135deg, #0051D5, #4038B0);
+    }
+    .return-to-dashboard svg {
+        width: 20px;
+        height: 20px;
+    }
+</style>
+<a href="main-dashboard.html" class="return-to-dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Ana Dashboard
+</a>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-title">👥 Customer Analytics</div>
+            <div class="nav-actions">
+                <button class="nav-btn" onclick="window.open('main-dashboard.html', '_blank')">🏠 Hub</button>
+                <button class="nav-btn" onclick="refreshData()">🔄 Refresh</button>
+                <button class="nav-btn" onclick="exportData()">📊 Export</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">Customer Analytics Dashboard</h1>
+            <p class="page-subtitle">Advanced customer segmentation and behavior analysis</p>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-number" id="totalCustomers">-</div>
+                <div class="stat-label">Total Customers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-number" id="activeCustomers">-</div>
+                <div class="stat-label">Active Customers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-number" id="avgBalance">-</div>
+                <div class="stat-label">Avg Balance</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📧</div>
+                <div class="stat-number" id="emailDomains">-</div>
+                <div class="stat-label">Email Domains</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="controls-grid">
+                <div class="form-group">
+                    <label class="form-label">Analysis Type</label>
+                    <select id="analysisType" class="form-select">
+                        <option value="all">All Customers</option>
+                        <option value="email">Email Analysis</option>
+                        <option value="balance">Balance Analysis</option>
+                        <option value="currency">Currency Analysis</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Date Range</label>
+                    <select id="dateRange" class="form-select">
+                        <option value="all">All Time</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Customer Limit</label>
+                    <input type="number" id="customerLimit" class="form-input" value="50" min="1" max="100">
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-primary" onclick="startAnalysis()">🔍 Start Analysis</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Charts -->
+        <div class="analytics-grid">
+            <div class="analytics-card">
+                <h3 class="card-title">📧 Email Domain Distribution</h3>
+                <div class="chart-container">
+                    <canvas id="emailChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="analytics-card">
+                <h3 class="card-title">💰 Balance Distribution</h3>
+                <div class="chart-container">
+                    <canvas id="balanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Results -->
+        <div class="analytics-grid">
+            <div class="analytics-card">
+                <h3 class="card-title">📊 Email Analysis</h3>
+                <ul class="analysis-list" id="emailAnalysis">
+                    <li class="analysis-item">
+                        <span class="item-label">Loading...</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="analytics-card">
+                <h3 class="card-title">💳 Balance Segments</h3>
+                <ul class="analysis-list" id="balanceAnalysis">
+                    <li class="analysis-item">
+                        <span class="item-label">Loading...</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Customer Table -->
+        <div class="customer-table">
+            <h3 class="card-title">📋 Customer Details</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Balance</th>
+                            <th>Status</th>
+                            <th>Last Activity</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customerTableBody">
+                        <tr>
+                            <td colspan="6" class="loading">Loading customer data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PROXY_URL = 'http://localhost:8080/bizimhesap-proxy-clean.php';
+        let customerData = [];
+        let analysisResults = {};
+
+        // Charts
+        let emailChart, balanceChart;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            startAnalysis();
+        });
+
+        function initializeCharts() {
+            // Email Domain Chart
+            const emailCtx = document.getElementById('emailChart').getContext('2d');
+            emailChart = new Chart(emailCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#007AFF', '#5856D6', '#34C759', '#FF9500',
+                            '#FF3B30', '#5AC8FA', '#FFCC02', '#FF2D92'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Balance Distribution Chart
+            const balanceCtx = document.getElementById('balanceChart').getContext('2d');
+            balanceChart = new Chart(balanceCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Customers',
+                        data: [],
+                        backgroundColor: 'rgba(0, 122, 255, 0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        async function startAnalysis() {
+            try {
+                updateStatus('Loading customers...');
+                await loadCustomers();
+                await analyzeCustomers();
+                updateCharts();
+                updateTable();
+                updateStatus('Analysis complete!');
+            } catch (error) {
+                console.error('Analysis failed:', error);
+                updateStatus('Analysis failed: ' + error.message);
+            }
+        }
+
+        async function loadCustomers() {
+            const response = await fetch(`${PROXY_URL}?endpoint=customers`);
+            const data = await response.json();
+            
+            if (!data.data?.customers) {
+                throw new Error('No customer data available');
+            }
+            
+            customerData = data.data.customers;
+            const limit = parseInt(document.getElementById('customerLimit').value);
+            customerData = customerData.slice(0, limit);
+            
+            // Load customer abstracts for detailed analysis
+            for (let i = 0; i < Math.min(customerData.length, 20); i++) {
+                try {
+                    const customer = customerData[i];
+                    const abstractResponse = await fetch(`${PROXY_URL}?endpoint=abstract/${customer.code}`);
+                    const abstractData = await abstractResponse.json();
+                    
+                    if (abstractData.data?.abstract) {
+                        customer.abstract = abstractData.data.abstract;
+                        customer.lastBalance = getLastBalance(abstractData.data.abstract);
+                        customer.transactionCount = abstractData.data.abstract.length;
+                        customer.lastActivity = getLastActivity(abstractData.data.abstract);
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                } catch (err) {
+                    console.log(`Error loading abstract for ${customerData[i].code}:`, err);
+                }
+            }
+        }
+
+        function analyzeCustomers() {
+            analysisResults = {
+                totalCustomers: customerData.length,
+                emailAnalysis: analyzeEmails(),
+                balanceAnalysis: analyzeBalances(),
+                currencyAnalysis: analyzeCurrencies(),
+                activityAnalysis: analyzeActivity()
+            };
+            
+            updateStats();
+        }
+
+        function analyzeEmails() {
+            const emailDomains = {};
+            const corporateEmails = [];
+            const personalEmails = [];
+            const noEmail = [];
+            
+            customerData.forEach(customer => {
+                if (!customer.email) {
+                    noEmail.push(customer);
+                    return;
+                }
+                
+                const domain = customer.email.split('@')[1]?.toLowerCase();
+                if (!domain) {
+                    noEmail.push(customer);
+                    return;
+                }
+                
+                emailDomains[domain] = (emailDomains[domain] || 0) + 1;
+                
+                // Classify as corporate or personal
+                const personalDomains = ['gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com'];
+                if (personalDomains.includes(domain)) {
+                    personalEmails.push(customer);
+                } else {
+                    corporateEmails.push(customer);
+                }
+            });
+            
+            return {
+                domains: emailDomains,
+                corporate: corporateEmails,
+                personal: personalEmails,
+                noEmail: noEmail
+            };
+        }
+
+        function analyzeBalances() {
+            const ranges = {
+                'Negative (Debt)': [],
+                '0 - 1,000 TL': [],
+                '1,000 - 5,000 TL': [],
+                '5,000 - 10,000 TL': [],
+                '10,000+ TL': []
+            };
+            
+            customerData.forEach(customer => {
+                const balance = customer.lastBalance || 0;
+                
+                if (balance < 0) {
+                    ranges['Negative (Debt)'].push(customer);
+                } else if (balance <= 1000) {
+                    ranges['0 - 1,000 TL'].push(customer);
+                } else if (balance <= 5000) {
+                    ranges['1,000 - 5,000 TL'].push(customer);
+                } else if (balance <= 10000) {
+                    ranges['5,000 - 10,000 TL'].push(customer);
+                } else {
+                    ranges['10,000+ TL'].push(customer);
+                }
+            });
+            
+            return ranges;
+        }
+
+        function analyzeCurrencies() {
+            // This would require more detailed transaction analysis
+            return {
+                'TL': customerData.length,
+                'USD': 0,
+                'EUR': 0
+            };
+        }
+
+        function analyzeActivity() {
+            const now = new Date();
+            const activeCustomers = customerData.filter(customer => {
+                if (!customer.lastActivity) return false;
+                const lastActivity = new Date(customer.lastActivity);
+                const daysDiff = (now - lastActivity) / (1000 * 60 * 60 * 24);
+                return daysDiff <= 30; // Active within last 30 days
+            });
+            
+            return {
+                active: activeCustomers.length,
+                inactive: customerData.length - activeCustomers.length
+            };
+        }
+
+        function updateStats() {
+            document.getElementById('totalCustomers').textContent = analysisResults.totalCustomers;
+            document.getElementById('activeCustomers').textContent = analysisResults.activityAnalysis.active;
+            
+            const avgBalance = customerData.reduce((sum, c) => sum + (c.lastBalance || 0), 0) / customerData.length;
+            document.getElementById('avgBalance').textContent = `₺${avgBalance.toFixed(0)}`;
+            
+            document.getElementById('emailDomains').textContent = Object.keys(analysisResults.emailAnalysis.domains).length;
+        }
+
+        function updateCharts() {
+            // Update email chart
+            const emailDomains = analysisResults.emailAnalysis.domains;
+            const topDomains = Object.entries(emailDomains)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 8);
+            
+            emailChart.data.labels = topDomains.map(([domain]) => domain);
+            emailChart.data.datasets[0].data = topDomains.map(([,count]) => count);
+            emailChart.update();
+            
+            // Update balance chart
+            const balanceRanges = analysisResults.balanceAnalysis;
+            balanceChart.data.labels = Object.keys(balanceRanges);
+            balanceChart.data.datasets[0].data = Object.values(balanceRanges).map(arr => arr.length);
+            balanceChart.update();
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById('customerTableBody');
+            
+            if (customerData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No customer data available</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = customerData.slice(0, 20).map(customer => {
+                const status = getCustomerStatus(customer);
+                const balance = customer.lastBalance || 0;
+                const lastActivity = customer.lastActivity || 'N/A';
+                
+                return `
+                    <tr>
+                        <td><strong>${customer.title}</strong><br><small>${customer.code}</small></td>
+                        <td>${customer.email || 'N/A'}</td>
+                        <td>${customer.phone || 'N/A'}</td>
+                        <td><strong>₺${balance.toFixed(2)}</strong></td>
+                        <td><span class="status-badge status-${status.toLowerCase()}">${status}</span></td>
+                        <td>${lastActivity !== 'N/A' ? new Date(lastActivity).toLocaleDateString('tr-TR') : 'N/A'}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // Update analysis lists
+            updateAnalysisLists();
+        }
+
+        function updateAnalysisLists() {
+            // Email analysis
+            const emailList = document.getElementById('emailAnalysis');
+            const emailDomains = Object.entries(analysisResults.emailAnalysis.domains)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 5);
+            
+            emailList.innerHTML = emailDomains.map(([domain, count]) => `
+                <li class="analysis-item">
+                    <span class="item-label">📧 ${domain}</span>
+                    <span class="item-value">${count} customers</span>
+                </li>
+            `).join('');
+            
+            // Balance analysis
+            const balanceList = document.getElementById('balanceAnalysis');
+            const balanceRanges = Object.entries(analysisResults.balanceAnalysis);
+            
+            balanceList.innerHTML = balanceRanges.map(([range, customers]) => `
+                <li class="analysis-item">
+                    <span class="item-label">💰 ${range}</span>
+                    <span class="item-value">${customers.length} customers</span>
+                </li>
+            `).join('');
+        }
+
+        function getLastBalance(abstract) {
+            if (!abstract || abstract.length === 0) return 0;
+            const lastRecord = abstract[abstract.length - 1];
+            return parseFloat(lastRecord.balance) || 0;
+        }
+
+        function getLastActivity(abstract) {
+            if (!abstract || abstract.length === 0) return null;
+            const lastRecord = abstract[abstract.length - 1];
+            return lastRecord.date;
+        }
+
+        function getCustomerStatus(customer) {
+            if (!customer.lastActivity) return 'Inactive';
+            
+            const now = new Date();
+            const lastActivity = new Date(customer.lastActivity);
+            const daysDiff = (now - lastActivity) / (1000 * 60 * 60 * 24);
+            
+            if (daysDiff <= 7) return 'Active';
+            if (daysDiff <= 30) return 'Pending';
+            return 'Inactive';
+        }
+
+        function updateStatus(message) {
+            console.log('Customer Analytics:', message);
+        }
+
+        function refreshData() {
+            startAnalysis();
+        }
+
+        function exportData() {
+            const csvData = customerData.map(customer => ({
+                Name: customer.title,
+                Code: customer.code,
+                Email: customer.email || '',
+                Phone: customer.phone || '',
+                Address: customer.address || '',
+                Balance: customer.lastBalance || 0,
+                Status: getCustomerStatus(customer)
+            }));
+            
+            const csv = convertToCSV(csvData);
+            downloadCSV(csv, 'customer-analytics.csv');
+        }
+
+        function convertToCSV(data) {
+            const headers = Object.keys(data[0]).join(',');
+            const rows = data.map(row => Object.values(row).join(','));
+            return [headers, ...rows].join('\n');
+        }
+
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', filename);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>

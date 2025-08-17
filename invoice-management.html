@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Management - Trek Sales Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #007AFF;
+            --secondary-color: #5856D6;
+            --success-color: #34C759;
+            --warning-color: #FF9500;
+            --danger-color: #FF3B30;
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --surface-primary: #FFFFFF;
+            --surface-secondary: #F2F2F7;
+            --surface-tertiary: #FAFAFA;
+            --border-color: #E5E5EA;
+            --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --shadow-heavy: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --gradient-primary: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--surface-tertiary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: var(--shadow-medium);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--surface-primary);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-light);
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-primary);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .action-bar {
+            background: var(--surface-primary);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .search-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex: 1;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .filter-select {
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .main-content {
+            background: var(--surface-primary);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-light);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .sidebar-card {
+            background: var(--surface-primary);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-light);
+        }
+
+        .sidebar-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .invoice-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .invoice-item {
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .invoice-item:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .invoice-number {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .invoice-amount {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--success-color);
+        }
+
+        .invoice-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .invoice-detail {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+        }
+
+        .status-paid {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-overdue {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-draft {
+            background: #e2e3e5;
+            color: #495057;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 1rem;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .quick-action {
+            background: var(--surface-secondary);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quick-action:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-bar {
+            background: var(--border-color);
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            background: var(--gradient-primary);
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+
+<!-- ===== AGENT SERVICE AUTO-INJECTION ===== -->
+<!-- Generated by Auto-Inject Agents System -->
+<script src="bizimhesap-api-integration.js"></script>
+<script src="data-aware-agents.js"></script>
+<script src="persistent-agent-service.js"></script>
+<script src="category-agent-schema.js"></script>
+
+<script>
+// Auto-detected page configuration
+(function() {
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    const agentConfig = window.CategoryAgentSchema ? window.CategoryAgentSchema.getAgentConfig(currentPage) : null;
+    
+    if (agentConfig) {
+        console.log(`🤖 Auto-injecting agents for ${agentConfig.category} page`);
+        window.PAGE_CATEGORY = agentConfig.category;
+        window.RELEVANT_AGENTS = agentConfig.relevantAgents;
+        
+        // Initialize when agent service is ready
+        function waitForAgentService() {
+            if (window.AgentAPI && window.AgentAPI.isServiceActive()) {
+                initializePageAgents();
+            } else {
+                setTimeout(waitForAgentService, 1000);
+            }
+        }
+        
+        function initializePageAgents() {
+            try {
+                console.log(`✅ Agent service ready for ${window.PAGE_CATEGORY}`);
+                
+                // Get relevant data
+                const pageData = window.agentService.getRelevantDataForPage(window.PAGE_CATEGORY);
+                
+                // Update page with agent data
+                updatePageWithAgentData(pageData);
+                
+                // Setup live update listeners
+                setupAgentEventListeners();
+                
+                // Show agent status widget
+                if (typeof showAgentStatusWidget === 'undefined') {
+                    createAgentStatusWidget();
+                }
+                
+                // Dispatch ready event
+                window.dispatchEvent(new CustomEvent('agentServiceReady', { 
+                    detail: { category: window.PAGE_CATEGORY, agents: window.RELEVANT_AGENTS } 
+                }));
+                
+            } catch (error) {
+                console.error('❌ Agent initialization error:', error);
+            }
+        }
+        
+        function updatePageWithAgentData(data) {
+            // Try to update common elements
+            updateCommonElements(data);
+            
+            // Dispatch event for page-specific handling
+            window.dispatchEvent(new CustomEvent('agentDataReceived', { detail: data }));
+            
+            console.log(`📊 Page data updated for ${window.PAGE_CATEGORY}:`, data);
+        }
+        
+        function updateCommonElements(data) {
+            // Update common metric elements
+            const updates = [
+                { selector: '[data-agent-metric="products"]', value: data.product?.data?.products?.length || 0 },
+                { selector: '[data-agent-metric="customers"]', value: data.customer?.data?.customers?.length || 0 },
+                { selector: '[data-agent-metric="warehouses"]', value: data.warehouse?.data?.warehouses?.length || 0 },
+                { selector: '[data-agent-metric="recommendations"]', value: data.recommendations?.length || 0 }
+            ];
+            
+            updates.forEach(update => {
+                const elements = document.querySelectorAll(update.selector);
+                elements.forEach(el => {
+                    if (el) {
+                        el.textContent = update.value;
+                        el.setAttribute('data-agent-updated', new Date().toISOString());
+                    }
+                });
+            });
+            
+            // Update status indicators
+            const statusElements = document.querySelectorAll('[data-agent-status]');
+            statusElements.forEach(el => {
+                const agentType = el.getAttribute('data-agent-status');
+                if (data[agentType]?.isActive) {
+                    el.className = 'agent-status-active';
+                    el.textContent = '●';
+                    el.style.color = '#10b981';
+                } else {
+                    el.className = 'agent-status-inactive';
+                    el.textContent = '●';
+                    el.style.color = '#ef4444';
+                }
+            });
+        }
+        
+        function setupAgentEventListeners() {
+            // Live data sync
+            window.addEventListener('agent_service_data_synced', function(event) {
+                console.log(`🔄 Live data sync for ${window.PAGE_CATEGORY}`);
+                const pageData = window.agentService.getRelevantDataForPage(window.PAGE_CATEGORY);
+                updatePageWithAgentData(pageData);
+            });
+            
+            // New recommendations
+            window.addEventListener('agent_service_new_recommendation', function(event) {
+                if (window.RELEVANT_AGENTS.includes(event.detail.recommendation.source)) {
+                    showAgentRecommendation(event.detail.recommendation);
+                }
+            });
+            
+            // Agent actions completed
+            window.addEventListener('agent_service_agent_action_completed', function(event) {
+                console.log(`⚡ Agent action completed for ${window.PAGE_CATEGORY}:`, event.detail);
+                showActionCompletedNotification(event.detail);
+            });
+        }
+        
+        function createAgentStatusWidget() {
+            const widget = document.createElement('div');
+            widget.id = 'autoAgentWidget';
+            widget.innerHTML = `
+                <div style="position: fixed; bottom: 20px; right: 20px; background: #2d3748; color: white; padding: 12px; border-radius: 8px; z-index: 10000; font-size: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); min-width: 200px;">
+                    <div style="font-weight: bold; margin-bottom: 8px; color: #e2e8f0;">
+                        🤖 ${window.PAGE_CATEGORY.toUpperCase()} AGENTS
+                    </div>
+                    <div id="agentStatusList">
+                        ${window.RELEVANT_AGENTS.map(agent => `
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <span style="color: #cbd5e0;">${agent}</span>
+                                <span data-agent-status="${agent}" style="color: #ef4444;">●</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #4a5568; font-size: 10px; color: #a0aec0;">
+                        <span id="agentDataCount">Loading...</span> • Live Data Active
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <button onclick="toggleAgentDetails()" style="background: #4299e1; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">
+                            Details
+                        </button>
+                        <button onclick="refreshAgentData()" style="background: #48bb78; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px; margin-left: 5px;">
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(widget);
+            
+            // Update data count
+            setTimeout(() => updateAgentDataCount(), 2000);
+        }
+        
+        function updateAgentDataCount() {
+            const countEl = document.getElementById('agentDataCount');
+            if (countEl && window.AgentAPI) {
+                const allData = window.AgentAPI.getAgentData();
+                const totalRecords = Object.values(allData).reduce((total, agent) => {
+                    if (agent.data) {
+                        const count = agent.data.products?.length || 
+                                    agent.data.customers?.length || 
+                                    agent.data.warehouses?.length || 
+                                    agent.data.items?.length || 0;
+                        return total + count;
+                    }
+                    return total;
+                }, 0);
+                countEl.textContent = `${totalRecords} records`;
+            }
+        }
+        
+        window.toggleAgentDetails = function() {
+            console.log('🔍 Agent details for', window.PAGE_CATEGORY);
+            const data = window.AgentAPI ? window.AgentAPI.getAgentData() : {};
+            console.table(data);
+            alert(`Agent Details for ${window.PAGE_CATEGORY}:\n\n` + 
+                  JSON.stringify(data, null, 2).substring(0, 500) + '...');
+        };
+        
+        window.refreshAgentData = function() {
+            console.log('🔄 Refreshing agent data...');
+            if (window.AgentAPI) {
+                window.AgentAPI.refreshAgentData().then(() => {
+                    console.log('✅ Agent data refreshed');
+                    updateAgentDataCount();
+                });
+            }
+        };
+        
+        function showAgentRecommendation(recommendation) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed; top: 20px; right: 20px; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                color: white; border-radius: 8px; padding: 15px; 
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+                z-index: 10001; max-width: 350px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            notification.innerHTML = `
+                <div style="font-weight: bold; margin-bottom: 5px;">
+                    💡 ${recommendation.priority} - ${recommendation.source}
+                </div>
+                <div style="font-size: 14px; line-height: 1.4;">
+                    ${recommendation.message}
+                </div>
+                <div style="margin-top: 10px; text-align: right;">
+                    <button onclick="this.parentNode.parentNode.remove()" 
+                            style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                        Dismiss
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 10000);
+        }
+        
+        function showActionCompletedNotification(actionData) {
+            console.log(`✅ Action completed: ${actionData.action} on ${actionData.agentType}`);
+            
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed; top: 20px; left: 20px; 
+                background: #10b981; color: white; 
+                padding: 10px 15px; border-radius: 6px; 
+                z-index: 10001; font-size: 12px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            notification.textContent = `✅ ${actionData.action} completed`;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+        
+        // Start initialization
+        setTimeout(waitForAgentService, 1000);
+        
+    } else {
+        console.log('⚠️ No agent configuration found for', currentPage);
+    }
+})();
+</script>
+
+<style>
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.agent-status-active { color: #10b981 !important; }
+.agent-status-inactive { color: #ef4444 !important; }
+
+[data-agent-metric] {
+    font-weight: bold;
+    color: #10b981;
+}
+
+[data-agent-metric][data-agent-updated] {
+    animation: dataUpdated 0.5s ease-out;
+}
+
+@keyframes dataUpdated {
+    0% { background: rgba(16, 185, 129, 0.2); }
+    100% { background: transparent; }
+}
+</style>
+<!-- ===== END AGENT SERVICE AUTO-INJECTION ===== -->
+
+</head>
+<body>
+
+<!-- Return to Main Dashboard Button -->
+<style>
+    .return-to-dashboard {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 10000;
+        background: linear-gradient(135deg, #007AFF, #5856D6);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+    .return-to-dashboard:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        background: linear-gradient(135deg, #0051D5, #4038B0);
+    }
+    .return-to-dashboard svg {
+        width: 20px;
+        height: 20px;
+    }
+</style>
+<a href="main-dashboard.html" class="return-to-dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Ana Dashboard
+</a>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-title">🧾 Invoice Management</div>
+            <div class="nav-actions">
+                <button class="nav-btn" onclick="window.open('main-dashboard.html', '_blank')">🏠 Hub</button>
+                <button class="nav-btn" onclick="window.open('add-invoice.html', '_blank')">➕ New Invoice</button>
+                <button class="nav-btn" onclick="refreshData()">🔄 Refresh</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">Invoice Management System</h1>
+            <p class="page-subtitle">Complete invoice lifecycle management and analytics</p>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📄</div>
+                <div class="stat-number" id="totalInvoices">-</div>
+                <div class="stat-label">Total Invoices</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-number" id="totalAmount">-</div>
+                <div class="stat-label">Total Amount</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-number" id="paidInvoices">-</div>
+                <div class="stat-label">Paid Invoices</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏰</div>
+                <div class="stat-number" id="pendingInvoices">-</div>
+                <div class="stat-label">Pending Invoices</div>
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <div class="search-group">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search invoices by number, customer, or amount...">
+                <select id="statusFilter" class="filter-select">
+                    <option value="all">All Status</option>
+                    <option value="draft">Draft</option>
+                    <option value="pending">Pending</option>
+                    <option value="paid">Paid</option>
+                    <option value="overdue">Overdue</option>
+                </select>
+                <select id="periodFilter" class="filter-select">
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="quarter">This Quarter</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn btn-primary" onclick="searchInvoices()">🔍 Search</button>
+                <button class="btn btn-success" onclick="scanForInvoices()">📊 Scan Customer Data</button>
+                <button class="btn btn-warning" onclick="exportInvoices()">📤 Export</button>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+            <!-- Invoice List -->
+            <div class="main-content">
+                <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    📋 Invoice List
+                    <div class="progress-bar" style="flex: 1; margin-left: 1rem; display: none;" id="loadingBar">
+                        <div class="progress-fill" id="loadingProgress" style="width: 0%"></div>
+                    </div>
+                </h3>
+                
+                <div class="invoice-list" id="invoiceList">
+                    <div class="loading">Loading invoice data...</div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Quick Actions -->
+                <div class="sidebar-card">
+                    <h4 class="sidebar-title">⚡ Quick Actions</h4>
+                    <div class="quick-actions">
+                        <div class="quick-action" onclick="window.open('add-invoice.html', '_blank')">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">➕</div>
+                            <div>New Invoice</div>
+                        </div>
+                        <div class="quick-action" onclick="loadDraftInvoices()">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📝</div>
+                            <div>Drafts</div>
+                        </div>
+                        <div class="quick-action" onclick="loadOverdueInvoices()">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">⚠️</div>
+                            <div>Overdue</div>
+                        </div>
+                        <div class="quick-action" onclick="generateReport()">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📊</div>
+                            <div>Reports</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Chart -->
+                <div class="sidebar-card">
+                    <h4 class="sidebar-title">📈 Monthly Trends</h4>
+                    <div class="chart-container">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="sidebar-card">
+                    <h4 class="sidebar-title">🕐 Recent Activity</h4>
+                    <div id="recentActivity">
+                        <div class="loading">Loading activity...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PROXY_URL = 'http://localhost:8080/bizimhesap-proxy-clean.php';
+        let invoiceData = [];
+        let customerData = [];
+        let monthlyChart;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeChart();
+            loadInvoiceData();
+            
+            // Setup search functionality
+            document.getElementById('searchInput').addEventListener('input', debounce(searchInvoices, 300));
+            document.getElementById('statusFilter').addEventListener('change', filterInvoices);
+            document.getElementById('periodFilter').addEventListener('change', filterInvoices);
+        });
+
+        function initializeChart() {
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+            monthlyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Invoice Amount',
+                        data: [],
+                        borderColor: '#007AFF',
+                        backgroundColor: 'rgba(0, 122, 255, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadInvoiceData() {
+            try {
+                showProgress(0);
+                updateStatus('Loading stored invoices...');
+                
+                // Load local invoices
+                const localInvoices = getStoredInvoices();
+                invoiceData = [...localInvoices];
+                
+                showProgress(30);
+                updateStatus('Loading customers...');
+                
+                // Load customers for additional invoice data
+                await loadCustomers();
+                
+                showProgress(60);
+                updateStatus('Scanning customer data for invoices...');
+                
+                // Scan customer abstracts for invoice data
+                await scanCustomerInvoices();
+                
+                showProgress(90);
+                updateStatus('Processing data...');
+                
+                // Process and display data
+                processInvoiceData();
+                updateStats();
+                updateChart();
+                displayInvoices();
+                loadRecentActivity();
+                
+                showProgress(100);
+                setTimeout(() => hideProgress(), 500);
+                updateStatus('Invoice data loaded successfully!');
+                
+            } catch (error) {
+                console.error('Error loading invoice data:', error);
+                updateStatus('Error loading invoice data: ' + error.message);
+                hideProgress();
+            }
+        }
+
+        async function loadCustomers() {
+            const response = await fetch(`${PROXY_URL}?endpoint=customers`);
+            const data = await response.json();
+            
+            if (data.data?.customers) {
+                customerData = data.data.customers;
+            }
+        }
+
+        async function scanCustomerInvoices() {
+            const limit = Math.min(customerData.length, 20); // Scan first 20 customers
+            
+            for (let i = 0; i < limit; i++) {
+                try {
+                    const customer = customerData[i];
+                    updateStatus(`Scanning ${customer.title}... (${i + 1}/${limit})`);
+                    
+                    const abstractResponse = await fetch(`${PROXY_URL}?endpoint=abstract/${customer.code}`);
+                    const abstractData = await abstractResponse.json();
+                    
+                    if (abstractData.data?.abstract) {
+                        const invoiceRecords = abstractData.data.abstract.filter(record => 
+                            record.documentType && (
+                                record.documentType.toLowerCase().includes('fatura') ||
+                                record.documentType.toLowerCase().includes('satış') ||
+                                record.documentType.toLowerCase().includes('alış')
+                            )
+                        );
+                        
+                        invoiceRecords.forEach(record => {
+                            const invoice = {
+                                id: `${customer.code}_${record.documentNo}`,
+                                invoiceNo: record.documentNo || 'N/A',
+                                customer: customer,
+                                customerName: customer.title,
+                                date: record.date,
+                                amount: parseFloat(record.debit || record.credit || 0),
+                                status: determineInvoiceStatus(record),
+                                type: record.documentType,
+                                description: record.description,
+                                source: 'customer_abstract',
+                                balance: parseFloat(record.balance || 0)
+                            };
+                            
+                            // Check if not already exists
+                            if (!invoiceData.find(inv => inv.id === invoice.id)) {
+                                invoiceData.push(invoice);
+                            }
+                        });
+                    }
+                    
+                    // Update progress
+                    const progress = 60 + (i / limit) * 30;
+                    showProgress(progress);
+                    
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                } catch (err) {
+                    console.log(`Error scanning customer ${customerData[i].code}:`, err);
+                }
+            }
+        }
+
+        function processInvoiceData() {
+            // Sort by date (newest first)
+            invoiceData.sort((a, b) => {
+                const dateA = new Date(a.date || a.createdAt || 0);
+                const dateB = new Date(b.date || b.createdAt || 0);
+                return dateB - dateA;
+            });
+            
+            // Remove duplicates based on invoice number and customer
+            const uniqueInvoices = [];
+            const seen = new Set();
+            
+            invoiceData.forEach(invoice => {
+                const key = `${invoice.invoiceNo}_${invoice.customerName}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    uniqueInvoices.push(invoice);
+                }
+            });
+            
+            invoiceData = uniqueInvoices;
+        }
+
+        function determineInvoiceStatus(record) {
+            const amount = parseFloat(record.debit || record.credit || 0);
+            const balance = parseFloat(record.balance || 0);
+            
+            if (balance === 0) return 'paid';
+            if (amount > 0 && balance > 0) return 'pending';
+            if (amount < 0) return 'overdue';
+            return 'draft';
+        }
+
+        function updateStats() {
+            const total = invoiceData.length;
+            const totalAmount = invoiceData.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+            const paid = invoiceData.filter(inv => inv.status === 'paid').length;
+            const pending = invoiceData.filter(inv => inv.status === 'pending').length;
+            
+            document.getElementById('totalInvoices').textContent = total;
+            document.getElementById('totalAmount').textContent = `₺${totalAmount.toFixed(2)}`;
+            document.getElementById('paidInvoices').textContent = paid;
+            document.getElementById('pendingInvoices').textContent = pending;
+        }
+
+        function updateChart() {
+            // Group invoices by month
+            const monthlyData = {};
+            
+            invoiceData.forEach(invoice => {
+                const date = new Date(invoice.date || invoice.createdAt);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                
+                if (!monthlyData[monthKey]) {
+                    monthlyData[monthKey] = 0;
+                }
+                monthlyData[monthKey] += invoice.amount || 0;
+            });
+            
+            const sortedMonths = Object.keys(monthlyData).sort();
+            const last6Months = sortedMonths.slice(-6);
+            
+            monthlyChart.data.labels = last6Months.map(month => {
+                const [year, monthNum] = month.split('-');
+                const date = new Date(year, monthNum - 1);
+                return date.toLocaleDateString('tr-TR', { month: 'short', year: 'numeric' });
+            });
+            
+            monthlyChart.data.datasets[0].data = last6Months.map(month => monthlyData[month]);
+            monthlyChart.update();
+        }
+
+        function displayInvoices() {
+            const invoiceList = document.getElementById('invoiceList');
+            
+            if (invoiceData.length === 0) {
+                invoiceList.innerHTML = `
+                    <div class="empty-state">
+                        <h4>No invoices found</h4>
+                        <p>Start by creating a new invoice or scanning customer data</p>
+                        <button class="btn btn-primary" onclick="window.open('add-invoice.html', '_blank')" style="margin-top: 1rem;">
+                            ➕ Create First Invoice
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            const displayInvoices = invoiceData.slice(0, 50); // Show first 50
+            
+            invoiceList.innerHTML = displayInvoices.map(invoice => {
+                const statusClass = `status-${invoice.status}`;
+                const amount = invoice.amount || 0;
+                const date = invoice.date || invoice.createdAt;
+                
+                return `
+                    <div class="invoice-item" onclick="viewInvoiceDetails('${invoice.id}')">
+                        <span class="status-badge ${statusClass}">${getStatusLabel(invoice.status)}</span>
+                        
+                        <div class="invoice-header">
+                            <div class="invoice-number">${invoice.invoiceNo}</div>
+                            <div class="invoice-amount">₺${amount.toFixed(2)}</div>
+                        </div>
+                        
+                        <div class="invoice-details">
+                            <div class="invoice-detail">
+                                <strong>Customer:</strong> ${invoice.customerName || 'N/A'}
+                            </div>
+                            <div class="invoice-detail">
+                                <strong>Date:</strong> ${date ? new Date(date).toLocaleDateString('tr-TR') : 'N/A'}
+                            </div>
+                            <div class="invoice-detail">
+                                <strong>Type:</strong> ${invoice.type || 'Invoice'}
+                            </div>
+                            <div class="invoice-detail">
+                                <strong>Source:</strong> ${invoice.source === 'customer_abstract' ? 'Customer Data' : 'Local'}
+                            </div>
+                        </div>
+                        
+                        ${invoice.description ? `<div style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">${invoice.description}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function loadRecentActivity() {
+            const recentActivity = document.getElementById('recentActivity');
+            const recentInvoices = invoiceData.slice(0, 5);
+            
+            if (recentInvoices.length === 0) {
+                recentActivity.innerHTML = '<div style="text-align: center; color: var(--text-secondary);">No recent activity</div>';
+                return;
+            }
+            
+            recentActivity.innerHTML = recentInvoices.map(invoice => {
+                const date = invoice.date || invoice.createdAt;
+                const timeAgo = date ? getTimeAgo(new Date(date)) : 'Unknown';
+                
+                return `
+                    <div style="padding: 0.75rem 0; border-bottom: 1px solid var(--border-color); cursor: pointer;" onclick="viewInvoiceDetails('${invoice.id}')">
+                        <div style="font-weight: 600; margin-bottom: 0.25rem;">${invoice.invoiceNo}</div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">${invoice.customerName}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">${timeAgo}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'paid': 'Paid',
+                'pending': 'Pending',
+                'overdue': 'Overdue',
+                'draft': 'Draft'
+            };
+            return labels[status] || 'Unknown';
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 60) return `${diffMins} minutes ago`;
+            if (diffHours < 24) return `${diffHours} hours ago`;
+            return `${diffDays} days ago`;
+        }
+
+        function showProgress(percentage) {
+            const loadingBar = document.getElementById('loadingBar');
+            const loadingProgress = document.getElementById('loadingProgress');
+            
+            loadingBar.style.display = 'block';
+            loadingProgress.style.width = `${percentage}%`;
+        }
+
+        function hideProgress() {
+            document.getElementById('loadingBar').style.display = 'none';
+        }
+
+        function updateStatus(message) {
+            console.log('Invoice Management:', message);
+        }
+
+        function getStoredInvoices() {
+            const invoices = JSON.parse(localStorage.getItem('trek_invoices') || '[]');
+            const scannedInvoices = JSON.parse(localStorage.getItem('trek_scanned_invoices') || '[]');
+            return [...invoices, ...scannedInvoices];
+        }
+
+        function searchInvoices() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            filterInvoices();
+        }
+
+        function filterInvoices() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const periodFilter = document.getElementById('periodFilter').value;
+            
+            let filteredInvoices = [...invoiceData];
+            
+            // Apply search filter
+            if (searchTerm) {
+                filteredInvoices = filteredInvoices.filter(invoice => 
+                    invoice.invoiceNo.toLowerCase().includes(searchTerm) ||
+                    invoice.customerName.toLowerCase().includes(searchTerm) ||
+                    (invoice.amount && invoice.amount.toString().includes(searchTerm))
+                );
+            }
+            
+            // Apply status filter
+            if (statusFilter !== 'all') {
+                filteredInvoices = filteredInvoices.filter(invoice => invoice.status === statusFilter);
+            }
+            
+            // Apply period filter
+            if (periodFilter !== 'all') {
+                const now = new Date();
+                filteredInvoices = filteredInvoices.filter(invoice => {
+                    const invoiceDate = new Date(invoice.date || invoice.createdAt);
+                    
+                    switch (periodFilter) {
+                        case 'today':
+                            return invoiceDate.toDateString() === now.toDateString();
+                        case 'week':
+                            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                            return invoiceDate >= weekAgo;
+                        case 'month':
+                            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                            return invoiceDate >= monthAgo;
+                        case 'quarter':
+                            const quarterAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+                            return invoiceDate >= quarterAgo;
+                        default:
+                            return true;
+                    }
+                });
+            }
+            
+            // Update display with filtered results
+            displayFilteredInvoices(filteredInvoices);
+        }
+
+        function displayFilteredInvoices(filteredInvoices) {
+            // Temporarily store full data and replace with filtered
+            const originalData = [...invoiceData];
+            invoiceData = filteredInvoices;
+            displayInvoices();
+            invoiceData = originalData; // Restore original data
+        }
+
+        function viewInvoiceDetails(invoiceId) {
+            const invoice = invoiceData.find(inv => inv.id === invoiceId);
+            if (!invoice) return;
+            
+            alert(`Invoice Details:\n\nNumber: ${invoice.invoiceNo}\nCustomer: ${invoice.customerName}\nAmount: ₺${(invoice.amount || 0).toFixed(2)}\nStatus: ${getStatusLabel(invoice.status)}\nDate: ${invoice.date ? new Date(invoice.date).toLocaleDateString('tr-TR') : 'N/A'}`);
+        }
+
+        function scanForInvoices() {
+            loadInvoiceData();
+        }
+
+        function refreshData() {
+            loadInvoiceData();
+        }
+
+        function loadDraftInvoices() {
+            document.getElementById('statusFilter').value = 'draft';
+            filterInvoices();
+        }
+
+        function loadOverdueInvoices() {
+            document.getElementById('statusFilter').value = 'overdue';
+            filterInvoices();
+        }
+
+        function exportInvoices() {
+            const csvData = invoiceData.map(invoice => ({
+                'Invoice Number': invoice.invoiceNo,
+                'Customer': invoice.customerName,
+                'Date': invoice.date || invoice.createdAt,
+                'Amount': invoice.amount || 0,
+                'Status': getStatusLabel(invoice.status),
+                'Type': invoice.type || 'Invoice',
+                'Source': invoice.source === 'customer_abstract' ? 'Customer Data' : 'Local'
+            }));
+            
+            const csv = convertToCSV(csvData);
+            downloadCSV(csv, 'invoice-export.csv');
+        }
+
+        function generateReport() {
+            const report = {
+                totalInvoices: invoiceData.length,
+                totalAmount: invoiceData.reduce((sum, inv) => sum + (inv.amount || 0), 0),
+                byStatus: {},
+                byMonth: {}
+            };
+            
+            // Group by status
+            invoiceData.forEach(invoice => {
+                const status = invoice.status || 'unknown';
+                report.byStatus[status] = (report.byStatus[status] || 0) + 1;
+            });
+            
+            console.log('Invoice Report:', report);
+            alert('Report generated! Check console for details.');
+        }
+
+        function convertToCSV(data) {
+            if (data.length === 0) return '';
+            
+            const headers = Object.keys(data[0]).join(',');
+            const rows = data.map(row => Object.values(row).map(val => `"${val}"`).join(','));
+            return [headers, ...rows].join('\n');
+        }
+
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', filename);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    </script>
+</body>
+</html>

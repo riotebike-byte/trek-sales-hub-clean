@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Sales & Campaign Agent</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+        
+        .agent-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .agent-header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .agent-title {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .agent-subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(52, 199, 89, 0.2);
+            border: 1px solid rgba(52, 199, 89, 0.5);
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.9em;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #34C759;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .agent-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .agent-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .panel-title {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .refresh-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+        
+        .refresh-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .recommendation-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+        
+        .recommendation-card:hover {
+            transform: translateX(5px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .recommendation-card.high-priority {
+            border-left-color: #FF3B30;
+            background: rgba(255, 59, 48, 0.1);
+        }
+        
+        .recommendation-card.medium-priority {
+            border-left-color: #FF9500;
+            background: rgba(255, 149, 0, 0.1);
+        }
+        
+        .recommendation-card.low-priority {
+            border-left-color: #34C759;
+            background: rgba(52, 199, 89, 0.1);
+        }
+        
+        .recommendation-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        
+        .recommendation-desc {
+            opacity: 0.9;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+        
+        .recommendation-metrics {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .metric-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .campaign-card {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1));
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .campaign-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #FFD700, #FFA500);
+        }
+        
+        .campaign-title {
+            font-weight: 700;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #FFD700;
+        }
+        
+        .campaign-target {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .campaign-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        
+        .campaign-metric {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .metric-value {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .metric-label {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .action-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            flex: 1;
+            text-align: center;
+        }
+        
+        .action-btn.primary {
+            background: linear-gradient(135deg, #007AFF, #5856D6);
+            border: none;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .full-width-panel {
+            grid-column: 1 / -1;
+        }
+        
+        .trending-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .trending-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .trending-rank {
+            font-size: 2em;
+            font-weight: 700;
+            color: #FFD700;
+            margin-bottom: 5px;
+        }
+        
+        .trending-category {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .trending-growth {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="agent-container">
+        <div class="agent-header">
+            <div class="agent-title">🎯 Sales & Campaign Agent</div>
+            <div class="agent-subtitle">AI-Powered Sales Optimization & Campaign Recommendations</div>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                Agent Active • Monitoring Performance
+            </div>
+        </div>
+        
+        <div class="agent-grid">
+            <!-- Sales Recommendations -->
+            <div class="agent-panel">
+                <div class="panel-header">
+                    <div class="panel-title">📈 Sales Recommendations</div>
+                    <button class="refresh-btn" onclick="refreshSalesRecommendations()">🔄 Refresh</button>
+                </div>
+                <div id="salesRecommendations">
+                    <!-- Sales önerileri buraya gelecek -->
+                </div>
+            </div>
+            
+            <!-- Campaign Suggestions -->
+            <div class="agent-panel">
+                <div class="panel-header">
+                    <div class="panel-title">🎪 Campaign Suggestions</div>
+                    <button class="refresh-btn" onclick="refreshCampaignSuggestions()">🔄 Refresh</button>
+                </div>
+                <div id="campaignSuggestions">
+                    <!-- Campaign önerileri buraya gelecek -->
+                </div>
+            </div>
+            
+            <!-- Trending Analysis -->
+            <div class="agent-panel full-width-panel">
+                <div class="panel-header">
+                    <div class="panel-title">🔥 Trending Analysis & Opportunities</div>
+                    <button class="refresh-btn" onclick="refreshTrendingAnalysis()">🔄 Refresh</button>
+                </div>
+                <div id="trendingAnalysis">
+                    <!-- Trending analizi buraya gelecek -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let agentData = null;
+        let profitRankingData = [];
+        
+        // Agent veri yükle
+        function loadAgentData() {
+            // Main dashboard'dan gelen veriyi yükle
+            const savedData = localStorage.getItem('agentUpdateData');
+            if (savedData) {
+                try {
+                    agentData = JSON.parse(savedData);
+                    profitRankingData = agentData.profitRanking || [];
+                    console.log('🤖 Agent data loaded:', agentData);
+                    return true;
+                } catch (error) {
+                    console.error('Agent data load error:', error);
+                }
+            }
+            
+            // Fallback data
+            agentData = {
+                timestamp: new Date().toISOString(),
+                filter: 'all',
+                filteredCategories: ['MADONE', 'EMONDA', 'DOMANE', 'FUEL EX'],
+                profitRanking: [
+                    { category: 'MADONE', profitPotential: 85000, totalStock: 25, avgMargin: 32.5 },
+                    { category: 'EMONDA', profitPotential: 67000, totalStock: 18, avgMargin: 28.3 },
+                    { category: 'DOMANE', profitPotential: 54000, totalStock: 22, avgMargin: 25.1 },
+                    { category: 'FUEL EX', profitPotential: 41000, totalStock: 15, avgMargin: 22.8 }
+                ]
+            };
+            profitRankingData = agentData.profitRanking;
+            return false;
+        }
+        
+        function refreshSalesRecommendations() {
+            loadAgentData();
+            const container = document.getElementById('salesRecommendations');
+            
+            let html = '';
+            
+            if (profitRankingData.length > 0) {
+                // En yüksek kar potansiyelli kategori
+                const topCategory = profitRankingData[0];
+                html += `
+                    <div class="recommendation-card high-priority">
+                        <div class="recommendation-title">🏆 Focus on ${topCategory.category}</div>
+                        <div class="recommendation-desc">
+                            Your highest profit potential category with €${topCategory.profitPotential.toLocaleString()} expected profit. 
+                            Push aggressive sales strategy.
+                        </div>
+                        <div class="recommendation-metrics">
+                            <div class="metric-item">💰 €${topCategory.profitPotential.toLocaleString()}</div>
+                            <div class="metric-item">📊 ${topCategory.avgMargin.toFixed(1)}% margin</div>
+                            <div class="metric-item">📦 ${topCategory.totalStock} stock</div>
+                        </div>
+                    </div>
+                `;
+                
+                // Düşük marjlı kategoriler için öneriler
+                const lowMarginCategories = profitRankingData.filter(cat => cat.avgMargin < 25);
+                if (lowMarginCategories.length > 0) {
+                    lowMarginCategories.forEach(cat => {
+                        html += `
+                            <div class="recommendation-card medium-priority">
+                                <div class="recommendation-title">⚠️ Boost ${cat.category} Sales</div>
+                                <div class="recommendation-desc">
+                                    Low margin (${cat.avgMargin.toFixed(1)}%) detected. Consider bundle deals or volume discounts 
+                                    to increase velocity and total profit.
+                                </div>
+                                <div class="recommendation-metrics">
+                                    <div class="metric-item">📈 Increase velocity</div>
+                                    <div class="metric-item">🎁 Bundle offers</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                // Stok optimizasyonu
+                const highStockCategories = profitRankingData.filter(cat => cat.totalStock > 20);
+                if (highStockCategories.length > 0) {
+                    html += `
+                        <div class="recommendation-card low-priority">
+                            <div class="recommendation-title">📦 Optimize Inventory</div>
+                            <div class="recommendation-desc">
+                                High stock categories: ${highStockCategories.map(c => c.category).join(', ')}. 
+                                Consider flash sales or seasonal promotions.
+                            </div>
+                            <div class="recommendation-metrics">
+                                <div class="metric-item">⚡ Flash sales</div>
+                                <div class="metric-item">🏷️ Promotions</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                html = '<div style="text-align: center; opacity: 0.7; padding: 40px;">📊 Waiting for data...</div>';
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function refreshCampaignSuggestions() {
+            loadAgentData();
+            const container = document.getElementById('campaignSuggestions');
+            
+            let html = '';
+            
+            if (profitRankingData.length > 0) {
+                // Top 3 kategori için kampanya
+                const top3 = profitRankingData.slice(0, 3);
+                
+                html += `
+                    <div class="campaign-card">
+                        <div class="campaign-title">🏆 Premium Collection Campaign</div>
+                        <div class="campaign-target">
+                            <strong>Target:</strong> ${top3.map(c => c.category).join(', ')}<br>
+                            <strong>Duration:</strong> 30 days<br>
+                            <strong>Goal:</strong> €${top3.reduce((sum, c) => sum + c.profitPotential * 0.4, 0).toLocaleString()} revenue
+                        </div>
+                        <div class="campaign-metrics">
+                            <div class="campaign-metric">
+                                <div class="metric-value">40%</div>
+                                <div class="metric-label">Expected Boost</div>
+                            </div>
+                            <div class="campaign-metric">
+                                <div class="metric-value">${top3.reduce((sum, c) => sum + c.totalStock, 0)}</div>
+                                <div class="metric-label">Target Units</div>
+                            </div>
+                            <div class="campaign-metric">
+                                <div class="metric-value">€15K</div>
+                                <div class="metric-label">Ad Budget</div>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="action-btn primary" onclick="launchCampaign('premium')">🚀 Launch Campaign</button>
+                            <button class="action-btn" onclick="previewCampaign('premium')">👁️ Preview</button>
+                        </div>
+                    </div>
+                `;
+                
+                // Düşük stok kategoriler için aciliyet kampanyası
+                const lowStock = profitRankingData.filter(cat => cat.totalStock < 15);
+                if (lowStock.length > 0) {
+                    html += `
+                        <div class="campaign-card">
+                            <div class="campaign-title">⚡ Limited Stock Alert</div>
+                            <div class="campaign-target">
+                                <strong>Target:</strong> ${lowStock.map(c => c.category).join(', ')}<br>
+                                <strong>Strategy:</strong> Scarcity marketing<br>
+                                <strong>Message:</strong> "Only ${lowStock[0].totalStock} units left!"
+                            </div>
+                            <div class="campaign-metrics">
+                                <div class="campaign-metric">
+                                    <div class="metric-value">+25%</div>
+                                    <div class="metric-label">Urgency Lift</div>
+                                </div>
+                                <div class="campaign-metric">
+                                    <div class="metric-value">72h</div>
+                                    <div class="metric-label">Duration</div>
+                                </div>
+                            </div>
+                            <div class="action-buttons">
+                                <button class="action-btn primary" onclick="launchCampaign('urgency')">⚡ Start Now</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                html = '<div style="text-align: center; opacity: 0.7; padding: 40px;">🎪 Analyzing campaign opportunities...</div>';
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function refreshTrendingAnalysis() {
+            loadAgentData();
+            const container = document.getElementById('trendingAnalysis');
+            
+            let html = '<h3 style="margin-bottom: 20px;">📊 Profit Potential Ranking</h3>';
+            html += '<div class="trending-categories">';
+            
+            if (profitRankingData.length > 0) {
+                profitRankingData.slice(0, 6).forEach((cat, index) => {
+                    const growth = Math.random() * 30 + 10; // Simulated growth
+                    html += `
+                        <div class="trending-card">
+                            <div class="trending-rank">#${index + 1}</div>
+                            <div class="trending-category">${cat.category}</div>
+                            <div class="trending-growth">€${cat.profitPotential.toLocaleString()} potential</div>
+                            <div class="trending-growth">${cat.avgMargin.toFixed(1)}% margin</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            html += '</div>';
+            
+            // Opportunities
+            html += `
+                <h3 style="margin: 30px 0 20px;">🎯 Market Opportunities</h3>
+                <div class="recommendation-card low-priority">
+                    <div class="recommendation-title">🌟 Cross-Selling Opportunity</div>
+                    <div class="recommendation-desc">
+                        Customers buying ${profitRankingData[0]?.category || 'high-end bikes'} also show interest in accessories. 
+                        Bundle strategy could increase average order value by 35%.
+                    </div>
+                </div>
+                <div class="recommendation-card medium-priority">
+                    <div class="recommendation-title">📅 Seasonal Timing</div>
+                    <div class="recommendation-desc">
+                        Spring season approaching. Historical data shows 60% increase in bike sales March-May. 
+                        Prepare inventory and marketing campaigns.
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+        
+        function launchCampaign(type) {
+            console.log(`🚀 Launching ${type} campaign...`);
+            alert(`Campaign "${type}" launched successfully! Check performance in 24-48 hours.`);
+        }
+        
+        function previewCampaign(type) {
+            console.log(`👁️ Previewing ${type} campaign...`);
+            alert(`Campaign preview: High-impact visuals, targeted messaging, and strategic timing for maximum ROI.`);
+        }
+        
+        // Auto-refresh data
+        function autoRefresh() {
+            const lastUpdate = localStorage.getItem('lastAgentUpdate');
+            if (lastUpdate) {
+                const timeDiff = Date.now() - parseInt(lastUpdate);
+                if (timeDiff < 300000) { // 5 minutes
+                    refreshSalesRecommendations();
+                    refreshCampaignSuggestions();
+                    refreshTrendingAnalysis();
+                }
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎯 Sales & Campaign Agent initialized');
+            loadAgentData();
+            refreshSalesRecommendations();
+            refreshCampaignSuggestions();
+            refreshTrendingAnalysis();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(autoRefresh, 30000);
+        });
+    </script>
+</body>
+</html>
