@@ -29,7 +29,10 @@ echo "Response Length: " . strlen($response) . "\n";
 echo "First 500 chars:\n" . substr($response, 0, 500);
 
 if ($response && strlen($response) > 0) {
-    $xml = simplexml_load_string($response);
+    // Try parsing with NOCDATA to handle CDATA sections
+    libxml_use_internal_errors(true);
+    $xml = simplexml_load_string($response, 'SimpleXMLElement', LIBXML_NOCDATA);
+    
     if ($xml !== false) {
         echo "\n\nXML parsed successfully!";
         echo "\nRoot element: " . $xml->getName();
@@ -37,7 +40,21 @@ if ($response && strlen($response) > 0) {
             echo "\nFound " . count($xml->urun) . " urun elements";
             if (count($xml->urun) > 0) {
                 $first = $xml->urun[0];
-                echo "\nFirst product: " . (string)$first->urun_adi;
+                echo "\nFirst product: " . (string)$first->urun_ad;
+                echo "\nFirst category: " . (string)$first->kat_yolu;
+                echo "\nFirst price: " . (string)$first->satis_fiyat;
+                echo "\nFirst stock: " . (string)$first->stok;
+                
+                // Convert to same format as API
+                $testProduct = [
+                    'id' => (string)$first->stok_kod,
+                    'title' => (string)$first->urun_ad,
+                    'category' => (string)$first->kat_yolu,
+                    'price' => (float)str_replace(',', '.', (string)$first->satis_fiyat),
+                    'stock' => (int)$first->stok,
+                    'brand' => (string)$first->marka
+                ];
+                echo "\n\nConverted product JSON:\n" . json_encode($testProduct, JSON_PRETTY_PRINT);
             }
         } else {
             echo "\nNo urun elements found";
