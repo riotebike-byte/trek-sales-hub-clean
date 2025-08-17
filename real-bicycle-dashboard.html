@@ -812,13 +812,13 @@
             summary: {}
         };
 
-        // No brand configuration - using only category mappings from localStorage
+        // Tax rate calculation using exact category schema
 
-        // Get tax rate for product (only category mapping from localStorage)
+        // Get tax rate for product using exact category mappings
         function getTaxRate(product) {
             console.log(`🔍 Tax rate detection for: ${product.title} (Category: ${product.category})`);
             
-            // Only use category mapping from localStorage
+            // Use our exact category mapping schema
             if (categoryMappings && product.category) {
                 const productCategory = product.category.toLowerCase();
                 console.log(`🔍 Checking category mappings for: "${productCategory}"`);
@@ -846,10 +846,10 @@
                 
                 console.log(`❌ No category mapping found for: ${product.category}`);
             } else {
-                console.log(`⚠️ No category mappings loaded or no product category`);
+                console.log(`⚠️ categoryMappings yüklenmemiş veya ürün kategorisi yok`);
             }
             
-            console.log(`⚠️ Using default tax rate (20%) for: ${product.title}`);
+            console.log(`⚠️ Varsayılan vergi oranı (%20) kullanılıyor: ${product.title}`);
             return 20; // Default tax rate
         }
 
