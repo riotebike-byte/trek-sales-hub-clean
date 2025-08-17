@@ -88,16 +88,22 @@ if ($http_code === 200 && strpos($bizimhesap_endpoint, 'getproductsasxml') !== f
     if ($xml !== false) {
         $products = [];
         
-        if (isset($xml->Table)) {
-            foreach ($xml->Table as $product) {
+        // BizimHesap uses <urun> tags for products
+        if (isset($xml->urun)) {
+            foreach ($xml->urun as $product) {
                 $products[] = [
-                    'id' => (string)$product->Id,
-                    'title' => (string)$product->ProductName,
-                    'category' => (string)$product->CategoryName,
-                    'price' => (float)$product->SalesPrice,
-                    'stock' => (int)$product->Quantity,
-                    'code' => (string)$product->ProductCode,
-                    'warehouseId' => (string)$product->WarehouseId
+                    'id' => (string)$product->stok_kodu,
+                    'title' => (string)$product->urun_adi,
+                    'category' => (string)$product->kategori,
+                    'price' => (float)$product->satis_fiyati,
+                    'stock' => (int)$product->miktar,
+                    'code' => (string)$product->stok_kodu,
+                    'variant' => (string)$product->varyant,
+                    'brand' => (string)$product->marka,
+                    'barcode' => (string)$product->barkod,
+                    'currency' => (string)$product->para_birimi,
+                    'vatRate' => (float)$product->kdv_orani,
+                    'image' => (string)$product->resim
                 ];
             }
         }
