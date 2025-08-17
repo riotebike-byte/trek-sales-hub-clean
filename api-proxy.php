@@ -86,15 +86,18 @@ if ($http_code === 200 && strpos($bizimhesap_endpoint, 'getproductsasxml') !== f
     // Debug: Log raw response
     error_log("BizimHesap raw response: " . substr($response, 0, 500));
     
-    // Clean response (remove BOM and fix encoding issues)
+    // Clean response and enable internal errors for better debugging
+    libxml_use_internal_errors(true);
     $response = trim($response);
+    
+    // Fix common XML issues
     $response = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $response);
     if (substr($response, 0, 3) === "\xEF\xBB\xBF") {
         $response = substr($response, 3);
     }
     
     // Convert XML to JSON for products
-    $xml = simplexml_load_string($response);
+    $xml = simplexml_load_string($response, 'SimpleXMLElement', LIBXML_NOCDATA);
     if ($xml !== false) {
         $products = [];
         
@@ -102,17 +105,17 @@ if ($http_code === 200 && strpos($bizimhesap_endpoint, 'getproductsasxml') !== f
         if (isset($xml->urun)) {
             foreach ($xml->urun as $product) {
                 $products[] = [
-                    'id' => (string)$product->stok_kodu,
-                    'title' => (string)$product->urun_adi,
-                    'category' => (string)$product->kategori,
-                    'price' => (float)$product->satis_fiyati,
-                    'stock' => (int)$product->miktar,
-                    'code' => (string)$product->stok_kodu,
+                    'id' => (string)$product->stok_kod,
+                    'title' => (string)$product->urun_ad,
+                    'category' => (string)$product->kat_yolu,
+                    'price' => (float)str_replace(',', '.', (string)$product->satis_fiyat),
+                    'stock' => (int)$product->stok,
+                    'code' => (string)$product->stok_kod,
                     'variant' => (string)$product->varyant,
                     'brand' => (string)$product->marka,
                     'barcode' => (string)$product->barkod,
-                    'currency' => (string)$product->para_birimi,
-                    'vatRate' => (float)$product->kdv_orani,
+                    'currency' => (string)$product->para_birim,
+                    'vatRate' => (float)$product->kdv,
                     'image' => (string)$product->resim
                 ];
             }
