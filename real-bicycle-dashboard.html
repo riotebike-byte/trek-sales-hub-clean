@@ -883,33 +883,10 @@
 
         // Load saved category mappings or use default schema
         function loadSavedCategoryMappings() {
-            console.log('🔍 Loading category mappings...');
-            const saved = localStorage.getItem('categoryMappings');
-            console.log('localStorage categoryMappings:', saved);
+            console.log('🔧 Vergi şeması başlatılıyor (localStorage göz ardı ediliyor)...');
             
-            if (saved) {
-                try {
-                    categoryMappings = JSON.parse(saved);
-                    console.log('📋 Kategori eşleştirmeleri localStorage\'dan yüklendi:', categoryMappings);
-                    
-                    const totalCategories = Object.values(categoryMappings).reduce((sum, mapping) => sum + (mapping.categories || []).length, 0);
-                    if (totalCategories > 0) {
-                        console.log(`✅ ${totalCategories} kategori eşleştirmesi aktif`);
-                        
-                        // Debug: Show each mapping
-                        Object.entries(categoryMappings).forEach(([key, mapping]) => {
-                            console.log(`📂 ${key}: ${mapping.categories?.length || 0} categories, ${mapping.taxRate}% tax`);
-                        });
-                        
-                        return;
-                    }
-                } catch (error) {
-                    console.error('Kategori eşleştirmeleri yüklenirken hata:', error);
-                }
-            }
-            
-            // Fallback: Use default category schema
-            console.log('⚠️ localStorage\'da kategori eşleştirmesi bulunamadı, varsayılan şema kullanılıyor');
+            // ALWAYS use our exact schema - no localStorage dependency for reliability
+            console.log('✅ Kesin vergi şeması yükleniyor...');
             categoryMappings = {
                 "dsw-bisiklet": {
                     "name": "DSW BİSİKLET",
@@ -1018,11 +995,14 @@
                 }
             };
             
-            console.log(`✅ Varsayılan kategori şeması yüklendi (${Object.keys(categoryMappings).length} üst kategori)`);
+            console.log(`✅ Kesin kategori şeması yüklendi (${Object.keys(categoryMappings).length} üst kategori)`);
             
-            // Save to localStorage for future use
-            localStorage.setItem('categoryMappings', JSON.stringify(categoryMappings));
-            console.log('💾 Kategori şeması localStorage\'a kaydedildi');
+            // Debug: Show each mapping
+            Object.entries(categoryMappings).forEach(([key, mapping]) => {
+                console.log(`📂 ${key}: ${mapping.categories?.length || 0} categories, ${mapping.taxRate}% tax`);
+            });
+            
+            console.log('💾 Vergi şeması sistemde aktif (localStorage kullanımı devre dışı)');
         }
 
         // Initialize dashboard

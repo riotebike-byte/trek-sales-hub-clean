@@ -1747,16 +1747,12 @@
 
         // Tax calculation for margin analysis
         function initializeTaxSchema() {
-            const saved = localStorage.getItem('categoryMappings');
-            if (saved) {
-                try {
-                    categoryMappings = JSON.parse(saved);
-                    console.log('✅ Vergi şeması yüklendi:', Object.keys(categoryMappings).length, 'kategori');
-                } catch (error) {
-                    console.error('Vergi şeması yükleme hatası:', error);
-                }
-            } else {
-                // Default tax schema - same as real-bicycle-dashboard
+            console.log('🔧 Main Dashboard vergi şeması başlatılıyor (localStorage göz ardı ediliyor)...');
+            
+            // ALWAYS use our exact schema - no localStorage dependency
+            console.log('✅ Kesin vergi şeması yükleniyor...');
+            
+            // Exact tax schema - same as real-bicycle-dashboard
                 categoryMappings = {
                     "dsw-bisiklet": {
                         "name": "DSW BİSİKLET",
@@ -1799,9 +1795,15 @@
                         "taxRate": 65
                     }
                 };
-                localStorage.setItem('categoryMappings', JSON.stringify(categoryMappings));
-                console.log('💾 Varsayılan vergi şeması kaydedildi');
-            }
+                
+                console.log(`✅ Kesin vergi şeması yüklendi (${Object.keys(categoryMappings).length} üst kategori)`);
+                
+                // Debug: Show each mapping
+                Object.entries(categoryMappings).forEach(([key, mapping]) => {
+                    console.log(`📂 ${key}: ${mapping.categories?.length || 0} categories, ${mapping.taxRate}% tax`);
+                });
+                
+                console.log('💾 Vergi şeması sistemde aktif (localStorage kullanımı devre dışı)');
         }
 
         function getTaxRateForCategory(category) {
