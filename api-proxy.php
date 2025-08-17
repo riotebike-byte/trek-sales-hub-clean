@@ -83,6 +83,16 @@ if ($error) {
 
 // Handle BizimHesap XML response
 if ($http_code === 200 && strpos($bizimhesap_endpoint, 'getproductsasxml') !== false) {
+    // Debug: Log raw response
+    error_log("BizimHesap raw response: " . substr($response, 0, 500));
+    
+    // Clean response (remove BOM and fix encoding issues)
+    $response = trim($response);
+    $response = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $response);
+    if (substr($response, 0, 3) === "\xEF\xBB\xBF") {
+        $response = substr($response, 3);
+    }
+    
     // Convert XML to JSON for products
     $xml = simplexml_load_string($response);
     if ($xml !== false) {
@@ -116,7 +126,14 @@ if ($http_code === 200 && strpos($bizimhesap_endpoint, 'getproductsasxml') !== f
             'count' => count($products)
         ]);
     } else {
-        echo json_encode(['error' => 'Invalid XML response']);
+        // Better error handling
+        $xml_error = libxml_get_last_error();
+        echo json_encode([
+            'error' => 'Invalid XML response',
+            'xml_error' => $xml_error ? $xml_error->message : 'Unknown XML error',
+            'raw_response_preview' => substr($response, 0, 200),
+            'response_length' => strlen($response)
+        ]);
     }
 } else {
     // Forward other responses as-is
