@@ -1045,37 +1045,16 @@
             try {
                 console.log('📊 BizimHesap verileri çekiliyor...');
                 
-                // Try API first, fallback to mock data
-                try {
-                    const response = await fetch('/api-proxy-fixed.php?endpoint=/api/b2b/products');
-                    const data = await response.json();
-                    
-                    if (data.success && data.data && data.data.products && data.data.products.length > 0) {
-                        dashboardData.products = data.data.products;
-                        console.log(`✅ ${dashboardData.products.length} ürün API'den yüklendi`);
-                    } else {
-                        throw new Error('API response invalid');
-                    }
-                } catch (apiError) {
-                    console.log('⚠️ API hatası, mock data kullanılıyor:', apiError.message);
-                    
-                    // Fallback to mock data
-                    dashboardData.products = [
-                        { id: '1', title: 'MADONE SL 7 2024', category: 'MADONE', price: 7299, stock: 3, brand: 'TREK', variant: 'Size 56', code: 'MAD001' },
-                        { id: '2', title: 'MADONE SLR 9 AXS 2024', category: 'MADONE', price: 12999, stock: 1, brand: 'TREK', variant: 'Size 58', code: 'MAD002' },
-                        { id: '3', title: 'FX 3 DISC 2024', category: 'FX', price: 899, stock: 8, brand: 'TREK', variant: 'Size L', code: 'FX001' },
-                        { id: '4', title: 'FX 2 DISC 2024', category: 'FX', price: 649, stock: 12, brand: 'TREK', variant: 'Size M', code: 'FX002' },
-                        { id: '5', title: 'DS 4 2024', category: 'DS', price: 1299, stock: 5, brand: 'TREK', variant: 'Size L', code: 'DS001' },
-                        { id: '6', title: 'MARLIN 7 2024', category: 'MARLIN', price: 899, stock: 7, brand: 'TREK', variant: 'Size M', code: 'MAR001' },
-                        { id: '7', title: 'EMONDA ALR 5 2024', category: 'EMONDA', price: 2299, stock: 4, brand: 'TREK', variant: 'Size 54', code: 'EMO001' },
-                        { id: '8', title: 'DOMANE AL 3 DISC 2024', category: 'DOMANE', price: 1299, stock: 6, brand: 'TREK', variant: 'Size 56', code: 'DOM001' },
-                        { id: '9', title: 'VERVE 2 DISC 2024', category: 'VERVE', price: 649, stock: 9, brand: 'TREK', variant: 'Size S', code: 'VER001' },
-                        { id: '10', title: 'POWERFLY 4 2024', category: 'POWERFLY', price: 3299, stock: 2, brand: 'TREK', variant: 'Size M', code: 'POW001' },
-                        { id: '11', title: 'Bontrager Circuit MIPS Kask', category: 'KASK', price: 199, stock: 15, brand: 'BONTRAGER', variant: 'Size M', code: 'KAS001' },
-                        { id: '12', title: 'Bontrager H5 Hard Case Çanta', category: 'ÇANTA', price: 89, stock: 20, brand: 'BONTRAGER', variant: 'Siyah', code: 'CAN001' }
-                    ];
-                    console.log(`✅ ${dashboardData.products.length} mock ürün yüklendi`);
+                // BizimHesap API'den gerçek veri çek
+                const response = await fetch('/api-proxy-fixed.php?endpoint=/api/b2b/products');
+                const data = await response.json();
+                
+                if (!data.success || !data.data || !data.data.products) {
+                    throw new Error('BizimHesap API\'den geçerli veri alınamadı');
                 }
+
+                dashboardData.products = data.data.products;
+                console.log(`✅ ${dashboardData.products.length} ürün BizimHesap API'den yüklendi`);
 
                 // Business logic ile analiz et
                 const analysis = businessLogic.analyzeProductVariants(dashboardData.products);
