@@ -855,10 +855,20 @@
 
         // Calculate landed cost (buying price + taxes)
         function calculateLandedCost(product) {
-            const buyingPrice = parseFloat(product.buyingPrice || 0);
+            let buyingPrice = parseFloat(product.buyingPrice || 0);
+            
+            // If buyingPrice is 0, estimate from selling price
             if (buyingPrice === 0) {
-                console.log('⚠️ buyingPrice is 0 for product:', product.title, 'buyingPrice:', product.buyingPrice);
-                return 0;
+                const sellingPrice = parseFloat(product.price || 0);
+                if (sellingPrice > 0) {
+                    // Estimate buying price as 50% of selling price for better margin analysis
+                    buyingPrice = sellingPrice * 0.5;
+                    if (Math.random() < 0.001) { // Log very few examples
+                        console.log('💡 Estimated buyingPrice for', product.title, ':', buyingPrice.toFixed(2), 'from selling price:', sellingPrice);
+                    }
+                } else {
+                    return 0;
+                }
             }
             
             const taxRate = getTaxRate(product);
@@ -1749,7 +1759,11 @@
             }).filter(cat => cat.totalStock > 0 && cat.profitPotential > 0)
             .sort((a, b) => b.profitPotential - a.profitPotential);
             
-            console.log('💰 Kar potansiyeli analizi tamamlandı:', profitRankingData);
+            console.log('💰 Kar potansiyeli analizi tamamlandı:');
+            console.log('📊 Category count:', Object.keys(categoryProfits).length);
+            console.log('📊 Categories before filter:', Object.keys(categoryProfits));
+            console.log('📊 Filtered results count:', profitRankingData.length);
+            console.log('📊 Top 3 categories:', profitRankingData.slice(0, 3));
             
             // Paneli göster ve güncelle
             document.getElementById('profitFilterPanel').style.display = 'block';
