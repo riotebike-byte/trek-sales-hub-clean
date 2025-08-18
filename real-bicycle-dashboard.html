@@ -1149,8 +1149,8 @@
                     dashboardData.productGroups = {};
                     dashboardData.products.forEach(product => {
                         const key = product.title || product.id;
-                        // BizimHesap API'de stok field'ı test et - muhtemelen 'quantity' değil
-                        const stock = parseInt(product.quantity || product.stock || product.stok || product.inventory || 0);
+                        // BizimHesap API PHP proxy'den: stock field'ı direkt 'stock'
+                        const stock = parseInt(product.stock || 0);
                         if (Math.random() < 0.01) { // Log sadece %1'ini
                             console.log('📦 Product stock check:', product.title, 'quantity:', product.quantity, 'stock:', product.stock, 'final:', stock);
                         }

@@ -72,6 +72,8 @@ try {
             'marka' => 'brand',
             'stok' => 'stock',
             'satis_fiyat' => 'price',
+            'alis_fiyat' => 'buyingPrice',
+            'maliyet' => 'cost',
             'para_birim' => 'currency',
             'kdv' => 'vatRate',
             'detay' => 'description',
@@ -89,7 +91,7 @@ try {
             }
             
             // Type conversion
-            if ($jsonField === 'price') {
+            if ($jsonField === 'price' || $jsonField === 'buyingPrice' || $jsonField === 'cost') {
                 $value = (float)str_replace(',', '.', $value);
             } elseif ($jsonField === 'stock' || $jsonField === 'vatRate') {
                 $value = (int)$value;
