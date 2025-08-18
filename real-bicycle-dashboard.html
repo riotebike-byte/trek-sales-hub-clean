@@ -1220,14 +1220,18 @@
         // Fetch warehouses list
         async function fetchWarehouses() {
             const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-            const apiUrl = isLocalhost ? 'http://localhost:3001/api/b2b/warehouses' : '/api/b2b/warehouses';
+            const apiUrl = isLocalhost ? 'http://localhost:3002/api/b2b/warehouses' : '/api/b2b/warehouses';
             
+            console.log(`📦 Fetching warehouses from: ${apiUrl}`);
             const response = await fetch(apiUrl);
+            console.log(`📦 Warehouses response status: ${response.status}`);
+            
             if (!response.ok) {
                 throw new Error(`Warehouses API failed: ${response.status}`);
             }
             
             const data = await response.json();
+            console.log(`📦 Warehouses data:`, data);
             return data.data.warehouses;
         }
 
@@ -1235,7 +1239,7 @@
         async function fetchInventory(warehouseId) {
             const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
             const apiUrl = isLocalhost ? 
-                `http://localhost:3001/api/b2b/inventory/${warehouseId}` : 
+                `http://localhost:3002/api/b2b/inventory/${warehouseId}` : 
                 `/api/b2b/inventory/${warehouseId}`;
             
             const response = await fetch(apiUrl);
@@ -1250,6 +1254,7 @@
         // Fetch and merge inventory data with products (optimized)
         async function fetchAndMergeInventoryData() {
             try {
+                console.log('📦 Fetching warehouses...');
                 // Get warehouses list
                 const warehouses = await fetchWarehouses();
                 console.log(`📦 Found ${warehouses.length} warehouses:`, warehouses.map(w => w.title));
@@ -1316,7 +1321,7 @@
                 let apiUrl;
                 if (isLocalhost) {
                     // Localhost: Node.js proxy
-                    apiUrl = 'http://localhost:3001/api/b2b/products';
+                    apiUrl = 'http://localhost:3002/api/b2b/products';
                 } else {
                     // Production: Try Node.js first, then PHP fallback
                     apiUrl = '/api/b2b/products'; // Node.js proxy
@@ -1383,12 +1388,18 @@
                 
                 // Then fetch inventory data in background
                 console.log('🔄 Loading inventory data in background...');
-                fetchAndMergeInventoryData().then(() => {
-                    console.log('🔄 Inventory loaded, refreshing dashboard...');
-                    processProductData(); // Refresh with stock data
-                }).catch(error => {
-                    console.error('❌ Background inventory fetch failed:', error);
-                });
+                setTimeout(async () => {
+                    try {
+                        console.log('🔄 Starting background inventory fetch...');
+                        await fetchAndMergeInventoryData();
+                        console.log('🔄 Inventory loaded, refreshing dashboard...');
+                        await processProductData(); // Refresh with stock data
+                        console.log('✅ Dashboard refresh with inventory completed');
+                    } catch (error) {
+                        console.error('❌ Background inventory fetch failed:', error);
+                        console.error('❌ Error details:', error.stack);
+                    }
+                }, 2000); // Give products time to load first
                 
                 return; // Early return to show products quickly
                 
