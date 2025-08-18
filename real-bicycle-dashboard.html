@@ -1083,6 +1083,140 @@
             }
         }
 
+        // Process product data and update dashboard
+        async function processProductData() {
+            try {
+                // Business logic ile analiz et
+                console.log('🔧 BusinessLogic available:', !!businessLogic);
+                let analysis = null;
+                
+                if (!businessLogic) {
+                    console.log('❌ BusinessLogic not loaded! Loading varyant-based fallback...');
+                    // Varyant-based grouping according to BizimHesap structure
+                    dashboardData.productGroups = {};
+                    dashboardData.variantAnalysis = {};
+                    const productTitleGroups = {};
+                    
+                    dashboardData.products.forEach(product => {
+                        const title = product.title;
+                        const stock = parseInt(product.stock || product.quantity || 0); // Use 'stock' field first, fallback to 'quantity'
+                        
+                        if (!productTitleGroups[title]) {
+                            productTitleGroups[title] = {
+                                baseProduct: product,
+                                variants: [],
+                                totalStock: 0,
+                                hasStock: false
+                            };
+                        }
+                        
+                        // Varyant ekle
+                        productTitleGroups[title].variants.push(product);
+                        productTitleGroups[title].totalStock += stock;
+                        if (stock > 0) {
+                            productTitleGroups[title].hasStock = true;
+                        }
+                    });
+                    
+                    // Sadece stok'u olan ürünleri dahil et (en az bir varyantında stok varsa)
+                    Object.keys(productTitleGroups).forEach(title => {
+                        const group = productTitleGroups[title];
+                        if (group.hasStock) { // En az bir varyantında stok varsa
+                            dashboardData.productGroups[title] = group;
+                            
+                            // Create variant analysis for this group
+                            dashboardData.variantAnalysis[title] = {
+                                stockByVariant: {},
+                                totalVariants: group.variants.length,
+                                hasStock: group.hasStock
+                            };
+                            
+                            // Populate variant analysis
+                            group.variants.forEach(variant => {
+                                const variantName = variant.variant || variant.id || 'Default';
+                                const variantStock = parseInt(variant.stock || variant.quantity || 0);
+                                dashboardData.variantAnalysis[title].stockByVariant[variantName] = {
+                                    stock: variantStock,
+                                    product: variant
+                                };
+                            });
+                        }
+                    });
+                    console.log('✅ Fallback grouping created:', Object.keys(dashboardData.productGroups).length, 'groups');
+                } else {
+                    analysis = businessLogic.analyzeProductVariants(dashboardData.products);
+                    dashboardData.productGroups = analysis.productGroups;
+                    dashboardData.variantAnalysis = analysis.variantAnalysis;
+                    console.log('✅ BusinessLogic grouping completed:', Object.keys(dashboardData.productGroups).length, 'groups');
+                }
+
+                // Apply filters and create summary
+                const filteredProductGroups = {};
+                const filteredVariantAnalysis = {};
+                
+                Object.keys(dashboardData.productGroups).forEach(productId => {
+                    const group = dashboardData.productGroups[productId];
+                    const hasPrice = parseFloat(group.baseProduct.price || 0) > 0;
+                    const hasBuyingPrice = parseFloat(group.baseProduct.buyingPrice || 0) > 0;
+                    
+                    // Include products that have selling price OR buying price
+                    if (hasPrice || hasBuyingPrice) { 
+                        filteredProductGroups[productId] = group;
+                        if (dashboardData.variantAnalysis[productId]) {
+                            filteredVariantAnalysis[productId] = dashboardData.variantAnalysis[productId];
+                        }
+                    }
+                });
+                
+                console.log(`📊 Filtered from ${Object.keys(dashboardData.productGroups).length} to ${Object.keys(filteredProductGroups).length} product groups`);
+                dashboardData.productGroups = filteredProductGroups;
+                dashboardData.variantAnalysis = filteredVariantAnalysis;
+
+                // Summary'yi yeniden hesapla
+                if (businessLogic) {
+                    dashboardData.summary = businessLogic.generateVariantSummary(filteredProductGroups, filteredVariantAnalysis);
+                } else {
+                    // Create fallback summary
+                    dashboardData.summary = {
+                        totalProducts: Object.keys(filteredProductGroups).length,
+                        totalStock: Object.values(filteredProductGroups).reduce((sum, group) => sum + group.totalStock, 0),
+                        bicycleProducts: Object.values(filteredProductGroups).filter(group => {
+                            const category = group.baseProduct.category || '';
+                            return category.includes('MADONE') || category.includes('DOMANE') || category.includes('FX') || 
+                                   category.includes('MARLIN') || category.includes('EMONDA') || category.includes('POWERFLY');
+                        }).length,
+                        criticalProducts: Object.values(filteredProductGroups).filter(group => group.totalStock <= 2).length,
+                        transferNeeded: Object.values(filteredProductGroups).filter(group => group.totalStock <= 5).length,
+                        categoryBreakdown: {}
+                    };
+                    
+                    // Create category breakdown
+                    Object.values(filteredProductGroups).forEach(group => {
+                        const category = group.baseProduct.category || 'Diğer';
+                        if (!dashboardData.summary.categoryBreakdown[category]) {
+                            dashboardData.summary.categoryBreakdown[category] = {
+                                products: 0,
+                                stock: 0
+                            };
+                        }
+                        dashboardData.summary.categoryBreakdown[category].products += 1;
+                        dashboardData.summary.categoryBreakdown[category].stock += group.totalStock;
+                    });
+                }
+
+                console.log('✅ Ürün analizi tamamlandı');
+
+                // Update dashboard UI
+                updateMainMetrics();
+                updateCategoryGrid();
+                updateProfitAnalysis();
+
+            } catch (error) {
+                console.error('❌ Product processing error:', error);
+                throw error;
+            }
+        }
+
         // Fetch warehouses list
         async function fetchWarehouses() {
             const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -1113,7 +1247,7 @@
             return data.data.inventory;
         }
 
-        // Fetch and merge inventory data with products
+        // Fetch and merge inventory data with products (optimized)
         async function fetchAndMergeInventoryData() {
             try {
                 // Get warehouses list
@@ -1123,35 +1257,50 @@
                 // Create a map to store total quantities by product ID
                 const inventoryMap = new Map();
                 
-                // Fetch inventory from all warehouses
-                for (const warehouse of warehouses) {
-                    console.log(`📦 Fetching inventory for warehouse: ${warehouse.title}`);
+                // Fetch inventory from all warehouses in parallel (faster)
+                console.log('📦 Fetching inventory from all warehouses in parallel...');
+                const inventoryPromises = warehouses.map(async (warehouse) => {
                     try {
+                        console.log(`📦 Starting fetch for warehouse: ${warehouse.title}`);
                         const inventory = await fetchInventory(warehouse.id);
-                        
-                        // Aggregate quantities by product ID
-                        inventory.forEach(item => {
-                            const currentQty = inventoryMap.get(item.id) || 0;
-                            const newQty = parseInt(item.qty) || 0;
-                            inventoryMap.set(item.id, currentQty + newQty);
-                        });
+                        console.log(`✅ Completed fetch for warehouse: ${warehouse.title} (${inventory.length} items)`);
+                        return { warehouse, inventory };
                     } catch (error) {
                         console.warn(`⚠️ Failed to fetch inventory for warehouse ${warehouse.title}:`, error);
+                        return { warehouse, inventory: [] };
                     }
-                }
+                });
+                
+                // Wait for all warehouses to complete
+                const results = await Promise.all(inventoryPromises);
+                
+                // Aggregate quantities by product ID
+                results.forEach(({ warehouse, inventory }) => {
+                    inventory.forEach(item => {
+                        const currentQty = inventoryMap.get(item.id) || 0;
+                        const newQty = parseInt(item.qty) || 0;
+                        inventoryMap.set(item.id, currentQty + newQty);
+                    });
+                });
                 
                 // Merge inventory data with products
+                let stockFound = 0;
                 dashboardData.products.forEach(product => {
                     const totalQty = inventoryMap.get(product.id) || 0;
                     product.quantity = totalQty;
                     product.actualStock = totalQty; // Alternative field name
+                    if (totalQty > 0) stockFound++;
                 });
                 
-                console.log(`✅ Inventory data merged. Found stock for ${inventoryMap.size} products`);
+                console.log(`✅ Inventory data merged. Found stock for ${inventoryMap.size} product variants, ${stockFound} products have stock`);
                 
             } catch (error) {
                 console.error('❌ Inventory fetch error:', error);
-                // Continue without inventory data
+                // Continue without inventory data - set default quantities
+                dashboardData.products.forEach(product => {
+                    product.quantity = 0;
+                    product.actualStock = 0;
+                });
             }
         }
 
@@ -1219,9 +1368,29 @@
                 dashboardData.products = data.data.products;
                 console.log(`✅ ${dashboardData.products.length} ürün BizimHesap API'den yüklendi`);
                 
-                // Inventory data fetch and merge
-                console.log('🔄 Fetching inventory data from all warehouses...');
-                await fetchAndMergeInventoryData();
+                // Show products first, then load inventory asynchronously
+                console.log('🔄 Displaying products without inventory first...');
+                dashboardData.products.forEach(product => {
+                    product.quantity = 0; // Default to 0, will be updated
+                    product.actualStock = 0;
+                });
+                
+                // Continue with business logic analysis
+                console.log('🔧 BusinessLogic available:', !!businessLogic);
+                
+                // Display initial dashboard
+                await processProductData();
+                
+                // Then fetch inventory data in background
+                console.log('🔄 Loading inventory data in background...');
+                fetchAndMergeInventoryData().then(() => {
+                    console.log('🔄 Inventory loaded, refreshing dashboard...');
+                    processProductData(); // Refresh with stock data
+                }).catch(error => {
+                    console.error('❌ Background inventory fetch failed:', error);
+                });
+                
+                return; // Early return to show products quickly
                 
                 // İlk ürünün tüm field'larını göster
                 if (dashboardData.products.length > 0) {
