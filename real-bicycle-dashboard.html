@@ -707,6 +707,20 @@
                         Yüksek: <span id="highMarginProducts">-</span>
                     </div>
                 </div>
+
+                <!-- Bisiklet Özel Margin Analizi -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        🚴 Bisiklet Margin Analizi
+                    </div>
+                    <div class="metric-value" id="bicycleAvgMargin">-</div>
+                    <div class="metric-label">Bisiklet Ortalama Margin (%)</div>
+                    <div class="metric-label">
+                        🔴 Kritik (&lt;15%): <span id="bicycleLowMargin">-</span><br>
+                        🟡 Orta (15-35%): <span id="bicycleOptimalMargin">-</span><br> 
+                        🟢 İyi (&gt;35%): <span id="bicycleHighMargin">-</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Kategori Detayları -->
@@ -857,26 +871,23 @@
         function calculateLandedCost(product) {
             let buyingPrice = parseFloat(product.buyingPrice || 0);
             
-            // If buyingPrice is 0, estimate from selling price
+            // BuyingPrice genelde USD, Price genelde EUR
             if (buyingPrice === 0) {
-                const sellingPrice = parseFloat(product.price || 0);
-                if (sellingPrice > 0) {
-                    // Estimate buying price as 50% of selling price for better margin analysis
-                    buyingPrice = sellingPrice * 0.5;
-                    if (Math.random() < 0.001) { // Log very few examples
-                        console.log('💡 Estimated buyingPrice for', product.title, ':', buyingPrice.toFixed(2), 'from selling price:', sellingPrice);
-                    }
-                } else {
-                    return 0;
-                }
+                console.log('⚠️ buyingPrice is 0 for:', product.title);
+                return 0;
             }
             
             const taxRate = getTaxRate(product);
             
-            // Convert USD buying price to EUR first
-            const buyingPriceEur = businessLogic ? 
-                businessLogic.convertCurrency(buyingPrice, 'USD', 'EUR') : 
-                buyingPrice * 0.85; // Fallback conversion rate
+            // BuyingPrice USD, Price EUR - currency field'ını kontrol et
+            let buyingPriceEur = buyingPrice;
+            if (product.currency === 'EUR') {
+                // Price zaten EUR'da, buying price de EUR olabilir
+                buyingPriceEur = buyingPrice;
+            } else {
+                // USD to EUR conversion (fallback rate: 0.92)
+                buyingPriceEur = buyingPrice * 0.92; 
+            }
             
             // Calculate landed cost: buying price + (buying price * tax rate / 100)
             const landedCost = buyingPriceEur * (1 + taxRate / 100);
@@ -1144,24 +1155,57 @@
                 let analysis = null;
                 
                 if (!businessLogic) {
-                    console.log('❌ BusinessLogic not loaded! Loading fallback...');
-                    // Simple fallback grouping
+                    console.log('❌ BusinessLogic not loaded! Loading varyant-based fallback...');
+                    // Varyant-based grouping according to BizimHesap structure
                     dashboardData.productGroups = {};
+                    dashboardData.variantAnalysis = {};
+                    const productTitleGroups = {};
+                    
                     dashboardData.products.forEach(product => {
-                        const key = product.title || product.id;
-                        // BizimHesap API PHP proxy'den: stock field'ı direkt 'stock'
-                        const stock = parseInt(product.stock || 0);
-                        if (Math.random() < 0.01) { // Log sadece %1'ini
-                            console.log('📦 Product stock check:', product.title, 'quantity:', product.quantity, 'stock:', product.stock, 'final:', stock);
+                        const title = product.title;
+                        const stock = parseInt(product.stock || product.quantity || 0); // Use 'stock' field first, fallback to 'quantity'
+                        
+                        if (!productTitleGroups[title]) {
+                            productTitleGroups[title] = {
+                                baseProduct: product,
+                                variants: [],
+                                totalStock: 0,
+                                hasStock: false
+                            };
                         }
                         
-                        dashboardData.productGroups[key] = {
-                            baseProduct: product,
-                            variants: [product],
-                            totalStock: stock
-                        };
+                        // Varyant ekle
+                        productTitleGroups[title].variants.push(product);
+                        productTitleGroups[title].totalStock += stock;
+                        if (stock > 0) {
+                            productTitleGroups[title].hasStock = true;
+                        }
                     });
-                    dashboardData.variantAnalysis = {};
+                    
+                    // Sadece stok'u olan ürünleri dahil et (en az bir varyantında stok varsa)
+                    Object.keys(productTitleGroups).forEach(title => {
+                        const group = productTitleGroups[title];
+                        if (group.hasStock) { // En az bir varyantında stok varsa
+                            dashboardData.productGroups[title] = group;
+                            
+                            // Create variant analysis for this group
+                            dashboardData.variantAnalysis[title] = {
+                                stockByVariant: {},
+                                totalVariants: group.variants.length,
+                                hasStock: group.hasStock
+                            };
+                            
+                            // Populate variant analysis
+                            group.variants.forEach(variant => {
+                                const variantName = variant.variant || variant.id || 'Default';
+                                const variantStock = parseInt(variant.stock || variant.quantity || 0);
+                                dashboardData.variantAnalysis[title].stockByVariant[variantName] = {
+                                    stock: variantStock,
+                                    product: variant
+                                };
+                            });
+                        }
+                    });
                     console.log('✅ Fallback grouping created:', Object.keys(dashboardData.productGroups).length, 'groups');
                 } else {
                     analysis = businessLogic.analyzeProductVariants(dashboardData.products);
@@ -1172,13 +1216,15 @@
                 
                 // Sıfır stoklu ürünleri filtrele (tüm varyantları sıfır olanlar)
                 const filteredProductGroups = {};
-                const filteredVariantAnalysis = dashboardData.variantAnalysis || {};
+                const filteredVariantAnalysis = {};
                 
                 Object.keys(dashboardData.productGroups).forEach(productId => {
                     const group = dashboardData.productGroups[productId];
-                    // Kar analizi için stok 0 olanları da dahil et, sadece price > 0 olanları filtrele
                     const hasPrice = parseFloat(group.baseProduct.price || 0) > 0;
-                    if (hasPrice) { 
+                    const hasBuyingPrice = parseFloat(group.baseProduct.buyingPrice || 0) > 0;
+                    
+                    // Include products that have stock AND (selling price OR buying price)
+                    if (group.hasStock && (hasPrice || hasBuyingPrice)) { 
                         filteredProductGroups[productId] = group;
                         if (dashboardData.variantAnalysis[productId]) {
                             filteredVariantAnalysis[productId] = dashboardData.variantAnalysis[productId];
@@ -1186,11 +1232,41 @@
                     }
                 });
                 
+                console.log(`📊 Filtered from ${Object.keys(dashboardData.productGroups).length} to ${Object.keys(filteredProductGroups).length} product groups`);
                 dashboardData.productGroups = filteredProductGroups;
                 dashboardData.variantAnalysis = filteredVariantAnalysis;
                 
                 // Summary'yi yeniden hesapla
-                dashboardData.summary = businessLogic.generateVariantSummary(filteredProductGroups, filteredVariantAnalysis);
+                if (businessLogic) {
+                    dashboardData.summary = businessLogic.generateVariantSummary(filteredProductGroups, filteredVariantAnalysis);
+                } else {
+                    // Create fallback summary
+                    dashboardData.summary = {
+                        totalProducts: Object.keys(filteredProductGroups).length,
+                        totalStock: Object.values(filteredProductGroups).reduce((sum, group) => sum + group.totalStock, 0),
+                        bicycleProducts: Object.values(filteredProductGroups).filter(group => {
+                            const category = group.baseProduct.category || '';
+                            return category.includes('MADONE') || category.includes('DOMANE') || category.includes('FX') || 
+                                   category.includes('MARLIN') || category.includes('EMONDA') || category.includes('POWERFLY');
+                        }).length,
+                        criticalProducts: Object.values(filteredProductGroups).filter(group => group.totalStock <= 2).length,
+                        transferNeeded: Object.values(filteredProductGroups).filter(group => group.totalStock <= 5).length,
+                        categoryBreakdown: {}
+                    };
+                    
+                    // Create category breakdown
+                    Object.values(filteredProductGroups).forEach(group => {
+                        const category = group.baseProduct.category || 'Diğer';
+                        if (!dashboardData.summary.categoryBreakdown[category]) {
+                            dashboardData.summary.categoryBreakdown[category] = {
+                                products: 0,
+                                stock: 0
+                            };
+                        }
+                        dashboardData.summary.categoryBreakdown[category].products += 1;
+                        dashboardData.summary.categoryBreakdown[category].stock += group.totalStock;
+                    });
+                }
 
                 console.log('✅ Ürün analizi tamamlandı');
 
@@ -1288,6 +1364,44 @@
             document.getElementById('lowMarginProducts').textContent = lowMargin;
             document.getElementById('optimalMarginProducts').textContent = optimalMargin;
             document.getElementById('highMarginProducts').textContent = highMargin;
+
+            // Bisiklet özel margin analizi
+            let bicycleTotalMargin = 0;
+            let bicycleMarginCount = 0;
+            let bicycleLowMargin = 0, bicycleOptimalMargin = 0, bicycleHighMargin = 0;
+
+            Object.values(dashboardData.productGroups).forEach(group => {
+                const category = group.baseProduct.category || '';
+                const isBicycle = category.includes('MADONE') || category.includes('DOMANE') || 
+                                category.includes('FX') || category.includes('MARLIN') || 
+                                category.includes('EMONDA') || category.includes('POWERFLY') ||
+                                category.includes('CHECKPOINT') || category.includes('SPEED CONCEPT') ||
+                                category.includes('RAIL') || category.includes('SUPERCALIBER') ||
+                                category.includes('VERVE') || category.includes('FUEL EXE') ||
+                                category.includes('TOP FUEL') || category.includes('PROCALIBER');
+                
+                if (isBicycle && group.totalStock > 0) {
+                    const landedMargin = calculateMarginWithLandedCost(group.baseProduct);
+                    if (landedMargin > 0) {
+                        bicycleTotalMargin += landedMargin;
+                        bicycleMarginCount++;
+
+                        if (landedMargin < 15) {
+                            bicycleLowMargin++;
+                        } else if (landedMargin >= 15 && landedMargin <= 35) {
+                            bicycleOptimalMargin++;
+                        } else {
+                            bicycleHighMargin++;
+                        }
+                    }
+                }
+            });
+
+            const bicycleAvgMargin = bicycleMarginCount > 0 ? (bicycleTotalMargin / bicycleMarginCount).toFixed(1) : '0';
+            document.getElementById('bicycleAvgMargin').textContent = `${bicycleAvgMargin}%`;
+            document.getElementById('bicycleLowMargin').textContent = bicycleLowMargin;
+            document.getElementById('bicycleOptimalMargin').textContent = bicycleOptimalMargin;
+            document.getElementById('bicycleHighMargin').textContent = bicycleHighMargin;
         }
 
         // Kategori grid'ini güncelle
@@ -1299,7 +1413,15 @@
             
             Object.keys(categoryBreakdown).forEach(category => {
                 const data = categoryBreakdown[category];
-                const isBicycle = businessLogic.isBicycleCategory(category);
+                const isBicycle = businessLogic ? 
+                    businessLogic.isBicycleCategory(category) : 
+                    (category.includes('MADONE') || category.includes('DOMANE') || 
+                     category.includes('FX') || category.includes('MARLIN') || 
+                     category.includes('EMONDA') || category.includes('POWERFLY') ||
+                     category.includes('CHECKPOINT') || category.includes('SPEED CONCEPT') ||
+                     category.includes('RAIL') || category.includes('SUPERCALIBER') ||
+                     category.includes('VERVE') || category.includes('FUEL EXE') ||
+                     category.includes('TOP FUEL') || category.includes('PROCALIBER'));
                 
                 // Bu kategorideki ürünlerin fiyat bilgilerini hesapla
                 const categoryProducts = Object.values(dashboardData.productGroups).filter(
@@ -1347,23 +1469,27 @@
                         ${productCount > 0 ? `
                             <div class="price-info">
                                 <div class="price-row">
-                                    <span class="price-label">Satış:</span>
+                                    <span class="price-label">💰 Alış (USD):</span>
+                                    <span class="price-value">$${(avgBuyingPrice / 1.35).toFixed(0)}</span>
+                                </div>
+                                <div class="price-row">
+                                    <span class="price-label">💶 Satış (EUR):</span>
                                     <span class="price-value">€${avgSellingPrice}</span>
                                 </div>
                                 <div class="price-row">
-                                    <span class="price-label">Landed Cost:</span>
+                                    <span class="price-label">🚩 Landed Cost:</span>
                                     <span class="price-value">€${avgBuyingPrice}</span>
                                 </div>
                                 <div class="price-row">
-                                    <span class="price-label">Gerçek Marj:</span>
-                                    <span class="price-value">${avgMargin}%</span>
+                                    <span class="price-label">📊 Bisiklet Marjı:</span>
+                                    <span class="price-value margin-indicator ${avgMargin < 15 ? 'margin-low' : avgMargin > 35 ? 'margin-high' : 'margin-optimal'}">${avgMargin}%</span>
                                 </div>
                             </div>
                         ` : ''}
                         
                         ${isBicycle ? `
                             <div class="category-details" style="margin-top: 8px; color: #FFD700;">
-                                Kritik Seviye: ${businessLogic.getCriticalStockLevel(category)}
+                                Kritik Seviye: ${businessLogic ? businessLogic.getCriticalStockLevel(category) : '5 adet'}
                             </div>
                         ` : ''}
                         
@@ -1518,8 +1644,8 @@
                                 <div class="metric-label-small">Toplam Stok</div>
                             </div>
                             <div class="metric-box">
-                                <div class="metric-value-large">${Object.keys(analysis.stockByVariant).length}</div>
-                                <div class="metric-label-small">Varyant Sayısı</div>
+                                <div class="metric-value-large">€${parseFloat(group.baseProduct.price || 0).toFixed(0)}</div>
+                                <div class="metric-label-small">Satış Fiyatı</div>
                             </div>
                         </div>
                         
@@ -1619,18 +1745,18 @@
                         
                         <div style="margin-top: 15px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <span>Stok Dağılımı:</span>
-                                <span>${Object.keys(analysis.stockByVariant).length} varyant</span>
+                                <span>📦 Stok Seviyeleri:</span>
+                                <span>${group.totalStock} toplam stok</span>
                             </div>
-                            <div style="display: flex; gap: 5px; height: 8px; border-radius: 4px; overflow: hidden;">
-                                <div style="background: #ff4757; flex: ${criticalVariants}; min-width: 2px;"></div>
-                                <div style="background: #ffa502; flex: ${lowVariants}; min-width: 2px;"></div>
-                                <div style="background: #2ed573; flex: ${goodVariants}; min-width: 2px;"></div>
+                            <div style="display: flex; gap: 5px; height: 12px; border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.1);">
+                                <div style="background: #ff4757; flex: ${criticalVariants}; min-width: 2px;" title="Kritik Seviye"></div>
+                                <div style="background: #ffa502; flex: ${lowVariants}; min-width: 2px;" title="Düşük Stok"></div>
+                                <div style="background: #2ed573; flex: ${goodVariants}; min-width: 2px;" title="İyi Stok"></div>
                             </div>
-                            <div style="display: flex; justify-content: space-between; font-size: 0.8em; margin-top: 5px;">
-                                <span style="color: #ff4757;">Kritik: ${criticalVariants}</span>
-                                <span style="color: #ffa502;">Düşük: ${lowVariants}</span>
-                                <span style="color: #2ed573;">İyi: ${goodVariants}</span>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 0.8em; margin-top: 8px;">
+                                <div style="text-align: center; color: #ff4757;">🔴 Kritik<br><strong>${criticalVariants}</strong></div>
+                                <div style="text-align: center; color: #ffa502;">🟡 Düşük<br><strong>${lowVariants}</strong></div>
+                                <div style="text-align: center; color: #2ed573;">🟢 İyi<br><strong>${goodVariants}</strong></div>
                             </div>
                         </div>
                     </div>
