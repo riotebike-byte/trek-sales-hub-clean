@@ -1130,6 +1130,8 @@
 
                 // Business logic ile analiz et
                 console.log('🔧 BusinessLogic available:', !!businessLogic);
+                let analysis = null;
+                
                 if (!businessLogic) {
                     console.log('❌ BusinessLogic not loaded! Loading fallback...');
                     // Simple fallback grouping
@@ -1142,9 +1144,10 @@
                             totalStock: parseInt(product.quantity || product.stock || 0)
                         };
                     });
+                    dashboardData.variantAnalysis = {};
                     console.log('✅ Fallback grouping created:', Object.keys(dashboardData.productGroups).length, 'groups');
                 } else {
-                    const analysis = businessLogic.analyzeProductVariants(dashboardData.products);
+                    analysis = businessLogic.analyzeProductVariants(dashboardData.products);
                     dashboardData.productGroups = analysis.productGroups;
                     dashboardData.variantAnalysis = analysis.variantAnalysis;
                     console.log('✅ BusinessLogic grouping completed:', Object.keys(dashboardData.productGroups).length, 'groups');
@@ -1152,13 +1155,15 @@
                 
                 // Sıfır stoklu ürünleri filtrele (tüm varyantları sıfır olanlar)
                 const filteredProductGroups = {};
-                const filteredVariantAnalysis = {};
+                const filteredVariantAnalysis = dashboardData.variantAnalysis || {};
                 
-                Object.keys(analysis.productGroups).forEach(productId => {
-                    const group = analysis.productGroups[productId];
+                Object.keys(dashboardData.productGroups).forEach(productId => {
+                    const group = dashboardData.productGroups[productId];
                     if (group.totalStock > 0) { // En az bir varyantında stok varsa
                         filteredProductGroups[productId] = group;
-                        filteredVariantAnalysis[productId] = analysis.variantAnalysis[productId];
+                        if (dashboardData.variantAnalysis[productId]) {
+                            filteredVariantAnalysis[productId] = dashboardData.variantAnalysis[productId];
+                        }
                     }
                 });
                 
