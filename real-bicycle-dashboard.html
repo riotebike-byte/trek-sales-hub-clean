@@ -1046,7 +1046,7 @@
                 console.log('📊 BizimHesap verileri çekiliyor...');
                 
                 // BizimHesap API'den ürün verilerini çek
-                const response = await fetch('/api-proxy-working.php?endpoint=/api/b2b/products');
+                const response = await fetch('/api-proxy-fixed.php?endpoint=/api/b2b/products');
                 const data = await response.json();
                 
                 if (!data.data || !data.data.products) {
