@@ -1046,11 +1046,46 @@
                 console.log('📊 BizimHesap verileri çekiliyor...');
                 
                 // BizimHesap API'den gerçek veri çek
-                // Production API endpoint - otomatik detection
+                // Production API endpoint - multiple fallbacks
                 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-                const apiBaseUrl = isLocalhost ? 'http://localhost:3001' : '';
-                const response = await fetch(`${apiBaseUrl}/api/b2b/products`);
-                const data = await response.json();
+                
+                let apiUrl;
+                if (isLocalhost) {
+                    // Localhost: Node.js proxy
+                    apiUrl = 'http://localhost:3001/api/b2b/products';
+                } else {
+                    // Production: Try Node.js first, then PHP fallback
+                    apiUrl = '/api/b2b/products'; // Node.js proxy
+                }
+                
+                console.log('🔗 API URL:', apiUrl);
+                console.log('🌍 Environment:', isLocalhost ? 'localhost' : 'production');
+                
+                let response = await fetch(apiUrl);
+                console.log('📊 Response status:', response.status);
+                console.log('📊 Response headers:', response.headers.get('content-type'));
+                
+                // If Node.js proxy fails in production, try PHP fallback
+                if (!isLocalhost && (!response.ok || !response.headers.get('content-type')?.includes('application/json'))) {
+                    console.log('🔄 Node.js proxy failed, trying PHP fallback...');
+                    apiUrl = '/api-proxy-fixed.php?endpoint=/api/b2b/products';
+                    response = await fetch(apiUrl);
+                    console.log('📊 Fallback response status:', response.status);
+                }
+                
+                // Response'ı text olarak al ve kontrol et
+                const responseText = await response.text();
+                console.log('📊 Response preview:', responseText.substring(0, 200));
+                
+                // JSON parse etmeye çalış
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('❌ JSON Parse Error:', parseError);
+                    console.error('❌ Response Text:', responseText);
+                    throw new Error(`API response is not valid JSON: ${responseText.substring(0, 100)}`);
+                }
                 
                 if (!data.data || !data.data.products) {
                     throw new Error('BizimHesap API\'den geçerli veri alınamadı');
