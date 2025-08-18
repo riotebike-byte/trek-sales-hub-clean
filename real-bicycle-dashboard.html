@@ -1127,6 +1127,17 @@
 
                 dashboardData.products = data.data.products;
                 console.log(`✅ ${dashboardData.products.length} ürün BizimHesap API'den yüklendi`);
+                
+                // İlk ürünün tüm field'larını göster
+                if (dashboardData.products.length > 0) {
+                    console.log('🔍 First product all fields:', dashboardData.products[0]);
+                    console.log('🔍 Available stock fields:', {
+                        quantity: dashboardData.products[0].quantity,
+                        stock: dashboardData.products[0].stock,
+                        stok: dashboardData.products[0].stok,
+                        inventory: dashboardData.products[0].inventory
+                    });
+                }
 
                 // Business logic ile analiz et
                 console.log('🔧 BusinessLogic available:', !!businessLogic);
@@ -1138,8 +1149,8 @@
                     dashboardData.productGroups = {};
                     dashboardData.products.forEach(product => {
                         const key = product.title || product.id;
-                        // BizimHesap API'de quantity field'ı kullanılıyor
-                        const stock = parseInt(product.quantity || product.stock || 0);
+                        // BizimHesap API'de stok field'ı test et - muhtemelen 'quantity' değil
+                        const stock = parseInt(product.quantity || product.stock || product.stok || product.inventory || 0);
                         if (Math.random() < 0.01) { // Log sadece %1'ini
                             console.log('📦 Product stock check:', product.title, 'quantity:', product.quantity, 'stock:', product.stock, 'final:', stock);
                         }
