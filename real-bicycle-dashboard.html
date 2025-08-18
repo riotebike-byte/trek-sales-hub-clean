@@ -1138,10 +1138,16 @@
                     dashboardData.productGroups = {};
                     dashboardData.products.forEach(product => {
                         const key = product.title || product.id;
+                        // BizimHesap API'de quantity field'ı kullanılıyor
+                        const stock = parseInt(product.quantity || product.stock || 0);
+                        if (Math.random() < 0.01) { // Log sadece %1'ini
+                            console.log('📦 Product stock check:', product.title, 'quantity:', product.quantity, 'stock:', product.stock, 'final:', stock);
+                        }
+                        
                         dashboardData.productGroups[key] = {
                             baseProduct: product,
                             variants: [product],
-                            totalStock: parseInt(product.quantity || product.stock || 0)
+                            totalStock: stock
                         };
                     });
                     dashboardData.variantAnalysis = {};
@@ -1159,7 +1165,9 @@
                 
                 Object.keys(dashboardData.productGroups).forEach(productId => {
                     const group = dashboardData.productGroups[productId];
-                    if (group.totalStock > 0) { // En az bir varyantında stok varsa
+                    // Kar analizi için stok 0 olanları da dahil et, sadece price > 0 olanları filtrele
+                    const hasPrice = parseFloat(group.baseProduct.price || 0) > 0;
+                    if (hasPrice) { 
                         filteredProductGroups[productId] = group;
                         if (dashboardData.variantAnalysis[productId]) {
                             filteredVariantAnalysis[productId] = dashboardData.variantAnalysis[productId];
