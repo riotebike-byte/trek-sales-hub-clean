@@ -856,7 +856,10 @@
         // Calculate landed cost (buying price + taxes)
         function calculateLandedCost(product) {
             const buyingPrice = parseFloat(product.buyingPrice || 0);
-            if (buyingPrice === 0) return 0;
+            if (buyingPrice === 0) {
+                console.log('⚠️ buyingPrice is 0 for product:', product.title, 'buyingPrice:', product.buyingPrice);
+                return 0;
+            }
             
             const taxRate = getTaxRate(product);
             
@@ -867,6 +870,17 @@
             
             // Calculate landed cost: buying price + (buying price * tax rate / 100)
             const landedCost = buyingPriceEur * (1 + taxRate / 100);
+            
+            if (Math.random() < 0.01) { // Log 1% of calculations
+                console.log('💰 Landed cost calc:', {
+                    title: product.title,
+                    buyingPrice: buyingPrice,
+                    buyingPriceEur: buyingPriceEur,
+                    taxRate: taxRate,
+                    landedCost: landedCost
+                });
+            }
+            
             return landedCost;
         }
 
@@ -1087,8 +1101,18 @@
                     throw new Error(`API response is not valid JSON: ${responseText.substring(0, 100)}`);
                 }
                 
-                if (!data.data || !data.data.products) {
+                // PHP fallback farklı response format kullanıyor
+                if (!data.success && (!data.data || !data.data.products)) {
                     throw new Error('BizimHesap API\'den geçerli veri alınamadı');
+                }
+                
+                // PHP fallback için data format düzeltmesi
+                if (data.success && data.data && data.data.products) {
+                    // PHP format: {success: true, data: {products: [...]}}
+                    console.log('📊 Using PHP fallback data format');
+                } else if (data.data && data.data.products) {
+                    // Node.js format: {data: {products: [...]}}
+                    console.log('📊 Using Node.js data format');
                 }
 
                 dashboardData.products = data.data.products;
@@ -1685,6 +1709,9 @@
             
             // Kategori bazında kar potansiyeli hesapla
             const categoryProfits = {};
+            
+            console.log('🔍 Product Groups count:', Object.keys(dashboardData.productGroups).length);
+            console.log('🔍 First product sample:', Object.values(dashboardData.productGroups)[0]?.baseProduct);
             
             Object.values(dashboardData.productGroups).forEach(group => {
                 const product = group.baseProduct;
