@@ -1223,8 +1223,21 @@
                     const hasPrice = parseFloat(group.baseProduct.price || 0) > 0;
                     const hasBuyingPrice = parseFloat(group.baseProduct.buyingPrice || 0) > 0;
                     
-                    // Include products that have stock AND (selling price OR buying price)
-                    if (group.hasStock && (hasPrice || hasBuyingPrice)) { 
+                    // Debug first few products
+                    if (Object.keys(filteredProductGroups).length < 5) {
+                        console.log(`🔍 Product ${productId}:`, {
+                            title: group.baseProduct.title,
+                            hasStock: group.hasStock,
+                            totalStock: group.totalStock,
+                            price: group.baseProduct.price,
+                            hasPrice: hasPrice,
+                            buyingPrice: group.baseProduct.buyingPrice,
+                            hasBuyingPrice: hasBuyingPrice
+                        });
+                    }
+                    
+                    // Include products that have (selling price OR buying price) - don't require stock for margin analysis
+                    if (hasPrice || hasBuyingPrice) { 
                         filteredProductGroups[productId] = group;
                         if (dashboardData.variantAnalysis[productId]) {
                             filteredVariantAnalysis[productId] = dashboardData.variantAnalysis[productId];
