@@ -1,0 +1,30 @@
+{
+  "name": "trek-sales-hub",
+  "version": "1.0.0",
+  "description": "Trek Sales Management Hub with BizimHesap API Integration",
+  "main": "simple-proxy.js",
+  "type": "module",
+  "scripts": {
+    "start": "node simple-proxy.js",
+    "dev": "node simple-proxy.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "trek",
+    "bicycle",
+    "sales",
+    "bizimhesap",
+    "api",
+    "proxy"
+  ],
+  "author": "Trek Sales Team",
+  "license": "MIT"
+}

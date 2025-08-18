@@ -253,7 +253,10 @@
             showStatus('connectionResults', '🔄 Testing API connection...');
             
             try {
-                const response = await fetch('/api-proxy-fixed.php?endpoint=/api/b2b/products');
+                // Production API endpoint - otomatik detection
+                const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const apiBaseUrl = isLocalhost ? 'http://localhost:3001' : '';
+                const response = await fetch(`${apiBaseUrl}/api/b2b/products`);
                 const data = await response.json();
                 
                 let result = `API Test Results:\n`;
@@ -280,7 +283,9 @@
             showStatus('connectionResults', '🔄 Testing direct BizimHesap API...');
             
             try {
-                const response = await fetch('/test-api-direct.php');
+                const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const apiBaseUrl = isLocalhost ? 'http://localhost:3001' : '';
+                const response = await fetch(`${apiBaseUrl}/health`);
                 const text = await response.text();
                 showResults('connectionResults', `Direct API Test:\n${text}`);
             } catch (error) {
