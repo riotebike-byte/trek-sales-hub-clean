@@ -75,6 +75,7 @@ try {
             'alis_fiyat' => 'buyingPrice',
             'maliyet' => 'cost',
             'para_birim' => 'currency',
+            'alis_para_birim' => 'buyingCurrency',
             'kdv' => 'vatRate',
             'detay' => 'description',
             'kat_yolu' => 'category',
@@ -98,7 +99,7 @@ try {
             }
             
             // Debug logging for first few products
-            if ($count < 3 && ($jsonField === 'price' || $jsonField === 'stock')) {
+            if ($count < 3 && ($jsonField === 'price' || $jsonField === 'stock' || $jsonField === 'buyingPrice' || $jsonField === 'currency')) {
                 error_log("Debug PHP Proxy - Product $count: $jsonField = $value");
             }
             

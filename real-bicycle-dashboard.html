@@ -870,23 +870,30 @@
         // Calculate landed cost (buying price + taxes)
         function calculateLandedCost(product) {
             let buyingPrice = parseFloat(product.buyingPrice || 0);
+            const sellingPrice = parseFloat(product.price || 0);
             
-            // BuyingPrice genelde USD, Price genelde EUR
+            // If no buying price, estimate from selling price
+            if (buyingPrice === 0 && sellingPrice > 0) {
+                // Estimate buying price assuming 30% margin
+                buyingPrice = sellingPrice * 0.70;
+                console.log(`⚠️ Estimated buying price for ${product.title}: €${buyingPrice.toFixed(2)}`);
+            }
+            
             if (buyingPrice === 0) {
-                console.log('⚠️ buyingPrice is 0 for:', product.title);
                 return 0;
             }
             
             const taxRate = getTaxRate(product);
             
-            // BuyingPrice USD, Price EUR - currency field'ını kontrol et
+            // Handle currency conversion
             let buyingPriceEur = buyingPrice;
-            if (product.currency === 'EUR') {
-                // Price zaten EUR'da, buying price de EUR olabilir
-                buyingPriceEur = buyingPrice;
-            } else {
-                // USD to EUR conversion (fallback rate: 0.92)
-                buyingPriceEur = buyingPrice * 0.92; 
+            const currency = product.currency || 'EUR';
+            const buyingCurrency = product.buyingCurrency || currency;
+            
+            if (buyingCurrency === 'USD') {
+                buyingPriceEur = buyingPrice * 0.92; // USD to EUR
+            } else if (buyingCurrency === 'TL') {
+                buyingPriceEur = buyingPrice * 0.034; // TL to EUR (approximate)
             }
             
             // Calculate landed cost: buying price + (buying price * tax rate / 100)
@@ -896,6 +903,7 @@
                 console.log('💰 Landed cost calc:', {
                     title: product.title,
                     buyingPrice: buyingPrice,
+                    buyingCurrency: buyingCurrency,
                     buyingPriceEur: buyingPriceEur,
                     taxRate: taxRate,
                     landedCost: landedCost
@@ -1236,7 +1244,7 @@
                         });
                     }
                     
-                    // Include products that have (selling price OR buying price) - don't require stock for margin analysis
+                    // Include products that have selling price OR buying price
                     if (hasPrice || hasBuyingPrice) { 
                         filteredProductGroups[productId] = group;
                         if (dashboardData.variantAnalysis[productId]) {
