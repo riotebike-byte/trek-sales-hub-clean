@@ -46,7 +46,7 @@ if ($http_code !== 200 || empty($response)) {
 
 $products = [];
 $count = 0;
-$maxProducts = 500;
+// No limit - get all products
 
 try {
     // Fix encoding issues first
@@ -59,19 +59,24 @@ try {
     preg_match_all('/<urun>(.*?)<\/urun>/s', $response, $matches);
     
     foreach ($matches[1] as $urunContent) {
-        if ($count >= $maxProducts) break;
+        // Process all products - no limit
         
         $product = [];
         
-        // Extract fields using regex
+        // Extract all BizimHesap fields using regex
         $fields = [
             'stok_kod' => 'id',
-            'urun_ad' => 'title', 
-            'kat_yolu' => 'category',
-            'satis_fiyat' => 'price',
-            'stok' => 'stock',
+            'barkod' => 'barcode', 
+            'urun_ad' => 'title',
             'varyant' => 'variant',
-            'marka' => 'brand'
+            'marka' => 'brand',
+            'stok' => 'stock',
+            'satis_fiyat' => 'price',
+            'para_birim' => 'currency',
+            'kdv' => 'vatRate',
+            'detay' => 'description',
+            'kat_yolu' => 'category',
+            'resim' => 'image'
         ];
         
         foreach ($fields as $xmlField => $jsonField) {
@@ -86,7 +91,7 @@ try {
             // Type conversion
             if ($jsonField === 'price') {
                 $value = (float)str_replace(',', '.', $value);
-            } elseif ($jsonField === 'stock') {
+            } elseif ($jsonField === 'stock' || $jsonField === 'vatRate') {
                 $value = (int)$value;
             }
             
