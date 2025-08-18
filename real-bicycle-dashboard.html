@@ -1083,6 +1083,78 @@
             }
         }
 
+        // Fetch warehouses list
+        async function fetchWarehouses() {
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const apiUrl = isLocalhost ? 'http://localhost:3001/api/b2b/warehouses' : '/api/b2b/warehouses';
+            
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                throw new Error(`Warehouses API failed: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            return data.data.warehouses;
+        }
+
+        // Fetch inventory for a specific warehouse
+        async function fetchInventory(warehouseId) {
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const apiUrl = isLocalhost ? 
+                `http://localhost:3001/api/b2b/inventory/${warehouseId}` : 
+                `/api/b2b/inventory/${warehouseId}`;
+            
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                throw new Error(`Inventory API failed for warehouse ${warehouseId}: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            return data.data.inventory;
+        }
+
+        // Fetch and merge inventory data with products
+        async function fetchAndMergeInventoryData() {
+            try {
+                // Get warehouses list
+                const warehouses = await fetchWarehouses();
+                console.log(`📦 Found ${warehouses.length} warehouses:`, warehouses.map(w => w.title));
+                
+                // Create a map to store total quantities by product ID
+                const inventoryMap = new Map();
+                
+                // Fetch inventory from all warehouses
+                for (const warehouse of warehouses) {
+                    console.log(`📦 Fetching inventory for warehouse: ${warehouse.title}`);
+                    try {
+                        const inventory = await fetchInventory(warehouse.id);
+                        
+                        // Aggregate quantities by product ID
+                        inventory.forEach(item => {
+                            const currentQty = inventoryMap.get(item.id) || 0;
+                            const newQty = parseInt(item.qty) || 0;
+                            inventoryMap.set(item.id, currentQty + newQty);
+                        });
+                    } catch (error) {
+                        console.warn(`⚠️ Failed to fetch inventory for warehouse ${warehouse.title}:`, error);
+                    }
+                }
+                
+                // Merge inventory data with products
+                dashboardData.products.forEach(product => {
+                    const totalQty = inventoryMap.get(product.id) || 0;
+                    product.quantity = totalQty;
+                    product.actualStock = totalQty; // Alternative field name
+                });
+                
+                console.log(`✅ Inventory data merged. Found stock for ${inventoryMap.size} products`);
+                
+            } catch (error) {
+                console.error('❌ Inventory fetch error:', error);
+                // Continue without inventory data
+            }
+        }
+
         // Ana veri yükleme fonksiyonu
         async function loadDashboardData() {
             try {
@@ -1147,14 +1219,18 @@
                 dashboardData.products = data.data.products;
                 console.log(`✅ ${dashboardData.products.length} ürün BizimHesap API'den yüklendi`);
                 
+                // Inventory data fetch and merge
+                console.log('🔄 Fetching inventory data from all warehouses...');
+                await fetchAndMergeInventoryData();
+                
                 // İlk ürünün tüm field'larını göster
                 if (dashboardData.products.length > 0) {
                     console.log('🔍 First product all fields:', dashboardData.products[0]);
-                    console.log('🔍 Available stock fields:', {
+                    console.log('🔍 Available stock fields after merge:', {
                         quantity: dashboardData.products[0].quantity,
+                        actualStock: dashboardData.products[0].actualStock,
                         stock: dashboardData.products[0].stock,
-                        stok: dashboardData.products[0].stok,
-                        inventory: dashboardData.products[0].inventory
+                        stok: dashboardData.products[0].stok
                     });
                 }
 
