@@ -97,6 +97,11 @@ try {
                 $value = (int)$value;
             }
             
+            // Debug logging for first few products
+            if ($count < 3 && ($jsonField === 'price' || $jsonField === 'stock')) {
+                error_log("Debug PHP Proxy - Product $count: $jsonField = $value");
+            }
+            
             $product[$jsonField] = $value;
         }
         
