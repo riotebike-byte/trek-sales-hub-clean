@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizimHesap Data Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .test-section {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4299e1;
+        }
+        
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+        }
+        
+        .results {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+            font-family: 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .status {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+        
+        .status.loading {
+            background: #fed7d7;
+            color: #c53030;
+        }
+        
+        .status.success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .status.error {
+            background: #fed7d7;
+            color: #c53030;
+        }
+        
+        .category-analysis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .category-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .category-name {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+        
+        .category-stats {
+            font-size: 14px;
+            color: #4a5568;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 BizimHesap Data Analyzer</h1>
+        
+        <div class="test-section">
+            <div class="section-title">📡 API Connection Test</div>
+            <button class="btn" onclick="testAPIConnection()">Test API Connection</button>
+            <button class="btn" onclick="testDirectAPI()">Test Direct BizimHesap</button>
+            <div id="connectionResults" class="results" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="section-title">📊 Product Data Analysis</div>
+            <button class="btn" onclick="analyzeProducts()">Load & Analyze Products</button>
+            <button class="btn" onclick="showSampleProducts()">Show Sample Products</button>
+            <button class="btn" onclick="analyzeTaxCategories()">Analyze Tax Categories</button>
+            <div id="productResults" class="results" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="section-title">🏷️ Category Breakdown</div>
+            <button class="btn" onclick="showCategoryBreakdown()">Category Breakdown</button>
+            <button class="btn" onclick="showBrandAnalysis()">Brand Analysis</button>
+            <button class="btn" onclick="showPriceAnalysis()">Price Analysis</button>
+            <div id="categoryResults" class="results" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="section-title">⚙️ Tax Rate Testing</div>
+            <button class="btn" onclick="testTaxCalculations()">Test Tax Calculations</button>
+            <button class="btn" onclick="testLandedCosts()">Test Landed Costs</button>
+            <button class="btn" onclick="showTaxSchema()">Show Tax Schema</button>
+            <div id="taxResults" class="results" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let allProducts = [];
+        
+        // Tax schema - same as in dashboard
+        const categoryMappings = {
+            "dsw-bisiklet": {
+                "name": "DSW BİSİKLET",
+                "categories": ["FX", "DS", "MARLIN"],
+                "taxRate": 70
+            },
+            "nci-bisiklet": {
+                "name": "NCI BİSİKLET", 
+                "categories": ["MADONE", "EMONDA", "DOMANE", "POWERFLY", "PROCALIBER", "CHECKPOINT", "SPEED CONCEPT", "RAIL", "DOMANE+", "SUPERCALIBER", "VERVE+", "FUEL EXE", "MARLİN+", "FX+", "KADRO", "TOWNIE GO!", "DS+", "TOP FUEL"],
+                "taxRate": 35
+            },
+            "dsw-aksesuar": {
+                "name": "DSW AKSESUAR",
+                "categories": ["VERVE", "AYDINLATMA", "ÇANTA", "İÇ LASTİK", "GİDON BOĞAZI", "BAGAJ-SEPET", "MATARA-KAFES", "ELCİK-GİDON BANDI", "KADRO KULAĞI", "PEDAL", "POMPA", "ZİL", "KİLİT", "KASK", "ELDİVEN", "DIŞ LASTİK", "SELE-SELE BORUSU", "ERKEK AYAKKABI", "Tanımsız", "ÇAMURLUK", "ANAHTAR TAKIMI", "PARK AYAĞI", "YEDEK PARÇA", "ELECTRA KADIN BİSİKLET"],
+                "taxRate": 60
+            },
+            "nci-aksesuar": {
+                "name": "NCI AKSESUAR",
+                "categories": ["JANT SETİ", "GİDON"],
+                "taxRate": 40
+            },
+            "gobik": {
+                "name": "Gobik",
+                "categories": ["FORMA", "ÇORAP", "TAYT-ŞORT"],
+                "taxRate": 33
+            },
+            "trieye": {
+                "name": "TriEye", 
+                "categories": ["Gözlük"],
+                "taxRate": 68
+            },
+            "bryton": {
+                "name": "Bryton",
+                "categories": ["KM SAATİ"],
+                "taxRate": 65
+            },
+            "saris": {
+                "name": "Saris",
+                "categories": ["ARAÇ ARKASI TAŞIYICI"],
+                "taxRate": 65
+            }
+        };
+        
+        function getTaxRate(product) {
+            if (!product.category) return 20;
+            
+            const productCategory = product.category.toLowerCase();
+            for (const [upperCat, mapping] of Object.entries(categoryMappings)) {
+                if (mapping.categories) {
+                    const categoryMatch = mapping.categories.some(cat => {
+                        const catLower = cat.toLowerCase();
+                        return productCategory.includes(catLower) || catLower.includes(productCategory);
+                    });
+                    if (categoryMatch) {
+                        return mapping.taxRate || 20;
+                    }
+                }
+            }
+            return 20;
+        }
+        
+        function showResults(elementId, content) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.innerHTML = content;
+        }
+        
+        function showStatus(elementId, message, type = 'loading') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        async function testAPIConnection() {
+            showStatus('connectionResults', '🔄 Testing API connection...');
+            
+            try {
+                const response = await fetch('/api-proxy-fixed.php?endpoint=/api/b2b/products');
+                const data = await response.json();
+                
+                let result = `API Test Results:\n`;
+                result += `Status: ${response.status}\n`;
+                result += `Success: ${data.success}\n`;
+                result += `Product Count: ${data.count || 0}\n`;
+                result += `Response Size: ${JSON.stringify(data).length} characters\n`;
+                result += `Method: ${data.method || 'unknown'}\n\n`;
+                
+                if (data.data && data.data.products && data.data.products.length > 0) {
+                    result += `First Product Sample:\n`;
+                    result += JSON.stringify(data.data.products[0], null, 2);
+                    allProducts = data.data.products;
+                }
+                
+                showResults('connectionResults', result);
+                
+            } catch (error) {
+                showResults('connectionResults', `❌ API Error: ${error.message}`);
+            }
+        }
+        
+        async function testDirectAPI() {
+            showStatus('connectionResults', '🔄 Testing direct BizimHesap API...');
+            
+            try {
+                const response = await fetch('/test-api-direct.php');
+                const text = await response.text();
+                showResults('connectionResults', `Direct API Test:\n${text}`);
+            } catch (error) {
+                showResults('connectionResults', `❌ Direct API Error: ${error.message}`);
+            }
+        }
+        
+        async function analyzeProducts() {
+            if (allProducts.length === 0) {
+                await testAPIConnection();
+            }
+            
+            if (allProducts.length === 0) {
+                showResults('productResults', '❌ No products loaded');
+                return;
+            }
+            
+            let result = `Product Analysis (${allProducts.length} total products):\n\n`;
+            
+            // Sample first 5 products
+            result += `First 5 Products:\n`;
+            allProducts.slice(0, 5).forEach((product, index) => {
+                result += `${index + 1}. ${product.title}\n`;
+                result += `   Category: ${product.category}\n`;
+                result += `   Price: ${product.price} ${product.currency}\n`;
+                result += `   Stock: ${product.stock}\n`;
+                result += `   Brand: ${product.brand}\n\n`;
+            });
+            
+            showResults('productResults', result);
+        }
+        
+        function showSampleProducts() {
+            if (allProducts.length === 0) {
+                showResults('productResults', '❌ No products loaded. Click "Load & Analyze Products" first.');
+                return;
+            }
+            
+            // Show random 10 products
+            const sample = allProducts.sort(() => Math.random() - 0.5).slice(0, 10);
+            
+            let result = `Random 10 Product Sample:\n\n`;
+            sample.forEach((product, index) => {
+                result += `${index + 1}. ${product.title}\n`;
+                result += `   ID: ${product.id}\n`;
+                result += `   Category: ${product.category}\n`;
+                result += `   Price: ${product.price} ${product.currency}\n`;
+                result += `   Stock: ${product.stock}\n`;
+                result += `   Brand: ${product.brand}\n`;
+                result += `   Variant: ${product.variant}\n\n`;
+            });
+            
+            showResults('productResults', result);
+        }
+        
+        function showCategoryBreakdown() {
+            if (allProducts.length === 0) {
+                showResults('categoryResults', '❌ No products loaded. Click "Load & Analyze Products" first.');
+                return;
+            }
+            
+            const categories = {};
+            allProducts.forEach(product => {
+                const cat = product.category || 'Unknown';
+                if (!categories[cat]) {
+                    categories[cat] = { count: 0, totalStock: 0, avgPrice: 0, products: [] };
+                }
+                categories[cat].count++;
+                categories[cat].totalStock += parseInt(product.stock) || 0;
+                categories[cat].avgPrice += parseFloat(product.price) || 0;
+                categories[cat].products.push(product.title);
+            });
+            
+            let result = `Category Breakdown (${Object.keys(categories).length} categories):\n\n`;
+            
+            Object.entries(categories)
+                .sort((a, b) => b[1].count - a[1].count)
+                .forEach(([cat, data]) => {
+                    const avgPrice = data.avgPrice / data.count;
+                    result += `📁 ${cat}:\n`;
+                    result += `   Products: ${data.count}\n`;
+                    result += `   Total Stock: ${data.totalStock}\n`;
+                    result += `   Avg Price: ${avgPrice.toFixed(2)}\n`;
+                    result += `   Sample Products: ${data.products.slice(0, 3).join(', ')}\n\n`;
+                });
+            
+            showResults('categoryResults', result);
+        }
+        
+        function showBrandAnalysis() {
+            if (allProducts.length === 0) {
+                showResults('categoryResults', '❌ No products loaded.');
+                return;
+            }
+            
+            const brands = {};
+            allProducts.forEach(product => {
+                const brand = product.brand || 'Unknown';
+                if (!brands[brand]) brands[brand] = 0;
+                brands[brand]++;
+            });
+            
+            let result = `Brand Analysis:\n\n`;
+            Object.entries(brands)
+                .sort((a, b) => b[1] - a[1])
+                .forEach(([brand, count]) => {
+                    result += `🏷️ ${brand}: ${count} products\n`;
+                });
+            
+            showResults('categoryResults', result);
+        }
+        
+        function testTaxCalculations() {
+            if (allProducts.length === 0) {
+                showResults('taxResults', '❌ No products loaded.');
+                return;
+            }
+            
+            let result = `Tax Rate Testing:\n\n`;
+            
+            // Test tax rates for different categories
+            const testCategories = ['MADONE', 'FX', 'DS', 'MARLIN', 'EMONDA', 'KASK', 'VERVE'];
+            
+            testCategories.forEach(category => {
+                const products = allProducts.filter(p => 
+                    p.category && p.category.toLowerCase().includes(category.toLowerCase())
+                );
+                
+                if (products.length > 0) {
+                    const sample = products[0];
+                    const taxRate = getTaxRate(sample);
+                    const landedCost = sample.price + (sample.price * taxRate / 100);
+                    
+                    result += `📊 ${category}:\n`;
+                    result += `   Sample Product: ${sample.title}\n`;
+                    result += `   Tax Rate: ${taxRate}%\n`;
+                    result += `   Base Price: ${sample.price}\n`;
+                    result += `   Landed Cost: ${landedCost.toFixed(2)}\n`;
+                    result += `   Found ${products.length} products in this category\n\n`;
+                }
+            });
+            
+            showResults('taxResults', result);
+        }
+        
+        function showTaxSchema() {
+            let result = `Tax Schema Configuration:\n\n`;
+            
+            Object.entries(categoryMappings).forEach(([key, mapping]) => {
+                result += `🏷️ ${mapping.name} (${mapping.taxRate}% tax):\n`;
+                result += `   Categories: ${mapping.categories.join(', ')}\n\n`;
+            });
+            
+            showResults('taxResults', result);
+        }
+        
+        function testLandedCosts() {
+            if (allProducts.length === 0) {
+                showResults('taxResults', '❌ No products loaded.');
+                return;
+            }
+            
+            let result = `Landed Cost Examples:\n\n`;
+            
+            // Get sample products from each tax category
+            const samples = [];
+            Object.entries(categoryMappings).forEach(([key, mapping]) => {
+                const categoryProducts = allProducts.filter(product => {
+                    if (!product.category) return false;
+                    return mapping.categories.some(cat => 
+                        product.category.toLowerCase().includes(cat.toLowerCase())
+                    );
+                });
+                
+                if (categoryProducts.length > 0) {
+                    samples.push({
+                        ...categoryProducts[0],
+                        taxGroup: mapping.name,
+                        taxRate: mapping.taxRate
+                    });
+                }
+            });
+            
+            samples.forEach(product => {
+                const landedCost = product.price + (product.price * product.taxRate / 100);
+                result += `💰 ${product.title}\n`;
+                result += `   Tax Group: ${product.taxGroup}\n`;
+                result += `   Base Price: €${product.price}\n`;
+                result += `   Tax Rate: ${product.taxRate}%\n`;
+                result += `   Tax Amount: €${(product.price * product.taxRate / 100).toFixed(2)}\n`;
+                result += `   Landed Cost: €${landedCost.toFixed(2)}\n\n`;
+            });
+            
+            showResults('taxResults', result);
+        }
+        
+        function analyzeTaxCategories() {
+            if (allProducts.length === 0) {
+                showResults('productResults', '❌ No products loaded.');
+                return;
+            }
+            
+            let result = `Tax Category Analysis:\n\n`;
+            
+            const taxGroups = {};
+            allProducts.forEach(product => {
+                const taxRate = getTaxRate(product);
+                if (!taxGroups[taxRate]) {
+                    taxGroups[taxRate] = { count: 0, totalValue: 0, categories: new Set() };
+                }
+                taxGroups[taxRate].count++;
+                taxGroups[taxRate].totalValue += parseFloat(product.price) || 0;
+                taxGroups[taxRate].categories.add(product.category);
+            });
+            
+            Object.entries(taxGroups)
+                .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
+                .forEach(([taxRate, data]) => {
+                    result += `📊 ${taxRate}% Tax Rate:\n`;
+                    result += `   Products: ${data.count}\n`;
+                    result += `   Total Value: €${data.totalValue.toFixed(2)}\n`;
+                    result += `   Categories: ${Array.from(data.categories).join(', ')}\n\n`;
+                });
+            
+            showResults('productResults', result);
+        }
+        
+        function showPriceAnalysis() {
+            if (allProducts.length === 0) {
+                showResults('categoryResults', '❌ No products loaded.');
+                return;
+            }
+            
+            const prices = allProducts.map(p => parseFloat(p.price) || 0).filter(p => p > 0);
+            prices.sort((a, b) => a - b);
+            
+            const min = prices[0];
+            const max = prices[prices.length - 1];
+            const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+            const median = prices[Math.floor(prices.length / 2)];
+            
+            let result = `Price Analysis (${prices.length} products with prices):\n\n`;
+            result += `💰 Min Price: €${min.toFixed(2)}\n`;
+            result += `💰 Max Price: €${max.toFixed(2)}\n`;
+            result += `💰 Average Price: €${avg.toFixed(2)}\n`;
+            result += `💰 Median Price: €${median.toFixed(2)}\n\n`;
+            
+            // Price ranges
+            const ranges = [
+                { min: 0, max: 100, name: '€0-100' },
+                { min: 100, max: 500, name: '€100-500' },
+                { min: 500, max: 1000, name: '€500-1000' },
+                { min: 1000, max: 5000, name: '€1000-5000' },
+                { min: 5000, max: Infinity, name: '€5000+' }
+            ];
+            
+            result += `Price Ranges:\n`;
+            ranges.forEach(range => {
+                const count = prices.filter(p => p >= range.min && p < range.max).length;
+                result += `${range.name}: ${count} products\n`;
+            });
+            
+            showResults('categoryResults', result);
+        }
+    </script>
+</body>
+</html>
