@@ -30,10 +30,10 @@ app.use('/api', async (req, res) => {
         
         // Check if it's a B2B API request (needs token) or legacy API (needs apikey)
         if (endpoint.includes('/b2b/')) {
-            // B2B API - use token from request header
+            // B2B API - use token from request header or API key as fallback
             const token = req.headers.token || BIZIMHESAP_API_KEY;
             headers['token'] = token;
-            console.log(`🔄 Proxying B2B API ${req.method}: ${targetUrl} (with token)`);
+            console.log(`🔄 Proxying B2B API ${req.method}: ${targetUrl} (with token: ${token.substring(0,8)}...)`);
         } else {
             // Legacy API - add API key to URL
             const url = new URL(targetUrl);
