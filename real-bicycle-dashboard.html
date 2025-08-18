@@ -1129,7 +1129,26 @@
                 console.log(`✅ ${dashboardData.products.length} ürün BizimHesap API'den yüklendi`);
 
                 // Business logic ile analiz et
-                const analysis = businessLogic.analyzeProductVariants(dashboardData.products);
+                console.log('🔧 BusinessLogic available:', !!businessLogic);
+                if (!businessLogic) {
+                    console.log('❌ BusinessLogic not loaded! Loading fallback...');
+                    // Simple fallback grouping
+                    dashboardData.productGroups = {};
+                    dashboardData.products.forEach(product => {
+                        const key = product.title || product.id;
+                        dashboardData.productGroups[key] = {
+                            baseProduct: product,
+                            variants: [product],
+                            totalStock: parseInt(product.quantity || product.stock || 0)
+                        };
+                    });
+                    console.log('✅ Fallback grouping created:', Object.keys(dashboardData.productGroups).length, 'groups');
+                } else {
+                    const analysis = businessLogic.analyzeProductVariants(dashboardData.products);
+                    dashboardData.productGroups = analysis.productGroups;
+                    dashboardData.variantAnalysis = analysis.variantAnalysis;
+                    console.log('✅ BusinessLogic grouping completed:', Object.keys(dashboardData.productGroups).length, 'groups');
+                }
                 
                 // Sıfır stoklu ürünleri filtrele (tüm varyantları sıfır olanlar)
                 const filteredProductGroups = {};
@@ -1722,6 +1741,11 @@
             
             console.log('🔍 Product Groups count:', Object.keys(dashboardData.productGroups).length);
             console.log('🔍 First product sample:', Object.values(dashboardData.productGroups)[0]?.baseProduct);
+            
+            if (Object.keys(dashboardData.productGroups).length === 0) {
+                console.log('❌ No product groups found! Problem in product grouping.');
+                return;
+            }
             
             Object.values(dashboardData.productGroups).forEach(group => {
                 const product = group.baseProduct;
