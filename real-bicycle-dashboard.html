@@ -1780,6 +1780,17 @@
             
             categoryGrid.innerHTML = html;
         }
+        
+        // Kar potansiyeli analizini güncelle
+        function updateProfitAnalysis() {
+            try {
+                // Profit analysis panelini güncelle
+                loadProfitAnalysisPanel();
+                console.log('✅ Profit analysis updated');
+            } catch (error) {
+                console.error('❌ Profit analysis update error:', error);
+            }
+        }
 
         // Depo analizini güncelle
         function updateDepotAnalysis() {
