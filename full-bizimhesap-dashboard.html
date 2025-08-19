@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizimHesap - Tam Veri Dashboard</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+        
+        .dashboard-container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .loading {
+            text-align: center;
+            font-size: 1.2em;
+            margin: 50px 0;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-align: center;
+        }
+        
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+            color: #FFD700;
+        }
+        
+        .summary-card .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .products-table {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow-x: auto;
+        }
+        
+        .filter-controls {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .filter-controls input, .filter-controls select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+        
+        .filter-controls button {
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: none;
+            background: #FFD700;
+            color: #333;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .product-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .product-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #FFD700;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .product-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #FFD700;
+        }
+        
+        .stock-positive { color: #28a745; }
+        .stock-zero { color: #ffc107; }
+        .stock-negative { color: #dc3545; }
+        
+        .price-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        
+        .margin-info {
+            background: linear-gradient(45deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1));
+            border-radius: 8px;
+            padding: 8px;
+            margin-top: 8px;
+            text-align: center;
+        }
+        
+        .error {
+            background: #dc3545;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>🚴 BizimHesap Tam Veri Dashboard</h1>
+            <p>Alış • Satış • Stok • Landed Cost • Margin Analizi</p>
+        </div>
+        
+        <div id="loading" class="loading">
+            📊 BizimHesap API'den veriler yükleniyor...
+        </div>
+        
+        <div id="dashboard-content" style="display: none;">
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Toplam Ürün</h3>
+                    <div class="value" id="total-products">0</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Toplam Stok</h3>
+                    <div class="value" id="total-stock">0</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Stoklu Ürünler</h3>
+                    <div class="value" id="in-stock-products">0</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Ortalama Margin</h3>
+                    <div class="value" id="avg-margin">0%</div>
+                </div>
+            </div>
+            
+            <!-- Products Table -->
+            <div class="products-table">
+                <div class="filter-controls">
+                    <input type="text" id="search-input" placeholder="Ürün ara..." />
+                    <select id="brand-filter">
+                        <option value="">Tüm Markalar</option>
+                    </select>
+                    <select id="stock-filter">
+                        <option value="">Tüm Stoklar</option>
+                        <option value="positive">Stokta Var</option>
+                        <option value="zero">Stok Sıfır</option>
+                        <option value="negative">Negatif Stok</option>
+                    </select>
+                    <button onclick="refreshData()">🔄 Yenile</button>
+                    <span id="showing-count"></span>
+                </div>
+                
+                <div class="products-grid" id="products-grid">
+                    <!-- Products will be loaded here -->
+                </div>
+            </div>
+        </div>
+        
+        <div id="error-message" style="display: none;"></div>
+    </div>
+
+    <script>
+        let allProducts = [];
+        let allInventory = {};
+        let filteredProducts = [];
+        
+        // API Base URL
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const apiBase = isLocalhost ? 'http://localhost:3002/api/b2b' : '/api/b2b';
+        
+        // Tax calculation function
+        function getTaxRate(product) {
+            const category = (product.category || '').toLowerCase();
+            const title = (product.title || '').toLowerCase();
+            
+            // MADONE kategorisi için 35%
+            if (title.includes('madone') || category.includes('madone')) {
+                return 35;
+            }
+            
+            // DSW kategorileri için 70%
+            const dswCategories = ['dsw', 'ön sipariş', 'önsipariş'];
+            if (dswCategories.some(cat => category.includes(cat) || title.includes(cat))) {
+                return 70;
+            }
+            
+            // Diğer ürünler için API'den gelen tax değeri veya varsayılan 20%
+            return parseFloat(product.tax) || 20;
+        }
+        
+        // Landed cost calculation
+        function calculateLandedCost(product) {
+            const buyingPrice = parseFloat(product.buyingPrice) || 0;
+            const taxRate = getTaxRate(product);
+            return buyingPrice * (1 + taxRate / 100);
+        }
+        
+        // Margin calculation with landed cost
+        function calculateMargin(product) {
+            const sellingPrice = parseFloat(product.price) || 0;
+            const landedCost = calculateLandedCost(product);
+            
+            if (sellingPrice === 0 || landedCost === 0) return 0;
+            return ((sellingPrice - landedCost) / sellingPrice) * 100;
+        }
+        
+        // Load all data
+        async function loadData() {
+            try {
+                console.log('📊 Loading products...');
+                const productsResponse = await fetch(`${apiBase}/products`);
+                const productsData = await productsResponse.json();
+                allProducts = productsData.data.products;
+                console.log(`✅ Loaded ${allProducts.length} products`);
+                
+                console.log('📦 Loading warehouses...');
+                const warehousesResponse = await fetch(`${apiBase}/warehouses`);
+                const warehousesData = await warehousesResponse.json();
+                const warehouses = warehousesData.data.warehouses;
+                console.log(`✅ Loaded ${warehouses.length} warehouses`);
+                
+                // Load inventory from all warehouses
+                console.log('📦 Loading inventory from all warehouses...');
+                const inventoryPromises = warehouses.map(async (warehouse) => {
+                    try {
+                        const response = await fetch(`${apiBase}/inventory/${warehouse.id}`);
+                        const data = await response.json();
+                        return { warehouse: warehouse.title, inventory: data.data.inventory };
+                    } catch (error) {
+                        console.warn(`⚠️ Failed to load inventory for ${warehouse.title}:`, error);
+                        return { warehouse: warehouse.title, inventory: [] };
+                    }
+                });
+                
+                const inventoryResults = await Promise.all(inventoryPromises);
+                
+                // Aggregate inventory
+                allInventory = {};
+                let totalInventoryItems = 0;
+                inventoryResults.forEach(({ warehouse, inventory }) => {
+                    inventory.forEach(item => {
+                        if (!allInventory[item.id]) {
+                            allInventory[item.id] = 0;
+                        }
+                        allInventory[item.id] += parseInt(item.qty) || 0;
+                        totalInventoryItems++;
+                    });
+                });
+                
+                console.log(`✅ Loaded inventory: ${totalInventoryItems} items from ${warehouses.length} warehouses`);
+                
+                // Merge inventory with products
+                allProducts.forEach(product => {
+                    product.totalStock = allInventory[product.id] || 0;
+                });
+                
+                filteredProducts = [...allProducts];
+                
+                updateSummary();
+                populateFilters();
+                renderProducts();
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'block';
+                
+                console.log('✅ Dashboard loaded successfully!');
+                
+            } catch (error) {
+                console.error('❌ Error loading data:', error);
+                document.getElementById('loading').style.display = 'none';
+                const errorDiv = document.getElementById('error-message');
+                errorDiv.innerHTML = `<div class="error">❌ Veri yüklenirken hata: ${error.message}</div>`;
+                errorDiv.style.display = 'block';
+            }
+        }
+        
+        // Update summary statistics
+        function updateSummary() {
+            const totalProducts = allProducts.length;
+            const totalStock = allProducts.reduce((sum, p) => sum + (p.totalStock || 0), 0);
+            const inStockProducts = allProducts.filter(p => (p.totalStock || 0) > 0).length;
+            
+            // Calculate average margin
+            const productsWithMargin = allProducts.filter(p => {
+                return parseFloat(p.price) > 0 && parseFloat(p.buyingPrice) > 0;
+            });
+            
+            const avgMargin = productsWithMargin.length > 0 ? 
+                productsWithMargin.reduce((sum, p) => sum + calculateMargin(p), 0) / productsWithMargin.length : 0;
+            
+            document.getElementById('total-products').textContent = totalProducts.toLocaleString();
+            document.getElementById('total-stock').textContent = totalStock.toLocaleString();
+            document.getElementById('in-stock-products').textContent = inStockProducts.toLocaleString();
+            document.getElementById('avg-margin').textContent = avgMargin.toFixed(1) + '%';
+        }
+        
+        // Populate filter dropdowns
+        function populateFilters() {
+            // Brand filter
+            const brands = [...new Set(allProducts.map(p => p.brand).filter(b => b))].sort();
+            const brandSelect = document.getElementById('brand-filter');
+            brandSelect.innerHTML = '<option value="">Tüm Markalar</option>';
+            brands.forEach(brand => {
+                const option = document.createElement('option');
+                option.value = brand;
+                option.textContent = brand;
+                brandSelect.appendChild(option);
+            });
+        }
+        
+        // Filter products
+        function filterProducts() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const selectedBrand = document.getElementById('brand-filter').value;
+            const stockFilter = document.getElementById('stock-filter').value;
+            
+            filteredProducts = allProducts.filter(product => {
+                // Search filter
+                const matchesSearch = !searchTerm || 
+                    product.title.toLowerCase().includes(searchTerm) ||
+                    product.code.toLowerCase().includes(searchTerm) ||
+                    (product.brand && product.brand.toLowerCase().includes(searchTerm));
+                
+                // Brand filter
+                const matchesBrand = !selectedBrand || product.brand === selectedBrand;
+                
+                // Stock filter
+                let matchesStock = true;
+                if (stockFilter === 'positive') {
+                    matchesStock = (product.totalStock || 0) > 0;
+                } else if (stockFilter === 'zero') {
+                    matchesStock = (product.totalStock || 0) === 0;
+                } else if (stockFilter === 'negative') {
+                    matchesStock = (product.totalStock || 0) < 0;
+                }
+                
+                return matchesSearch && matchesBrand && matchesStock;
+            });
+            
+            renderProducts();
+        }
+        
+        // Render products grid
+        function renderProducts() {
+            const grid = document.getElementById('products-grid');
+            const count = document.getElementById('showing-count');
+            
+            count.textContent = `${filteredProducts.length} ürün gösteriliyor`;
+            
+            // Limit to first 100 for performance
+            const productsToShow = filteredProducts.slice(0, 100);
+            
+            grid.innerHTML = productsToShow.map(product => {
+                const sellingPrice = parseFloat(product.price) || 0;
+                const buyingPrice = parseFloat(product.buyingPrice) || 0;
+                const landedCost = calculateLandedCost(product);
+                const margin = calculateMargin(product);
+                const stock = product.totalStock || 0;
+                const taxRate = getTaxRate(product);
+                
+                let stockClass = 'stock-zero';
+                if (stock > 0) stockClass = 'stock-positive';
+                else if (stock < 0) stockClass = 'stock-negative';
+                
+                let marginColor = '#ffc107';
+                if (margin > 30) marginColor = '#28a745';
+                else if (margin < 10) marginColor = '#dc3545';
+                
+                return `
+                    <div class="product-card">
+                        <div class="product-title">${product.title}</div>
+                        
+                        <div class="product-info">
+                            <div class="info-row">
+                                <span class="info-label">Kod:</span>
+                                <span>${product.code || '-'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Marka:</span>
+                                <span>${product.brand || '-'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Varyant:</span>
+                                <span>${product.variant || '-'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Stok:</span>
+                                <span class="${stockClass}"><strong>${stock}</strong></span>
+                            </div>
+                        </div>
+                        
+                        <div class="price-info">
+                            <div class="info-row">
+                                <span class="info-label">💰 Alış (${product.buyingCurrency || 'USD'}):</span>
+                                <span><strong>${buyingPrice.toFixed(2)}</strong></span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">💎 Satış (${product.currency || 'EUR'}):</span>
+                                <span><strong>${sellingPrice.toFixed(2)}</strong></span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">📊 Vergi:</span>
+                                <span><strong>${taxRate}%</strong></span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">🏭 Landed Cost:</span>
+                                <span><strong>${landedCost.toFixed(2)}</strong></span>
+                            </div>
+                        </div>
+                        
+                        ${sellingPrice > 0 && buyingPrice > 0 ? `
+                            <div class="margin-info" style="color: ${marginColor};">
+                                <strong>Margin: ${margin.toFixed(1)}%</strong>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Refresh data
+        function refreshData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('dashboard-content').style.display = 'none';
+            loadData();
+        }
+        
+        // Event listeners
+        document.getElementById('search-input').addEventListener('input', filterProducts);
+        document.getElementById('brand-filter').addEventListener('change', filterProducts);
+        document.getElementById('stock-filter').addEventListener('change', filterProducts);
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 BizimHesap Dashboard starting...');
+            loadData();
+        });
+    </script>
+</body>
+</html>
