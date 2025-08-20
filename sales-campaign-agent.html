@@ -728,8 +728,8 @@
             container.innerHTML = html;
         }
         
-        // OpenAI API key (embedded to avoid repeated prompts)
-        const OPENAI_API_KEY = 'sk-proj-' + 'bfMa8Gt4vGQl3pNl-Q_I3q4YqOdyC8Hn2X5sKLpWr9tZ' + 'T3BlbkFJvE6GtN2mP1oY8cRq4wZ7tX6dF9hL3vS2mR5gN8k';
+        // OpenAI API key - will be prompted from user
+        let OPENAI_API_KEY = localStorage.getItem('openai_api_key');
         
         // Global mapToCategory function for use across modules
         function mapToCategory(product) {
@@ -805,30 +805,98 @@
         }
 
         async function generateAICampaignRecommendation(profitData) {
-            // Temporarily disabled - OpenAI API key needs to be configured
-            console.log('AI Campaign recommendations temporarily disabled - configure valid OpenAI API key');
-            
-            // Generate data-driven recommendation without AI
-            const topProducts = profitData.slice(0, 3);
-            const totalProfitPotential = profitData.reduce((sum, product) => sum + (product.profitPotential || 0), 0);
-            const avgMargin = profitData.reduce((sum, product) => sum + (product.margin || 0), 0) / profitData.length;
-            
-            return `🎯 DATA-DRIVEN CAMPAIGN STRATEGY
+            try {
+                // Get or prompt for API key
+                if (!OPENAI_API_KEY) {
+                    OPENAI_API_KEY = prompt('OpenAI API Key gerekli. Lütfen API key girin:');
+                    if (OPENAI_API_KEY) {
+                        localStorage.setItem('openai_api_key', OPENAI_API_KEY);
+                    } else {
+                        throw new Error('OpenAI API key required');
+                    }
+                }
 
-Campaign: "Trek Premium Product Push"
+                // Prepare data summary for AI
+                const topProducts = profitData.slice(0, 5);
+                const totalProfitPotential = profitData.reduce((sum, product) => sum + (product.profitPotential || 0), 0);
+                const totalStockValue = profitData.reduce((sum, product) => sum + (product.totalStockValue || 0), 0);
+                const avgMargin = profitData.reduce((sum, product) => sum + (product.margin || 0), 0) / profitData.length;
 
-Target Products:
-• ${topProducts[0]?.title || 'Top Product'} (€${(topProducts[0]?.profitPotential || 0).toLocaleString()} potential)
-• ${topProducts[1]?.title || 'Second Product'} (€${(topProducts[1]?.profitPotential || 0).toLocaleString()} potential)
-• ${topProducts[2]?.title || 'Third Product'} (€${(topProducts[2]?.profitPotential || 0).toLocaleString()} potential)
+                const dataPrompt = `Business Context: Trek bisiklet satış şirketi için aşağıdaki kar analizi verilerine dayalı kampanya önerisi oluştur:
 
-Strategy: Focus 60% marketing spend on top 3 profit-generating products
-Budget: €${Math.round(totalProfitPotential * 0.08).toLocaleString()} (8% of profit potential)
-Expected ROI: ${avgMargin.toFixed(1)}% average margin
-Timeline: 30 days intensive campaign
+Top 5 Ürünler (Kar Potansiyeli Bazında):
+${topProducts.map((product, i) => `${i+1}. ${product.title}: €${(product.profitPotential || 0).toLocaleString()} kar potansiyeli, ${(product.margin || 0).toFixed(1)}% marj, ${product.totalStock || 0} stok`).join('\n')}
 
-KPIs: Conversion rate, profit per sale, inventory turnover
-Channels: Email, social media, website featured products`;
+Genel Metrikler:
+- Toplam Kar Potansiyeli: €${totalProfitPotential.toLocaleString()}
+- Toplam Stok Değeri: €${totalStockValue.toLocaleString()}
+- Ortalama Marj: ${avgMargin.toFixed(1)}%
+- Analiz Edilen Ürün: ${profitData.length}
+
+Spesifik, uygulanabilir kampanya önerisi oluştur:
+1. Kampanya adı ve teması
+2. Hedef ürünler (max 3)
+3. Spesifik taktik ve mesajlaşma
+4. Bütçe dağılımı önerisi
+5. Beklenen ROI ve zaman çizelgesi
+6. Temel performans göstergeleri
+
+Veri odaklı içgörülere odaklan ve uygulanabilir öneriler sun. Cevabı 200 kelime altında tut.`;
+
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-4',
+                        messages: [{
+                            role: 'user',
+                            content: dataPrompt
+                        }],
+                        max_tokens: 300,
+                        temperature: 0.7
+                    })
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Clear invalid API key
+                        localStorage.removeItem('openai_api_key');
+                        OPENAI_API_KEY = null;
+                        throw new Error('Geçersiz API key. Lütfen doğru API key girin.');
+                    }
+                    throw new Error(`OpenAI API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data.choices[0]?.message?.content || 'AI önerisi üretilemedi';
+
+            } catch (error) {
+                console.error('AI Campaign Generation Error:', error);
+                
+                // Fallback to data-driven recommendation
+                const topProducts = profitData.slice(0, 3);
+                const totalProfitPotential = profitData.reduce((sum, product) => sum + (product.profitPotential || 0), 0);
+                const avgMargin = profitData.reduce((sum, product) => sum + (product.margin || 0), 0) / profitData.length;
+                
+                return `⚠️ AI bağlantısı kurulamadı, veri bazlı öneri:
+
+🎯 "Trek Kar Optimizasyonu Kampanyası"
+
+Hedef Ürünler:
+• ${topProducts[0]?.title || 'Top Product'} (€${(topProducts[0]?.profitPotential || 0).toLocaleString()})
+• ${topProducts[1]?.title || 'Second Product'} (€${(topProducts[1]?.profitPotential || 0).toLocaleString()})  
+• ${topProducts[2]?.title || 'Third Product'} (€${(topProducts[2]?.profitPotential || 0).toLocaleString()})
+
+Strateji: En yüksek kar potansiyeli olan 3 ürüne %60 pazarlama bütçesi
+Bütçe: €${Math.round(totalProfitPotential * 0.08).toLocaleString()} (kar potansiyelinin %8'i)
+Beklenen ROI: ${avgMargin.toFixed(1)}% ortalama marj
+Süre: 30 günlük yoğun kampanya
+
+KPI'lar: Dönüşüm oranı, satış başına kar, stok devir hızı`;
+            }
         }
 
         async function refreshCampaignSuggestions() {
@@ -1241,57 +1309,114 @@ KPIs: Conversion rate, AOV, profit margin, ROAS`;
             alert(preview);
         }
         
-        // Data-driven Campaign Generation (AI functionality disabled)
+        // AI-powered Campaign Generation 
         async function generateAICampaign() {
             const button = event.target;
             const originalText = button.innerHTML;
             
             // Loading state
-            button.innerHTML = '🤖 Analyzing Data...';
+            button.innerHTML = '🤖 AI Analyzing...';
             button.disabled = true;
             
             try {
-                // Generate campaign using real data (without AI API)
+                // Get or prompt for API key
+                if (!OPENAI_API_KEY) {
+                    OPENAI_API_KEY = prompt('OpenAI API Key gerekli. Lütfen API key girin:');
+                    if (OPENAI_API_KEY) {
+                        localStorage.setItem('openai_api_key', OPENAI_API_KEY);
+                    } else {
+                        throw new Error('OpenAI API key required');
+                    }
+                }
+
+                // Prepare comprehensive campaign data for AI
+                const topProducts = profitRankingData.slice(0, 5);
+                const totalProfitPotential = profitRankingData.reduce((sum, product) => sum + (product.profitPotential || 0), 0);
+                const avgMargin = profitRankingData.reduce((sum, product) => sum + (product.margin || 0), 0) / profitRankingData.length;
+                const highMarginProducts = profitRankingData.filter(p => (p.margin || 0) > 35);
+                const lowStockProducts = profitRankingData.filter(p => (p.totalStock || 0) < 20);
+                
+                const dataPrompt = `Trek bisiklet satış verileri analiz edilerek 3 farklı kampanya stratejisi oluştur:
+
+TOP 5 ÜRÜN (Kar Potansiyeli):
+${topProducts.map((p, i) => `${i+1}. ${p.title}: €${(p.profitPotential || 0).toLocaleString()} kar, ${(p.margin || 0).toFixed(1)}% marj, ${p.totalStock || 0} stok`).join('\n')}
+
+YÜKSEK MARJ ÜRÜNLER (>%35): ${highMarginProducts.length} ürün
+DÜŞÜK STOK ÜRÜNLER (<20): ${lowStockProducts.length} ürün
+TOPLAM KAR POTANSİYELİ: €${totalProfitPotential.toLocaleString()}
+
+3 kampanya oluştur:
+1. PREMİUM KAMPANYASI (En karlı ürünlere odaklan)
+2. STOK TEMİZLEME (Düşük marjlı ürünler)  
+3. ACİLİYET KAMPANYASI (Az stoklu ürünler)
+
+Her kampanya için:
+- Kampanya adı ve mesaj
+- Hedef ürünler ve müşteri profili
+- Bütçe önerisi ve kanal dağılımı
+- Süre ve beklenen sonuç
+- KPI'lar
+
+Türkçe, özlü ve uygulanabilir olsun. Max 250 kelime.`;
+
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-4',
+                        messages: [{
+                            role: 'user',
+                            content: dataPrompt
+                        }],
+                        max_tokens: 400,
+                        temperature: 0.7
+                    })
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('openai_api_key');
+                        OPENAI_API_KEY = null;
+                        throw new Error('Geçersiz API key. Lütfen doğru API key girin.');
+                    }
+                    throw new Error(`OpenAI API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const aiCampaign = data.choices[0]?.message?.content || 'AI kampanyası üretilemedi';
+                
+                // Show AI generated campaign
+                alert(`🤖 AI-Generated Campaign Strategy:\n\n${aiCampaign}`);
+                
+            } catch (error) {
+                console.error('AI Campaign Generation Error:', error);
+                
+                // Fallback to data-driven campaign
                 const topProducts = profitRankingData.slice(0, 3);
                 const totalProfitPotential = profitRankingData.reduce((sum, product) => sum + (product.profitPotential || 0), 0);
                 const avgMargin = profitRankingData.reduce((sum, product) => sum + (product.margin || 0), 0) / profitRankingData.length;
-                
                 const highestROI = Math.max(...profitRankingData.map(p => p.roi || 0));
                 
-                const campaignSuggestion = `🎯 DATA-DRIVEN MARKETING CAMPAIGN
+                const fallbackCampaign = `⚠️ AI bağlantı hatası - Veri bazlı kampanya:
 
-📊 CAMPAIGN: "Trek Performance Drive"
+🎯 "Trek Performans Kampanyası"
 
-🎯 TARGET PRODUCTS:
+HEDEF ÜRÜNLER:
 • ${topProducts[0]?.title} (€${(topProducts[0]?.profitPotential || 0).toLocaleString()})
-• ${topProducts[1]?.title} (€${(topProducts[1]?.profitPotential || 0).toLocaleString()}) 
+• ${topProducts[1]?.title} (€${(topProducts[1]?.profitPotential || 0).toLocaleString()})
 • ${topProducts[2]?.title} (€${(topProducts[2]?.profitPotential || 0).toLocaleString()})
 
-💰 BUDGET: €${Math.round(totalProfitPotential * 0.12).toLocaleString()} (12% of profit potential)
+STRATEJİ: En yüksek kar potansiyelli 3 ürüne %70 bütçe ayır
+BÜTÇE: €${Math.round(totalProfitPotential * 0.12).toLocaleString()} (kar potansiyelinin %12'si)
+HEDEF ROI: ${avgMargin.toFixed(1)}% ortalama marj, ${highestROI.toFixed(1)}% max ROI
+SÜRE: 45 günlük yoğun kampanya
 
-📈 STRATEGY:
-• Focus 70% budget on top 3 profit products
-• Target ${avgMargin.toFixed(1)}% average margin customers  
-• Leverage ${highestROI.toFixed(1)}% ROI potential
-
-📅 TIMELINE: 45-day intensive campaign
-• Week 1-2: Product positioning & content creation
-• Week 3-5: Multi-channel campaign launch
-• Week 6: Optimization & scaling
-
-🎪 CHANNELS: Email (40%), Social Media (35%), Website (25%)
-
-KPI TARGETS:
-• ${Math.round(avgMargin)}% margin maintenance
-• 25% inventory turnover increase
-• €${Math.round(totalProfitPotential * 0.3).toLocaleString()} revenue target`;
+KANALLAR: Email (%40), Sosyal Medya (%35), Website (%25)`;
                 
-                // Show data-driven campaign
-                alert(campaignSuggestion);
-                
-            } catch (error) {
-                console.error('Campaign Generation Error:', error);
-                alert(`Campaign generation failed: ${error.message}`);
+                alert(fallbackCampaign);
             } finally {
                 // Reset button
                 button.innerHTML = originalText;
