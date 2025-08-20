@@ -641,8 +641,9 @@
                 const margin = calculateMargin(product);
                 
                 // Calculate stock value for EVERY product (landed cost * stock)
+                let stockValue = 0;
                 if (buyingPrice > 0 && stock !== 0) {
-                    const stockValue = landedCost * Math.abs(stock);
+                    stockValue = landedCost * Math.abs(stock);
                     totalStockValue += stockValue;
                 }
                 
