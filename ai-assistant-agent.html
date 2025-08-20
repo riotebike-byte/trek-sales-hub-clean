@@ -405,6 +405,9 @@
             // Load conversation memory
             loadConversationMemory();
             
+            // Start automatic data refresh
+            startAutoDataRefresh();
+            
             console.log('✅ AI Assistant ready');
         }
 
@@ -918,6 +921,35 @@ En karlı ürünler: ${topProfitable || 'Hesaplanmamış'}`;
             sendMessage();
         }
 
+        // Start automatic data refresh
+        function startAutoDataRefresh() {
+            // Check for data updates every 2 minutes
+            setInterval(async () => {
+                try {
+                    const cachedData = localStorage.getItem('profitAnalysisData');
+                    if (cachedData) {
+                        const parsed = JSON.parse(cachedData);
+                        const dataAge = Date.now() - new Date(parsed.timestamp).getTime();
+                        
+                        // If we have newer profit analysis data, update
+                        if (parsed.products && parsed.products.length > 0) {
+                            const currentDataTimestamp = salesData.timestamp || 0;
+                            const newDataTimestamp = new Date(parsed.timestamp).getTime();
+                            
+                            if (newDataTimestamp > currentDataTimestamp) {
+                                console.log('🔄 Auto-updating with newer profit analysis data...');
+                                salesData = parsed.products;
+                                salesData.timestamp = newDataTimestamp;
+                                document.getElementById('dataStatus').textContent = `${salesData.length} ürün verisi (auto-güncellenmiş) ✅`;
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.log('⚠️ Auto-refresh check failed:', error.message);
+                }
+            }, 2 * 60 * 1000); // Check every 2 minutes
+        }
+
         // Refresh profit data
         async function refreshProfitData() {
             console.log('🔄 Refreshing profit analysis data...');
@@ -936,6 +968,7 @@ En karlı ürünler: ${topProfitable || 'Hesaplanmamış'}`;
                         await loadSalesData();
                     } else {
                         salesData = parsed.products;
+                        salesData.timestamp = new Date(parsed.timestamp).getTime();
                         document.getElementById('dataStatus').textContent = `${salesData.length} ürün verisi (güncel) ✅`;
                         console.log('✅ Using recent cached profit analysis data');
                     }
