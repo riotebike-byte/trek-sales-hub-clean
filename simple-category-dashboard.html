@@ -721,11 +721,28 @@
         }
         
         function showCategoryProducts(categoryKey, categoryName) {
+            console.log('showCategoryProducts called:', categoryKey, categoryName);
+            
             const modal = document.getElementById('productsModal');
             const modalTitle = document.getElementById('modalTitle');
             const modalProducts = document.getElementById('modalProducts');
             
+            if (!modal || !modalTitle || !modalProducts) {
+                console.error('Modal elements not found!');
+                return;
+            }
+            
             modalTitle.textContent = `${categoryName} - Ana Ürün Kartları`;
+            
+            // Check if products are loaded
+            if (!allProducts || allProducts.length === 0) {
+                console.error('No products loaded yet!');
+                modalProducts.innerHTML = '<div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.7);">Ürünler henüz yüklenmedi. Lütfen bekleyin...</div>';
+                modal.style.display = 'block';
+                return;
+            }
+            
+            console.log('Processing', allProducts.length, 'products for category:', categoryKey);
             
             // Group products by title first (to combine variants)
             const productGroups = {};
