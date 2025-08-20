@@ -16,7 +16,7 @@ ini_set('memory_limit', '512M');
 ini_set('max_execution_time', 300);
 error_reporting(0); // Disable error output to prevent JSON corruption
 
-$api_key = '6F4BAF303FA240608A39653824B6C495';
+$api_key = '6F4BAF303FA240608A39653824B6C495'; // Match Node.js proxy key
 $endpoint = $_GET['endpoint'] ?? '';
 
 // Simple endpoint check

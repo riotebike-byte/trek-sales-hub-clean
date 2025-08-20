@@ -461,8 +461,10 @@
                     allProducts = data.data.products; // Node.js proxy format
                 } else if (data.success && data.data) {
                     allProducts = data.data; // PHP proxy format
+                } else if (data.error) {
+                    throw new Error(`API Error: ${data.error}`);
                 } else {
-                    throw new Error('Unexpected API response format');
+                    throw new Error(`Unexpected API response format. Response: ${JSON.stringify(data).substring(0, 200)}`);
                 }
                 
                 // Group products by title first, then by category
