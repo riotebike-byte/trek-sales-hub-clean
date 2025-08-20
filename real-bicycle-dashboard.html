@@ -377,111 +377,210 @@
             return categoryInfo.taxRate;
         }
         
-        // Real category schema with tax rates
+        // Real category schema based on the category tree
         const categorySchema = {
-            "dsw-bisiklet": {
-                name: "DSW BİSİKLET",
-                categories: ["FX", "DS", "MARLIN"],
-                taxRate: 70
-            },
-            "nci-bisiklet": {
-                name: "NCI BİSİKLET", 
-                categories: ["MADONE", "EMONDA", "DOMANE", "POWERFLY", "PROCALIBER", "CHECKPOINT", "SPEED CONCEPT", "RAIL", "DOMANE+", "SUPERCALIBER", "VERVE+", "FUEL EXE", "MARLİN+", "FX+", "KADRO", "TOWNIE GO!", "DS+", "TOP FUEL"],
+            // BİSİKLET kategorileri
+            "yol-bisikleti": {
+                name: "YOL BİSİKLETİ",
+                categories: ["MADONE", "EMONDA", "DOMANE", "SPEED CONCEPT"],
                 taxRate: 35
             },
-            "dsw-aksesuar": {
-                name: "DSW AKSESUAR",
-                categories: ["VERVE", "AYDINLATMA", "ÇANTA", "İÇ LASTİK", "GİDON BOĞAZI", "BAGAJ-SEPET", "MATARA-KAFES", "ELCİK-GİDON BANDI", "KADRO KULAĞI", "PEDAL", "POMPA", "ZİL", "KİLİT", "KASK", "ELDİVEN", "DIŞ LASTİK", "SELE-SELE BORUSU", "ERKEK AYAKKABI", "Tanımsız", "ÇAMURLUK", "ANAHTAR TAKIMI", "PARK AYAĞI", "YEDEK PARÇA", "ELECTRA KADIN BİSİKLET"],
-                taxRate: 60
+            "gravel": {
+                name: "GRAVEL",
+                categories: ["CHECKMATE", "CHECKPOINT"],
+                taxRate: 35
             },
-            "nci-aksesuar": {
-                name: "NCI AKSESUAR",
-                categories: ["JANT SETİ", "GİDON", "BLENDR AYDINLATMA MONTAJ"],
+            "elektrikli-bisiklet": {
+                name: "ELEKTRİKLİ BİSİKLET 🔋",
+                categories: ["FUEL EXE", "RAIL", "POWERFLY FS", "POWERFLY", "DOMANE+", "DOMANE +", "DS+", "DS +", "FX+", "VERVE+", "VERVE +", "TOWNIE GO!", "TOWNIE GO+", "MARLİN+", "MARLIN+"],
+                taxRate: 35
+            },
+            "dag-bisikleti": {
+                name: "DAĞ BİSİKLETİ", 
+                categories: ["MARLIN", "PROCALIBER", "SUPERCALIBER", "FUEL EX", "TOP FUEL"],
+                taxRate: 35
+            },
+            "sehir-bisikleti": {
+                name: "ŞEHİR BİSİKLETİ",
+                categories: ["FX", "DS", "VERVE", "ELECTRA"],
+                taxRate: 35
+            },
+            
+            // DSW kategorileri (özel tax rate'ler)
+            "dsw-fx": {
+                name: "DSW FX BİSİKLET",
+                categories: ["DSW FX"],
+                taxRate: 70
+            },
+            "dsw-ds": {
+                name: "DSW DS BİSİKLET", 
+                categories: ["DSW DS"],
+                taxRate: 70
+            },
+            "dsw-marlin": {
+                name: "DSW MARLIN",
+                categories: ["DSW MARLIN"],
+                taxRate: 70
+            },
+            
+            // AKSESUAR kategorileri
+            "aksesuar": {
+                name: "AKSESUAR",
+                categories: ["ARAÇ ARKASI TAŞIYICI", "AYDINLATMA", "BAGAJ", "SEPET", "BİSİKLET TRAINER", "ÇAMURLUK", "ÇANTA", "ELCİK", "GİDON BANDI", "KİLİT", "MATARA", "MATARA KAFESİ", "POMPA", "YOL BİLGİSAYARI", "ZİL"],
                 taxRate: 40
             },
-            "gobik": {
-                name: "GOBİK",
-                categories: ["İÇLİK", "FORMA", "ÇORAP", "RÜZGARLIK-YAĞMURLUK", "TAYT-ŞORT", "KOL VE DİZ ISITICI"],
+            
+            // YEDEK PARÇA kategorileri  
+            "yedek-parca": {
+                name: "YEDEK PARÇA",
+                categories: ["AEROBAR", "GİDON", "ANAHTAR TAKIMI", "BATARYA", "BLENDR AYDINLATMA MONTAJ", "GİDON BOĞAZI", "İÇ LASTİK", "LASTİK", "İNDİRİMLİ PARÇA", "JANT SETİ", "KADRO KULAĞI", "PARK AYAĞI", "PEDAL", "SELE", "SELE BORUSU"],
+                taxRate: 40
+            },
+            
+            // GİYİM kategorileri
+            "giyim": {
+                name: "GİYİM",
+                categories: ["AYAKKABI", "KILIF", "ÇORAP", "ELDİVEN", "FORMA", "İÇLİK", "İNDİRİMLİ GİYİM", "KASK", "KOL", "DİZ ISITICI", "RÜZGARLIK", "YAĞMURLUK", "TAYT", "ŞORT"],
                 taxRate: 33
             },
-            "trieye": {
-                name: "TriEye",
-                categories: ["Gözlük"],
+            
+            // GOBİK özel kategori
+            "gobik": {
+                name: "GOBİK",
+                categories: ["GOBİK"],
+                taxRate: 33
+            },
+            
+            // GÖZLÜK kategorisi
+            "gozluk": {
+                name: "GÖZLÜK 👓",
+                categories: ["GÖZLÜK", "TRIEYE"],
                 taxRate: 68
             },
+            
+            // Bryton KM saati
             "bryton": {
-                name: "Bryton", 
-                categories: ["KM SAATİ"],
+                name: "Bryton KM SAATİ",
+                categories: ["BRYTON", "KM SAATİ"],
                 taxRate: 65
             },
+            
+            // Saris
             "saris": {
                 name: "Saris",
-                categories: ["ARAÇ ARKASI TAŞIYICI"],
+                categories: ["SARIS"],
                 taxRate: 65
             }
         };
 
-        // Map BizimHesap categories to our schema
+        // Map BizimHesap categories to our schema based on category tree
         function mapToCategory(product) {
             const title = (product.title || '').toUpperCase();
             const category = (product.category || '').toUpperCase();
             const brand = (product.brand || '').toUpperCase();
             
-            // Check each category schema
-            for (const [schemaKey, schemaData] of Object.entries(categorySchema)) {
-                for (const cat of schemaData.categories) {
-                    const catUpper = cat.toUpperCase();
-                    
-                    // Check in product category, title, or brand
-                    if (category.includes(catUpper) || 
-                        title.includes(catUpper) || 
-                        brand.includes(catUpper)) {
-                        return {
-                            key: schemaKey,
-                            name: schemaData.name,
-                            taxRate: schemaData.taxRate
-                        };
-                    }
-                }
-            }
-            
-            // Special handling for DSW prefix products
+            // First check for DSW products (highest priority - 70% tax)
             if (title.startsWith('DSW ')) {
-                // Check if it's a bike or accessory
-                const dswBikeCategories = categorySchema["dsw-bisiklet"].categories;
-                for (const cat of dswBikeCategories) {
-                    if (title.includes(cat.toUpperCase()) || category.includes(cat.toUpperCase())) {
-                        return {
-                            key: "dsw-bisiklet",
-                            name: categorySchema["dsw-bisiklet"].name,
-                            taxRate: categorySchema["dsw-bisiklet"].taxRate
-                        };
-                    }
+                if (title.includes('FX')) {
+                    return { key: "dsw-fx", name: "DSW FX BİSİKLET", taxRate: 70 };
                 }
-                // Default to DSW aksesuar
-                return {
-                    key: "dsw-aksesuar", 
-                    name: categorySchema["dsw-aksesuar"].name,
-                    taxRate: categorySchema["dsw-aksesuar"].taxRate
-                };
+                if (title.includes('DS')) {
+                    return { key: "dsw-ds", name: "DSW DS BİSİKLET", taxRate: 70 };
+                }
+                if (title.includes('MARLIN')) {
+                    return { key: "dsw-marlin", name: "DSW MARLIN", taxRate: 70 };
+                }
+                // Default DSW to aksesuar
+                return { key: "aksesuar", name: "AKSESUAR", taxRate: 60 };
             }
             
-            // Default - check for general bike indicators
+            // GOBİK brand check
+            if (brand.includes('GOBIK') || brand.includes('GOBİK') || 
+                title.includes('GOBIK') || title.includes('GOBİK')) {
+                return { key: "gobik", name: "GOBİK", taxRate: 33 };
+            }
+            
+            // TriEye / Gözlük check
+            if (brand.includes('TRIEYE') || title.includes('TRIEYE') || 
+                category.includes('GÖZLÜK') || category.includes('GOZLUK')) {
+                return { key: "gozluk", name: "GÖZLÜK 👓", taxRate: 68 };
+            }
+            
+            // Bryton check
+            if (brand.includes('BRYTON') || title.includes('BRYTON') || 
+                category.includes('KM SAATİ') || category.includes('KM SAATI')) {
+                return { key: "bryton", name: "Bryton KM SAATİ", taxRate: 65 };
+            }
+            
+            // Saris check
+            if (brand.includes('SARIS') || title.includes('SARIS')) {
+                return { key: "saris", name: "Saris", taxRate: 65 };
+            }
+            
+            // Elektrikli bisiklet check (emoji or + signs)
+            if (title.includes('🔋') || category.includes('🔋') || 
+                title.includes('FUEL EXE') || title.includes('POWERFLY') ||
+                title.includes('DOMANE+') || title.includes('DOMANE +') ||
+                title.includes('DS+') || title.includes('DS +') ||
+                title.includes('FX+') || title.includes('VERVE+') || title.includes('VERVE +') ||
+                title.includes('TOWNIE GO') || title.includes('MARLİN+') || title.includes('MARLIN+') ||
+                category.includes('ELEKTRİKLİ') || category.includes('ELEKTRIKLI')) {
+                return { key: "elektrikli-bisiklet", name: "ELEKTRİKLİ BİSİKLET 🔋", taxRate: 35 };
+            }
+            
+            // Yol bisikleti check
+            if (title.includes('MADONE') || title.includes('EMONDA') || 
+                title.includes('DOMANE') || title.includes('SPEED CONCEPT') ||
+                category.includes('YOL BİSİKLET')) {
+                return { key: "yol-bisikleti", name: "YOL BİSİKLETİ", taxRate: 35 };
+            }
+            
+            // Gravel check
+            if (title.includes('CHECKMATE') || title.includes('CHECKPOINT') ||
+                category.includes('GRAVEL')) {
+                return { key: "gravel", name: "GRAVEL", taxRate: 35 };
+            }
+            
+            // Dağ bisikleti check
+            if (title.includes('MARLIN') || title.includes('PROCALIBER') || 
+                title.includes('SUPERCALIBER') || title.includes('FUEL EX') || 
+                title.includes('TOP FUEL') || title.includes('RAIL') ||
+                category.includes('DAĞ BİSİKLET') || category.includes('DAG BISIKLET')) {
+                return { key: "dag-bisikleti", name: "DAĞ BİSİKLETİ", taxRate: 35 };
+            }
+            
+            // Şehir bisikleti check
+            if (title.includes('FX') || title.includes('DS') || 
+                title.includes('VERVE') || title.includes('ELECTRA') ||
+                category.includes('ŞEHİR BİSİKLET') || category.includes('SEHIR BISIKLET')) {
+                return { key: "sehir-bisikleti", name: "ŞEHİR BİSİKLETİ", taxRate: 35 };
+            }
+            
+            // Giyim check
+            if (category.includes('GİYİM') || category.includes('GIYIM') ||
+                category.includes('FORMA') || category.includes('TAYT') || category.includes('ŞORT') ||
+                category.includes('ELDİVEN') || category.includes('ÇORAP') || category.includes('KASK') ||
+                category.includes('AYAKKABI') || title.includes('FORMA') || title.includes('TAYT')) {
+                return { key: "giyim", name: "GİYİM", taxRate: 33 };
+            }
+            
+            // Yedek parça check
+            if (category.includes('YEDEK PARÇA') || category.includes('YEDEK PARCA') ||
+                category.includes('LASTİK') || category.includes('LASTIK') ||
+                category.includes('JANT') || category.includes('PEDAL') || 
+                category.includes('SELE') || category.includes('GİDON') ||
+                category.includes('BATARYA') || title.includes('LASTİK') || title.includes('LASTIK')) {
+                return { key: "yedek-parca", name: "YEDEK PARÇA", taxRate: 40 };
+            }
+            
+            // General bisiklet check
             if (category.includes('BİSİKLET') || category.includes('BISIKLET') ||
                 title.includes('BIKE') || title.includes('BICYCLE')) {
-                return {
-                    key: "nci-bisiklet",
-                    name: categorySchema["nci-bisiklet"].name, 
-                    taxRate: categorySchema["nci-bisiklet"].taxRate
-                };
+                return { key: "yol-bisikleti", name: "YOL BİSİKLETİ", taxRate: 35 };
             }
             
-            // Default to NCI aksesuar
-            return {
-                key: "nci-aksesuar",
-                name: categorySchema["nci-aksesuar"].name,
-                taxRate: categorySchema["nci-aksesuar"].taxRate
-            };
+            // Default to aksesuar
+            return { key: "aksesuar", name: "AKSESUAR", taxRate: 40 };
         }
         
         // Landed cost calculation: buyingPrice * (1 + taxRate/100)
