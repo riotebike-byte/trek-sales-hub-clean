@@ -259,14 +259,11 @@
     <script>
         let allProducts = [];
         
-        // API configuration - direct BizimHesap integration for production
+        // API configuration - simple proxy for production
         const isDevelopment = (window.location.hostname === 'localhost' || window.location.protocol === 'file:');
         const apiConfig = {
-            development: 'http://localhost:3002/api/b2b',
-            production: {
-                url: 'https://bizimhesap.com/api/product/getproductsasxml',
-                apikey: '6F4BAF303FA240608A39653824B6C495'
-            }
+            development: 'http://localhost:3002/api/b2b/products',
+            production: '/simple-api-proxy.php'
         };
         
         // Load tax rates from admin panel localStorage
@@ -456,83 +453,26 @@
             return 'ZAYIF';
         }
         
-        // Parse BizimHesap XML to product array
-        function parseXMLToProducts(xmlText) {
-            const products = [];
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-            
-            // Check for parsing errors
-            const parserError = xmlDoc.querySelector('parsererror');
-            if (parserError) {
-                throw new Error('XML parsing failed: ' + parserError.textContent);
-            }
-            
-            const urunNodes = xmlDoc.querySelectorAll('urun');
-            
-            urunNodes.forEach(urunNode => {
-                const product = {};
-                
-                // Extract fields from XML
-                const fields = {
-                    'stok_kod': 'id',
-                    'urun_ad': 'title', 
-                    'kat_yolu': 'category',
-                    'satis_fiyat': 'price',
-                    'stok': 'quantity',
-                    'varyant': 'variant',
-                    'marka': 'brand',
-                    'barkod': 'barcode'
-                };
-                
-                Object.entries(fields).forEach(([xmlField, jsonField]) => {
-                    const element = urunNode.querySelector(xmlField);
-                    if (element) {
-                        let value = element.textContent.trim();
-                        
-                        // Handle different field types
-                        if (jsonField === 'price') {
-                            value = parseFloat(value.replace(',', '.')) || 0;
-                        } else if (jsonField === 'quantity') {
-                            value = parseInt(value) || 0;
-                        }
-                        
-                        product[jsonField] = value;
-                    }
-                });
-                
-                // Add additional fields
-                if (product.id) {
-                    product.code = product.id;
-                }
-                
-                // Estimate buying price as 70% of selling price
-                if (product.price && product.price > 0) {
-                    product.buyingPrice = product.price * 0.7;
-                }
-                
-                // Only add products with essential data
-                if (product.id && product.title && product.quantity > 0) {
-                    products.push(product);
-                }
-            });
-            
-            console.log(`Parsed ${products.length} products from XML`);
-            return products;
-        }
         
         async function loadData() {
             try {
-                if (isDevelopment) {
-                    // Development: Use Node.js proxy
-                    const response = await fetch(`${apiConfig.development}/products`);
-                    const data = await response.json();
+                const apiUrl = isDevelopment ? apiConfig.development : apiConfig.production;
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(`API Error: ${data.error}`);
+                }
+                
+                if (data.data && data.data.products) {
                     allProducts = data.data.products;
                 } else {
-                    // Production: Direct XML API call
-                    const response = await fetch(`${apiConfig.production.url}?apikey=${apiConfig.production.apikey}`);
-                    const xmlText = await response.text();
-                    allProducts = parseXMLToProducts(xmlText);
+                    throw new Error('Invalid API response format');
                 }
                 
                 // Group products by title first, then by category
