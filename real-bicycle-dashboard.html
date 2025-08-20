@@ -645,29 +645,40 @@
                 
                 console.log(`✅ Loaded inventory: ${totalInventoryItems} items from ${warehouses.length} warehouses`);
                 
-                // Merge inventory with products
+                // Step 1: Set individual variant stock from inventory
                 allProducts.forEach(product => {
-                    product.totalStock = allInventory[product.id] || 0;
+                    product.variantStock = allInventory[product.id] || 0;
                 });
                 
-                // Group products by title to check variant stock
+                // Step 2: Group products by title and calculate total stock per product
                 const productGroups = {};
                 allProducts.forEach(product => {
                     const title = product.title;
                     if (!productGroups[title]) {
-                        productGroups[title] = [];
+                        productGroups[title] = {
+                            title: title,
+                            variants: [],
+                            totalStock: 0,
+                            hasStock: false
+                        };
                     }
-                    productGroups[title].push(product);
+                    productGroups[title].variants.push(product);
+                    productGroups[title].totalStock += (product.variantStock || 0);
+                    if ((product.variantStock || 0) > 0) {
+                        productGroups[title].hasStock = true;
+                    }
                 });
                 
-                // Filter products - only show if at least one variant has stock > 0
+                // Step 3: Assign correct total stock to each variant (all variants get same total)
+                allProducts.forEach(product => {
+                    const title = product.title;
+                    product.totalStock = productGroups[title].totalStock;
+                });
+                
+                // Step 4: Filter products - only show if product has total stock > 0
                 filteredProducts = allProducts.filter(product => {
                     const title = product.title;
-                    const variants = productGroups[title] || [product];
-                    
-                    // Check if at least one variant has positive stock
-                    const hasStock = variants.some(variant => (variant.totalStock || 0) > 0);
-                    return hasStock;
+                    return productGroups[title].hasStock;
                 });
                 
                 console.log(`Filtered ${allProducts.length} products to ${filteredProducts.length} with stock`);
@@ -693,21 +704,18 @@
         
         // Update summary statistics
         function updateSummary() {
-            // Group by title to get unique products (not variants)
+            // Group by title to get unique products (not variants) - FIXED VERSION
             const uniqueProducts = {};
             filteredProducts.forEach(product => {
                 const title = product.title;
                 if (!uniqueProducts[title]) {
+                    // Use the already calculated totalStock from loadData (which is sum of all variants)
                     uniqueProducts[title] = {
                         title: title,
-                        totalStock: 0,
-                        hasStock: false,
+                        totalStock: product.totalStock, // This already contains the sum of all variants
+                        hasStock: (product.totalStock || 0) > 0,
                         variants: []
                     };
-                }
-                uniqueProducts[title].totalStock += (product.totalStock || 0);
-                if ((product.totalStock || 0) > 0) {
-                    uniqueProducts[title].hasStock = true;
                 }
                 uniqueProducts[title].variants.push(product);
             });
@@ -731,9 +739,9 @@
             document.getElementById('avg-margin').textContent = avgMargin.toFixed(1) + '%';
         }
         
-        // Update profit analysis
+        // Update profit analysis - FIXED VERSION
         function updateProfitAnalysis() {
-            // First, group by product title to avoid duplicate counting
+            // Group by product title to avoid duplicate counting - FIXED VERSION
             const productTitleGroups = {};
             filteredProducts.forEach(product => {
                 const title = product.title;
@@ -745,7 +753,7 @@
                         categoryName: categoryInfo.name,
                         taxRate: categoryInfo.taxRate,
                         originalCategory: product.category || 'Diğer',
-                        totalStock: 0,
+                        totalStock: product.totalStock, // Use already calculated total (sum of all variants)
                         variants: [],
                         avgBuyingPrice: 0,
                         avgSellingPrice: 0,
@@ -755,11 +763,10 @@
                     };
                 }
                 
-                const stock = product.totalStock || 0;
                 const buyingPrice = parseFloat(product.buyingPrice) || 0;
                 const sellingPrice = parseFloat(product.price) || 0;
                 
-                productTitleGroups[title].totalStock += stock;
+                // Don't add stock again - it's already calculated correctly
                 productTitleGroups[title].variants.push(product);
                 
                 if (buyingPrice > 0 && sellingPrice > 0) {
