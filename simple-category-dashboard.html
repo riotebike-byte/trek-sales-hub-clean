@@ -579,10 +579,10 @@
                             <span>📦 ${category.productCount} ürün • ${category.totalStock} stok</span>
                         </div>
                         <div class="category-detail-row">
-                            <span>📊 Ortalama Marj: <span class="${getMarginColorClass(category.avgMargin)}">${category.avgMargin.toFixed(1)}%</span></span>
+                            <span>📊 Ortalama Marj: <span class="${getMarginColorClass(category.avgMargin || 0)}">${(category.avgMargin || 0).toFixed(1)}%</span></span>
                         </div>
                         
-                        <button class="show-products-btn" onclick="showCategoryProducts('${category.category}', '${category.categoryName}')">
+                        <button class="show-products-btn" onclick="showCategoryProducts('${category.category}', ${JSON.stringify(category.categoryName)})">
                             📋 Ürünleri Göster
                         </button>
                     </div>
