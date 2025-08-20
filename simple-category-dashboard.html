@@ -219,6 +219,9 @@
                 <div class="profit-header">
                     <div class="profit-title">💰 Kategori Bazlı Kar Analizi</div>
                     <div style="display: flex; gap: 10px;">
+                        <button onclick="openProfitAnalysis()" style="background: #9C27B0; color: white; border: none; padding: 12px 24px; border-radius: 25px; font-weight: bold; cursor: pointer;">
+                            📊 Analiz Dashboard
+                        </button>
                         <button onclick="openAdminPanel()" style="background: #FF9800; color: white; border: none; padding: 12px 24px; border-radius: 25px; font-weight: bold; cursor: pointer;">
                             🔧 Tax Admin
                         </button>
@@ -560,6 +563,15 @@
                 renderCategories(sortedCategories);
                 renderCategoryDetails(sortedCategories.slice(0, 12));
                 
+                // Make data available globally for agents and analysis dashboard
+                window.mainDashboardData = {
+                    products: allProducts,
+                    categories: categories,
+                    timestamp: new Date().toISOString()
+                };
+                
+                console.log('Main dashboard data exported:', window.mainDashboardData);
+                
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('dashboard-content').style.display = 'block';
                 
@@ -718,6 +730,10 @@
         
         function openAdminPanel() {
             window.open('tax-admin-panel.html', '_blank');
+        }
+        
+        function openProfitAnalysis() {
+            window.open('profit-analysis-dashboard.html', '_blank');
         }
         
         function showCategoryProducts(categoryKey, categoryName) {
