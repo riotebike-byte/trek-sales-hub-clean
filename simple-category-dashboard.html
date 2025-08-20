@@ -259,11 +259,11 @@
     <script>
         let allProducts = [];
         
-        // API configuration - simple proxy for production
+        // API configuration - production-ready proxy
         const isDevelopment = (window.location.hostname === 'localhost' || window.location.protocol === 'file:');
         const apiConfig = {
             development: 'http://localhost:3002/api/b2b/products',
-            production: '/simple-api-proxy.php'
+            production: '/production-api.php'
         };
         
         // Load tax rates from admin panel localStorage
