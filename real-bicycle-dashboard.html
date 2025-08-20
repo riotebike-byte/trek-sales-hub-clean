@@ -390,6 +390,71 @@
             return 20;
         }
         
+        // Map BizimHesap categories to our simplified category system
+        function mapToSimplifiedCategory(product) {
+            const title = (product.title || '').toUpperCase();
+            const category = (product.category || '').toUpperCase();
+            const brand = (product.brand || '').toUpperCase();
+            
+            // GOBİK tekstil - GOBİK marka giyim + forma/taytlar
+            if (brand.includes('GOBIK') || brand.includes('GOBİK') || 
+                title.includes('GOBIK') || title.includes('GOBİK') ||
+                title.includes('FORMA') || title.includes('TAYT') || title.includes('ŞORT') || title.includes('SORT') ||
+                category.includes('FORMA') || category.includes('TAYT') || category.includes('ŞORT') || category.includes('SORT') ||
+                category.includes('GİYİM') || category.includes('GIYIM') ||
+                category.includes('ELDİVEN') || category.includes('ELDIVEN') ||
+                category.includes('ÇORAP') || category.includes('CORAP') ||
+                title.includes('JERSEY') || title.includes('CYCLING')) {
+                return 'gobik_tekstil';
+            }
+            
+            // TriEye gözlük
+            if (brand.includes('TRIEYE') || title.includes('TRIEYE') || 
+                category.includes('GÖZLÜK') || category.includes('GOZLUK')) {
+                return 'trieye_gözlük';
+            }
+            
+            // Bryton GPS/bilgisayar
+            if (brand.includes('BRYTON') || title.includes('BRYTON') || 
+                category.includes('BİLGİSAYAR') || category.includes('BILGISAYAR') ||
+                category.includes('GPS')) {
+                return 'bryton_gpscom';
+            }
+            
+            // Elektrikli bisiklet - 🔋 işaretli bisikletler
+            if (title.includes('🔋') || category.includes('🔋') || 
+                category.includes('ELEKTRİKLİ') || category.includes('ELEKTRIKLI') ||
+                title.includes('POWERFLY') || title.includes('DOMANE +') || 
+                title.includes('FUEL EXE') || title.includes('RAIL') ||
+                title.includes('DS +') || title.includes('FX+') || 
+                title.includes('VERVE +') || title.includes('TOWNIE GO')) {
+                return 'elektrikli_bisiklet';
+            }
+            
+            // Normal bisiklet
+            if (category.includes('BİSİKLET') || category.includes('BISIKLET') ||
+                title.includes('MADONE') || title.includes('EMONDA') || title.includes('DOMANE') ||
+                title.includes('CHECKPOINT') || title.includes('CHECKMATE') || 
+                title.includes('MARLIN') || title.includes('FUEL') || title.includes('RAIL') ||
+                title.includes('PROCALIBER') || title.includes('SUPERCALIBER') ||
+                title.includes('VERVE') || title.includes('ELECTRA') ||
+                category.includes('YOL') || category.includes('GRAVEL') || 
+                category.includes('DAĞ') || category.includes('DAG') || 
+                category.includes('ŞEHİR') || category.includes('SEHIR')) {
+                return 'bisiklet';
+            }
+            
+            // Yedek parça
+            if (category.includes('YEDEK') || category.includes('PARÇA') || category.includes('PARCA') ||
+                title.includes('LASTİK') || title.includes('LASTIK') || title.includes('JANT') ||
+                title.includes('PEDAL') || title.includes('SELE') || title.includes('GİDON') ||
+                title.includes('GIDON') || title.includes('BATARYA') || title.includes('İÇ LASTİK')) {
+                return 'yedek_parça';
+            }
+            
+            // Aksesuar - diğer her şey
+            return 'aksesuar';
+        }
         
         // Landed cost calculation using import tax
         function calculateLandedCost(product) {
@@ -547,7 +612,8 @@
                 if (!productTitleGroups[title]) {
                     productTitleGroups[title] = {
                         title: title,
-                        category: product.category || 'Diğer',
+                        category: mapToSimplifiedCategory(product),
+                        originalCategory: product.category || 'Diğer',
                         totalStock: 0,
                         variants: [],
                         avgBuyingPrice: 0,
@@ -594,7 +660,7 @@
                 const buyingPrice = productGroup.avgBuyingPrice || 0;
                 const sellingPrice = productGroup.avgSellingPrice || 0;
                 const stock = productGroup.totalStock || 0;
-                const category = productGroup.category || 'Diğer';
+                const category = productGroup.category || 'aksesuar';
                 
                 // Create a representative product for calculations
                 const representativeProduct = productGroup.variants[0] || {};
