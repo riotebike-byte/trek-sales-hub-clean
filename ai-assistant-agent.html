@@ -412,35 +412,149 @@
             try {
                 document.getElementById('dataStatus').textContent = 'Sales verilerini yüklüyor...';
                 
-                const apiUrl = (window.location.hostname === 'localhost' || window.location.protocol === 'file:') 
-                    ? 'http://localhost:3002/api/b2b/products'
-                    : '/api.php';
-                    
-                const response = await fetch(apiUrl);
-                const data = await response.json();
+                // Try different API endpoints in order
+                const apiEndpoints = [
+                    'http://localhost:3002/api/b2b/products',
+                    '/api.php'
+                ];
                 
-                if (data.products) {
-                    salesData = data.products;
-                    document.getElementById('dataStatus').textContent = `${salesData.length} ürün verisi yüklendi ✅`;
-                    console.log('📊 Sales data loaded:', salesData.length, 'products');
-                } else {
-                    throw new Error('Invalid API response');
+                let dataLoaded = false;
+                
+                for (const apiUrl of apiEndpoints) {
+                    try {
+                        console.log(`🔄 Trying API endpoint: ${apiUrl}`);
+                        
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+                        
+                        const response = await fetch(apiUrl, {
+                            signal: controller.signal,
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        clearTimeout(timeoutId);
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
+                        const contentType = response.headers.get('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            throw new Error('Response is not JSON');
+                        }
+                        
+                        const data = await response.json();
+                        console.log('📡 API Response structure:', {
+                            type: typeof data,
+                            isArray: Array.isArray(data),
+                            keys: Object.keys(data || {}),
+                            length: data?.length || 'N/A'
+                        });
+                        
+                        // Enhanced response format handling
+                        let products = [];
+                        
+                        if (data && data.data && data.data.products && Array.isArray(data.data.products)) {
+                            products = data.data.products;
+                            console.log('📦 Found products in data.data.products format');
+                        } else if (data && data.products && Array.isArray(data.products)) {
+                            products = data.products;
+                            console.log('📦 Found products in data.products format');
+                        } else if (Array.isArray(data)) {
+                            products = data;
+                            console.log('📦 Found products in direct array format');
+                        } else if (data && typeof data === 'object') {
+                            // Look for any array property that might contain products
+                            for (const [key, value] of Object.entries(data)) {
+                                if (Array.isArray(value) && value.length > 0) {
+                                    // Check if first item looks like a product
+                                    const firstItem = value[0];
+                                    if (firstItem && (firstItem.title || firstItem.name || firstItem.price)) {
+                                        products = value;
+                                        console.log(`📦 Found products in data.${key} format`);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (products.length > 0) {
+                            // Process products to ensure consistent format
+                            salesData = products.map(product => {
+                                return {
+                                    title: product.title || product.name || 'Unknown Product',
+                                    price: parseFloat(product.price) || parseFloat(product.sellingPrice) || 0,
+                                    buyingPrice: parseFloat(product.buyingPrice) || parseFloat(product.cost) || 0,
+                                    quantity: parseInt(product.quantity) || parseInt(product.stock) || 0,
+                                    category: product.category || 'GENEL',
+                                    brand: product.brand || 'Trek',
+                                    code: product.code || product.id || '',
+                                    ...product // Keep all original properties
+                                };
+                            });
+                            
+                            dataLoaded = true;
+                            document.getElementById('dataStatus').textContent = `${salesData.length} ürün verisi yüklendi ✅`;
+                            console.log('📊 Sales data loaded:', salesData.length, 'products');
+                            console.log('📦 Sample product:', salesData[0]);
+                            return;
+                        } else {
+                            throw new Error('No products found in API response');
+                        }
+                        
+                    } catch (endpointError) {
+                        console.log(`❌ Endpoint ${apiUrl} failed:`, endpointError.message);
+                        continue;
+                    }
+                }
+                
+                // If no endpoint worked, try to get data from parent window
+                if (!dataLoaded && window.parent && window.parent !== window) {
+                    try {
+                        const parentData = window.parent.profitAnalysisData || window.parent.mainDashboardData;
+                        if (parentData && parentData.products) {
+                            salesData = parentData.products;
+                            dataLoaded = true;
+                            document.getElementById('dataStatus').textContent = `${salesData.length} ürün verisi (parent window) yüklendi ✅`;
+                            console.log('📊 Sales data loaded from parent window:', salesData.length, 'products');
+                            return;
+                        }
+                    } catch (parentError) {
+                        console.log('❌ Parent window data access failed:', parentError.message);
+                    }
+                }
+                
+                // If still no data, throw error to use demo data
+                if (!dataLoaded) {
+                    throw new Error('All data sources failed');
                 }
                 
             } catch (error) {
                 console.error('❌ Sales data load error:', error);
-                document.getElementById('dataStatus').textContent = 'Veri yüklenemedi ⚠️';
-                // Use demo data for demonstration
+                document.getElementById('dataStatus').textContent = 'Demo veri kullanılıyor 📋';
+                
+                // Use enhanced demo data for demonstration
                 salesData = generateDemoData();
+                console.log('📊 Using demo data:', salesData.length, 'products');
             }
         }
 
         // Generate demo data if API fails
         function generateDemoData() {
             return [
-                {title: 'FX Sport AL 3', price: '850', buyingPrice: '600', quantity: '45', category: 'FX SERİSİ'},
-                {title: 'Madone SL 7 Gen 8', price: '4200', buyingPrice: '3000', quantity: '12', category: 'MADONE'},
-                {title: 'Domane AL 5', price: '1800', buyingPrice: '1300', quantity: '28', category: 'DOMANE'},
+                {title: 'FX Sport AL 3', price: 850, buyingPrice: 600, quantity: 45, category: 'FX SERİSİ', brand: 'Trek', code: 'FX-001'},
+                {title: 'Madone SL 7 Gen 8', price: 4200, buyingPrice: 3000, quantity: 12, category: 'MADONE', brand: 'Trek', code: 'MAD-007'},
+                {title: 'Domane AL 5', price: 1800, buyingPrice: 1300, quantity: 28, category: 'DOMANE', brand: 'Trek', code: 'DOM-005'},
+                {title: 'FX+ 2 Stagger', price: 1200, buyingPrice: 850, quantity: 18, category: 'FX+ SERİSİ', brand: 'Trek', code: 'FXP-002'},
+                {title: 'Emonda ALR 5', price: 2100, buyingPrice: 1500, quantity: 22, category: 'EMONDA', brand: 'Trek', code: 'EMO-005'},
+                {title: 'DS 3', price: 950, buyingPrice: 650, quantity: 35, category: 'DS SERİSİ', brand: 'Trek', code: 'DS-003'},
+                {title: 'Domane+ HP', price: 3800, buyingPrice: 2700, quantity: 8, category: 'DOMANE+ SERİSİ', brand: 'Trek', code: 'DOMP-001'},
+                {title: 'FX Sport 4', price: 1100, buyingPrice: 780, quantity: 32, category: 'FX SERİSİ', brand: 'Trek', code: 'FX-004'},
+                {title: 'Madone SLR 9', price: 8500, buyingPrice: 6200, quantity: 3, category: 'MADONE', brand: 'Trek', code: 'MAD-009'},
+                {title: 'DS+ 1', price: 1650, buyingPrice: 1150, quantity: 15, category: 'DS+ SERİSİ', brand: 'Trek', code: 'DSP-001'}
             ];
         }
 
