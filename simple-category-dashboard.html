@@ -536,7 +536,7 @@
                         categoryGroups[category].totalStockValue += stockValue;
                         categoryGroups[category].totalSalesPotential += salesPotential;
                         categoryGroups[category].totalProfitPotential += profitPotential;
-                        categoryGroups[category].marginSum += margin;
+                        categoryGroups[category].marginSum += margin * productGroup.totalStock; // Weighted by stock
                         
                         // Store product for details
                         productsByCategory[category].push({
@@ -553,7 +553,8 @@
                 // Calculate averages and add products
                 Object.keys(categoryGroups).forEach(category => {
                     const group = categoryGroups[category];
-                    group.avgMargin = group.productCount > 0 ? group.marginSum / group.productCount : 0;
+                    // Weighted average margin by stock
+                    group.avgMargin = group.totalStock > 0 ? group.marginSum / group.totalStock : 0;
                     group.products = productsByCategory[category] || [];
                 });
                 

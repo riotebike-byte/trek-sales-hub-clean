@@ -748,8 +748,8 @@
                                 <div><strong>Selling Price:</strong> €${sellingPrice.toFixed(2)}</div>
                                 <div><strong>Profit per Unit:</strong> €${(sellingPrice - landedCost).toFixed(2)}</div>
                                 <div><strong>Total Stock:</strong> ${cat.totalStock} units</div>
-                                <div><strong>Investment:</strong> €${cat.totalInvestment.toLocaleString()}</div>
-                                <div><strong>Profit Potential:</strong> €${cat.profitPotential.toLocaleString()}</div>
+                                <div><strong>Investment:</strong> €${(cat.totalStockValue || 0).toLocaleString()}</div>
+                                <div><strong>Profit Potential:</strong> €${(cat.totalProfitPotential || 0).toLocaleString()}</div>
                                 <div style="margin-top: 10px; font-weight: 600;">Status: ${marginText}</div>
                             </div>
                         </div>
