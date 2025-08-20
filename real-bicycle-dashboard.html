@@ -320,11 +320,11 @@
                 </div>
                 
                 <div style="margin: 20px 0; font-size: 1.2em; font-weight: bold; color: #FFD700;">
-                    🏆 En Yüksek Kar Marjı Olan Ürünler (Stokta Olanlar)
+                    🏆 En Yüksek Kar Potansiyeli Olan Kategoriler
                 </div>
                 
-                <div class="top-margin-products" id="top-margin-products">
-                    <!-- Top margin products will be loaded here -->
+                <div class="top-margin-products" id="top-margin-categories">
+                    <!-- Top margin categories will be loaded here -->
                 </div>
             </div>
             
@@ -439,8 +439,13 @@
             return null;
         }
         
-        // Tax calculation function
-        function getTaxRate(product) {
+        // Get KDV (VAT) from BizimHesap data - DO NOT MODIFY
+        function getKDV(product) {
+            return parseFloat(product.tax) || parseFloat(product.vatRate) || 20;
+        }
+        
+        // Import tax calculation function (imp_tax) for landed cost
+        function getImportTax(product) {
             const brand = detectBrand(product);
             
             if (brand && brandConfig[brand]) {
@@ -457,25 +462,25 @@
             const title = (product.title || '').toUpperCase();
             const category = (product.category || '').toUpperCase();
             
-            // MADONE - 35% vergi (special case)
+            // MADONE - 35% import tax (special case)
             if (title.includes('MADONE') || category.includes('MADONE')) {
                 return 35;
             }
             
-            // DSW prefix - 70% vergi (special case)
+            // DSW prefix - 70% import tax (special case)
             if (title.startsWith('DSW ') || category.startsWith('DSW ')) {
                 return 70;
             }
             
-            return 20; // Default tax rate
+            return 20; // Default import tax rate
         }
         
         
-        // Landed cost calculation
+        // Landed cost calculation using import tax
         function calculateLandedCost(product) {
             const buyingPrice = parseFloat(product.buyingPrice) || 0;
-            const taxRate = getTaxRate(product);
-            return buyingPrice * (1 + taxRate / 100);
+            const importTax = getImportTax(product);
+            return buyingPrice * (1 + importTax / 100);
         }
         
         // Margin calculation with landed cost
@@ -584,10 +589,10 @@
             let totalStockValue = 0;
             let salesPotential = 0;
             let profitPotential = 0;
-            let validProducts = [];
             
-            // Group products by title for variant aggregation
-            const productGroups = {};
+            // Group products by category for profit analysis
+            const categoryGroups = {};
+            const productsByCategory = {};
             
             allProducts.forEach(product => {
                 const buyingPrice = parseFloat(product.buyingPrice) || 0;
@@ -595,12 +600,31 @@
                 const stock = product.totalStock || 0;
                 const landedCost = calculateLandedCost(product);
                 const margin = calculateMargin(product);
+                const category = product.category || 'Diğer';
                 
                 // Calculate stock value for EVERY product (landed cost * stock)
                 let stockValue = 0;
                 if (buyingPrice > 0 && stock !== 0) {
                     stockValue = landedCost * Math.abs(stock);
                     totalStockValue += stockValue;
+                }
+                
+                // Initialize category group if not exists
+                if (!categoryGroups[category]) {
+                    categoryGroups[category] = {
+                        category: category,
+                        totalStock: 0,
+                        totalStockValue: 0,
+                        totalSalesPotential: 0,
+                        totalProfitPotential: 0,
+                        productCount: 0,
+                        avgMargin: 0,
+                        marginSum: 0,
+                        avgImportTax: 0,
+                        importTaxSum: 0,
+                        products: []
+                    };
+                    productsByCategory[category] = [];
                 }
                 
                 // For sales and profit potential, only count positive stock
@@ -613,53 +637,37 @@
                     const productProfitPotential = (sellingPrice - landedCost) * stock;
                     profitPotential += productProfitPotential;
                     
-                    // Group by product title for display
-                    const title = product.title;
-                    if (!productGroups[title]) {
-                        productGroups[title] = {
-                            ...product,
-                            totalStock: 0,
-                            avgBuyingPrice: 0,
-                            avgSellingPrice: 0,
-                            avgLandedCost: 0,
-                            totalStockValue: 0,
-                            totalProfitPotential: 0,
-                            variants: [],
-                            buyingPriceSum: 0,
-                            sellingPriceSum: 0,
-                            landedCostSum: 0,
-                            validVariantCount: 0
-                        };
-                    }
+                    // Add to category totals
+                    categoryGroups[category].totalStock += stock;
+                    categoryGroups[category].totalStockValue += stockValue;
+                    categoryGroups[category].totalSalesPotential += productSalesPotential;
+                    categoryGroups[category].totalProfitPotential += productProfitPotential;
+                    categoryGroups[category].productCount++;
+                    categoryGroups[category].marginSum += margin;
+                    categoryGroups[category].importTaxSum += getImportTax(product);
                     
-                    productGroups[title].totalStock += stock;
-                    productGroups[title].totalStockValue += stockValue;
-                    productGroups[title].totalProfitPotential += productProfitPotential;
-                    productGroups[title].variants.push(product.variant || '');
-                    productGroups[title].buyingPriceSum += buyingPrice;
-                    productGroups[title].sellingPriceSum += sellingPrice;
-                    productGroups[title].landedCostSum += landedCost;
-                    productGroups[title].validVariantCount++;
+                    // Store product for expandable view
+                    productsByCategory[category].push({
+                        title: product.title,
+                        brand: product.brand,
+                        stock: stock,
+                        buyingPrice: buyingPrice,
+                        sellingPrice: sellingPrice,
+                        landedCost: landedCost,
+                        margin: margin,
+                        profitPotential: productProfitPotential,
+                        importTax: getImportTax(product)
+                    });
                 }
             });
             
-            // Calculate averages and prepare valid products for display
-            Object.keys(productGroups).forEach(title => {
-                const group = productGroups[title];
-                if (group.validVariantCount > 0) {
-                    group.avgBuyingPrice = group.buyingPriceSum / group.validVariantCount;
-                    group.avgSellingPrice = group.sellingPriceSum / group.validVariantCount;
-                    group.avgLandedCost = group.landedCostSum / group.validVariantCount;
-                    group.margin = ((group.avgSellingPrice - group.avgLandedCost) / group.avgSellingPrice) * 100;
-                    
-                    validProducts.push({
-                        ...group,
-                        buyingPrice: group.avgBuyingPrice,
-                        price: group.avgSellingPrice,
-                        landedCost: group.avgLandedCost,
-                        stockValue: group.totalStockValue,
-                        profitPotential: group.totalProfitPotential
-                    });
+            // Calculate averages for categories
+            Object.keys(categoryGroups).forEach(category => {
+                const group = categoryGroups[category];
+                if (group.productCount > 0) {
+                    group.avgMargin = group.marginSum / group.productCount;
+                    group.avgImportTax = group.importTaxSum / group.productCount;
+                    group.products = productsByCategory[category];
                 }
             });
             
@@ -672,45 +680,65 @@
             document.getElementById('profit-potential').textContent = formatCurrency(profitPotential);
             document.getElementById('roi-potential').textContent = roiPotential.toFixed(1) + '%';
             
-            // Show top margin products (top 10)
-            const topMarginProducts = validProducts
-                .sort((a, b) => b.margin - a.margin)
+            // Show top profit potential categories (top 10)
+            const topCategories = Object.values(categoryGroups)
+                .filter(cat => cat.totalProfitPotential > 0)
+                .sort((a, b) => b.totalProfitPotential - a.totalProfitPotential)
                 .slice(0, 10);
             
-            const topMarginContainer = document.getElementById('top-margin-products');
-            topMarginContainer.innerHTML = topMarginProducts.map((product, index) => {
-                const marginColor = product.margin > 50 ? '#28a745' : product.margin > 30 ? '#ffc107' : '#fd7e14';
-                const taxRate = getTaxRate(product);
-                const variantCount = product.variants ? product.variants.filter(v => v).length : 0;
+            const topCategoriesContainer = document.getElementById('top-margin-categories');
+            topCategoriesContainer.innerHTML = topCategories.map((category, index) => {
+                const marginColor = category.avgMargin > 50 ? '#28a745' : category.avgMargin > 30 ? '#ffc107' : '#fd7e14';
+                const categoryId = `category-${index}`;
                 
                 return `
                     <div class="margin-product-card">
-                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 10px; cursor: pointer;" 
+                             onclick="toggleCategoryProducts('${categoryId}')">
                             <span class="margin-rank">${index + 1}</span>
-                            <div class="margin-product-title">${product.title}</div>
+                            <div class="margin-product-title">${category.category}</div>
+                            <span style="margin-left: auto; font-size: 1.2em;">▼</span>
                         </div>
                         
                         <div class="margin-details">
-                            <div><strong>Kategori:</strong> ${product.category || '-'}</div>
-                            <div><strong>Marka:</strong> ${product.brand || '-'}</div>
-                            <div><strong>Toplam Stok:</strong> ${product.totalStock || product.totalStock}</div>
-                            <div><strong>Varyant Sayısı:</strong> ${variantCount > 0 ? variantCount : 1}</div>
-                            <div><strong>Ort. Alış:</strong> ${product.buyingPrice.toFixed(2)} ${product.buyingCurrency || 'USD'}</div>
-                            <div><strong>Ort. Satış:</strong> ${product.price.toFixed(2)} ${product.currency || 'EUR'}</div>
-                            <div><strong>Vergi Oranı:</strong> %${taxRate}</div>
-                            <div><strong>Landed Cost:</strong> ${product.landedCost.toFixed(2)}€</div>
+                            <div><strong>Ürün Sayısı:</strong> ${category.productCount}</div>
+                            <div><strong>Toplam Stok:</strong> ${category.totalStock}</div>
+                            <div><strong>Import Tax:</strong> %${category.avgImportTax.toFixed(1)}</div>
                             <div style="color: ${marginColor}; font-weight: bold;">
-                                <strong>Margin: ${product.margin.toFixed(1)}%</strong>
+                                <strong>Ortalama Margin: ${category.avgMargin.toFixed(1)}%</strong>
                             </div>
                         </div>
                         
                         <div style="margin-top: 10px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 6px;">
-                            <div style="font-size: 0.9em;"><strong>Toplam Stok Değeri:</strong> ${formatCurrency(product.stockValue)}</div>
-                            <div style="font-size: 0.9em; color: #28a745;"><strong>Toplam Kar Potansiyeli:</strong> ${formatCurrency(product.profitPotential)}</div>
+                            <div style="font-size: 0.9em;"><strong>Stok Değeri:</strong> ${formatCurrency(category.totalStockValue)}</div>
+                            <div style="font-size: 0.9em;"><strong>Satış Potansiyeli:</strong> ${formatCurrency(category.totalSalesPotential)}</div>
+                            <div style="font-size: 1.1em; color: #28a745;"><strong>Kar Potansiyeli:</strong> ${formatCurrency(category.totalProfitPotential)}</div>
+                        </div>
+                        
+                        <div id="${categoryId}" style="display: none; margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                            <div style="font-weight: bold; margin-bottom: 10px; color: #FFD700;">📦 Kategorideki Ürünler:</div>
+                            ${category.products.slice(0, 5).map(product => `
+                                <div style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                    <div style="font-size: 0.9em;"><strong>${product.title}</strong></div>
+                                    <div style="font-size: 0.8em; display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                                        <span>Stok: ${product.stock}</span>
+                                        <span>Margin: ${product.margin.toFixed(1)}%</span>
+                                        <span>Import Tax: %${product.importTax}</span>
+                                        <span style="color: #28a745;">Kar: ${formatCurrency(product.profitPotential)}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                            ${category.products.length > 5 ? `<div style="font-size: 0.8em; margin-top: 5px; opacity: 0.7;">...ve ${category.products.length - 5} ürün daha</div>` : ''}
                         </div>
                     </div>
                 `;
             }).join('');
+            
+            // Add toggle function for category products
+            window.toggleCategoryProducts = function(categoryId) {
+                const element = document.getElementById(categoryId);
+                element.style.display = element.style.display === 'none' ? 'block' : 'none';
+            };
         }
         
         // Format currency helper
@@ -786,7 +814,7 @@
                 const landedCost = calculateLandedCost(product);
                 const margin = calculateMargin(product);
                 const stock = product.totalStock || 0;
-                const taxRate = getTaxRate(product);
+                const importTax = getImportTax(product);
                 
                 let stockClass = 'stock-zero';
                 if (stock > 0) stockClass = 'stock-positive';
@@ -829,8 +857,8 @@
                                 <span><strong>${sellingPrice.toFixed(2)}</strong></span>
                             </div>
                             <div class="info-row">
-                                <span class="info-label">📊 Vergi:</span>
-                                <span><strong>${taxRate}%</strong></span>
+                                <span class="info-label">📊 Import Tax:</span>
+                                <span><strong>${importTax}%</strong></span>
                             </div>
                             <div class="info-row">
                                 <span class="info-label">🏭 Landed Cost:</span>
