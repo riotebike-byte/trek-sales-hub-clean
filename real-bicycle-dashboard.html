@@ -363,157 +363,113 @@
         const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         const apiBase = isLocalhost ? 'http://localhost:3002/api/b2b' : '/api-b2b-proxy.php/b2b';
         
-        // Tax calculation function - EXACT CATEGORY SCHEMA
-        function getTaxRate(product) {
-            const category = (product.category || '').toUpperCase();
-            const title = (product.title || '').toUpperCase();
+        // Brand configuration with tax rates
+        const brandConfig = {
+            'DSW': {
+                name: 'DSW',
+                categories: ['bisiklet', 'aksesuar'],
+                taxRate: 20,
+                keywords: ['dsw', 'trek'],
+                description: 'DSW Bisiklet ve Aksesuarları'
+            },
+            'NCI': {
+                name: 'NCI',
+                categories: ['bisiklet', 'aksesuar'],
+                taxRate: 20,
+                keywords: ['nci', 'specialized'],
+                description: 'NCI Bisiklet ve Aksesuarları'
+            },
+            'GOBIK': {
+                name: 'GOBİK',
+                categories: ['giyim'],
+                taxRate: 18,
+                keywords: ['gobik', 'gob', 'giyim', 'forma'],
+                description: 'GOBİK Spor Giyim'
+            },
+            'TRIEYE': {
+                name: 'TriEye',
+                categories: ['aksesuar'],
+                taxRate: 18,
+                keywords: ['trieye', 'tri', 'gözlük'],
+                description: 'TriEye Gözlük ve Aksesuarları'
+            },
+            'BRYTON': {
+                name: 'Bryton',
+                categories: ['elektronik'],
+                taxRate: 18,
+                keywords: ['bryton', 'gps', 'bilgisayar'],
+                description: 'Bryton GPS ve Bisiklet Bilgisayarı'
+            },
+            'BONTRAGER': {
+                name: 'Bontrager',
+                categories: ['aksesuar', 'parça'],
+                taxRate: 20,
+                keywords: ['bontrager', 'trek'],
+                description: 'Bontrager Aksesuar ve Parçaları'
+            },
+            'SRAM': {
+                name: 'SRAM',
+                categories: ['parça'],
+                taxRate: 20,
+                keywords: ['sram', 'rockshox', 'zipp'],
+                description: 'SRAM Bisiklet Parçaları'
+            },
+            'SHIMANO': {
+                name: 'Shimano',
+                categories: ['parça'],
+                taxRate: 20,
+                keywords: ['shimano', 'ultegra', 'dura-ace', '105', 'tiagra'],
+                description: 'Shimano Bisiklet Parçaları'
+            }
+        };
+        
+        // Category mappings loaded from localStorage or default
+        let categoryMappings = {};
+        
+        // Detect brand from product
+        function detectBrand(product) {
+            const text = `${product.title || ''} ${product.category || ''} ${product.brand || ''}`.toLowerCase();
             
-            // MADONE - 35% vergi
-            if (category.includes('MADONE') || title.includes('MADONE')) {
+            for (const [brandKey, brandInfo] of Object.entries(brandConfig)) {
+                if (brandInfo.keywords.some(keyword => text.includes(keyword.toLowerCase()))) {
+                    return brandKey;
+                }
+            }
+            
+            return null;
+        }
+        
+        // Tax calculation function
+        function getTaxRate(product) {
+            const brand = detectBrand(product);
+            
+            if (brand && brandConfig[brand]) {
+                return brandConfig[brand].taxRate;
+            } else if (categoryMappings) {
+                for (const [upperCat, mapping] of Object.entries(categoryMappings)) {
+                    if (mapping.categories && mapping.categories.includes(product.category)) {
+                        return mapping.taxRate || 20;
+                    }
+                }
+            }
+            
+            // Check for specific product names
+            const title = (product.title || '').toUpperCase();
+            const category = (product.category || '').toUpperCase();
+            
+            // MADONE - 35% vergi (special case)
+            if (title.includes('MADONE') || category.includes('MADONE')) {
                 return 35;
             }
             
-            // DSW CATEGORIES - 70% vergi
-            const dswCategories = [
-                'DSW DOMANE AL 2',
-                'DSW DOMANE AL 3', 
-                'DSW DOMANE AL 4',
-                'DSW DUAL SPORT 1',
-                'DSW DUAL SPORT 2',
-                'DSW DUAL SPORT 3',
-                'DSW FX 1',
-                'DSW FX 2',
-                'DSW FX 3',
-                'DSW MARLIN 4',
-                'DSW MARLIN 5',
-                'DSW MARLIN 6',
-                'DSW MARLIN 7',
-                'DSW MARLIN 8',
-                'DSW PRECALIBER 16',
-                'DSW PRECALIBER 20',
-                'DSW PRECALIBER 24',
-                'DSW VERVE 1',
-                'DSW VERVE 2'
-            ];
-            
-            // Check if category matches any DSW category
-            if (dswCategories.some(dsw => category.includes(dsw))) {
+            // DSW prefix - 70% vergi (special case)
+            if (title.startsWith('DSW ') || category.startsWith('DSW ')) {
                 return 70;
             }
             
-            // NCI CATEGORIES - 20% vergi  
-            const nciCategories = [
-                'NCI CHECKPOINT ALR 4',
-                'NCI CHECKPOINT ALR 5',
-                'NCI CHECKPOINT SL 5',
-                'NCI CHECKPOINT SL 6',
-                'NCI CHECKPOINT SL 7',
-                'NCI CHECKPOINT SLR 7',
-                'NCI DOMANE AL 2',
-                'NCI DOMANE AL 3',
-                'NCI DOMANE AL 4',
-                'NCI DOMANE AL 5',
-                'NCI DOMANE SL 5',
-                'NCI DOMANE SL 6',
-                'NCI DOMANE SL 7',
-                'NCI DOMANE SLR 6',
-                'NCI DOMANE SLR 7',
-                'NCI DOMANE SLR 9',
-                'NCI DUAL SPORT 1',
-                'NCI DUAL SPORT 2',
-                'NCI DUAL SPORT 3',
-                'NCI EMONDA ALR 4',
-                'NCI EMONDA ALR 5',
-                'NCI EMONDA SL 5',
-                'NCI EMONDA SL 6',
-                'NCI EMONDA SL 7',
-                'NCI EMONDA SLR 6',
-                'NCI EMONDA SLR 7',
-                'NCI EMONDA SLR 9',
-                'NCI FX 1',
-                'NCI FX 2',
-                'NCI FX 3',
-                'NCI FX SPORT 4',
-                'NCI FX SPORT 5',
-                'NCI FX SPORT 6',
-                'NCI FUEL EX 5',
-                'NCI FUEL EX 7',
-                'NCI FUEL EX 8',
-                'NCI FUEL EX 9',
-                'NCI FUEL EXE 9.5',
-                'NCI FUEL EXE 9.7',
-                'NCI FUEL EXE 9.8',
-                'NCI FUEL EXE 9.9',
-                'NCI MARLIN 4',
-                'NCI MARLIN 5',
-                'NCI MARLIN 6',
-                'NCI MARLIN 7',
-                'NCI MARLIN 8',
-                'NCI POWERFLY 4',
-                'NCI POWERFLY 5',
-                'NCI POWERFLY 7',
-                'NCI POWERFLY FS 4',
-                'NCI POWERFLY FS 5',
-                'NCI POWERFLY FS 7',
-                'NCI POWERFLY FS 9',
-                'NCI PRECALIBER 16',
-                'NCI PRECALIBER 20',
-                'NCI PRECALIBER 24',
-                'NCI PROCALIBER 9.5',
-                'NCI PROCALIBER 9.6',
-                'NCI PROCALIBER 9.7',
-                'NCI PROCALIBER 9.8',
-                'NCI RAIL 5',
-                'NCI RAIL 7',
-                'NCI RAIL 9',
-                'NCI RAIL 9.7',
-                'NCI RAIL 9.8',
-                'NCI RAIL 9.9',
-                'NCI ROSCOE 6',
-                'NCI ROSCOE 7',
-                'NCI ROSCOE 8',
-                'NCI ROSCOE 9',
-                'NCI SLASH 7',
-                'NCI SLASH 8',
-                'NCI SLASH 9',
-                'NCI SLASH 9.7',
-                'NCI SLASH 9.8',
-                'NCI SLASH 9.9',
-                'NCI SPEED CONCEPT SL 6',
-                'NCI SPEED CONCEPT SL 7',
-                'NCI SPEED CONCEPT SLR 6',
-                'NCI SPEED CONCEPT SLR 7',
-                'NCI SPEED CONCEPT SLR 9',
-                'NCI SUPERCALIBER 9.5',
-                'NCI SUPERCALIBER 9.6',
-                'NCI SUPERCALIBER 9.7',
-                'NCI SUPERCALIBER 9.8',
-                'NCI SUPERCALIBER 9.9',
-                'NCI TOP FUEL 5',
-                'NCI TOP FUEL 7',
-                'NCI TOP FUEL 8',
-                'NCI TOP FUEL 9',
-                'NCI TOP FUEL 9.7',
-                'NCI TOP FUEL 9.8',
-                'NCI TOP FUEL 9.9',
-                'NCI VERVE 1',
-                'NCI VERVE 2',
-                'NCI VERVE 3',
-                'NCI VERVE+ 1',
-                'NCI VERVE+ 2',
-                'NCI VERVE+ 3',
-                'NCI X-CALIBER 7',
-                'NCI X-CALIBER 8',
-                'NCI X-CALIBER 9'
-            ];
-            
-            if (nciCategories.some(nci => category.includes(nci))) {
-                return 20;
-            }
-            
-            // Default 20% for other products
-            return 20;
+            return 20; // Default tax rate
         }
+        
         
         // Landed cost calculation
         function calculateLandedCost(product) {
@@ -913,6 +869,18 @@
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 BizimHesap Dashboard starting...');
+            
+            // Load category mappings from localStorage if available
+            const savedMappings = localStorage.getItem('categoryMappings');
+            if (savedMappings) {
+                try {
+                    categoryMappings = JSON.parse(savedMappings);
+                    console.log('✅ Category mappings loaded from localStorage');
+                } catch (error) {
+                    console.error('Failed to load category mappings:', error);
+                }
+            }
+            
             loadData();
         });
     </script>
