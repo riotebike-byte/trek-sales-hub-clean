@@ -609,45 +609,12 @@
                 allProducts = productsData.data.products;
                 console.log(`✅ Loaded ${allProducts.length} products`);
                 
-                console.log('📦 Loading warehouses...');
-                const warehousesResponse = await fetch(`${apiBase}/warehouses`);
-                const warehousesData = await warehousesResponse.json();
-                const warehouses = warehousesData.data.warehouses;
-                console.log(`✅ Loaded ${warehouses.length} warehouses`);
+                console.log('✅ Using Products API quantity field for stock calculation');
                 
-                // Load inventory from all warehouses
-                console.log('📦 Loading inventory from all warehouses...');
-                const inventoryPromises = warehouses.map(async (warehouse) => {
-                    try {
-                        const response = await fetch(`${apiBase}/inventory/${warehouse.id}`);
-                        const data = await response.json();
-                        return { warehouse: warehouse.title, inventory: data.data.inventory };
-                    } catch (error) {
-                        console.warn(`⚠️ Failed to load inventory for ${warehouse.title}:`, error);
-                        return { warehouse: warehouse.title, inventory: [] };
-                    }
-                });
-                
-                const inventoryResults = await Promise.all(inventoryPromises);
-                
-                // Aggregate inventory
-                allInventory = {};
-                let totalInventoryItems = 0;
-                inventoryResults.forEach(({ warehouse, inventory }) => {
-                    inventory.forEach(item => {
-                        if (!allInventory[item.id]) {
-                            allInventory[item.id] = 0;
-                        }
-                        allInventory[item.id] += parseInt(item.qty) || 0;
-                        totalInventoryItems++;
-                    });
-                });
-                
-                console.log(`✅ Loaded inventory: ${totalInventoryItems} items from ${warehouses.length} warehouses`);
-                
-                // Step 1: Set individual variant stock from inventory
+                // CORRECTED: Use Products API quantity field instead of inventory
+                // Step 1: Set individual variant stock from Products API quantity field
                 allProducts.forEach(product => {
-                    product.variantStock = allInventory[product.id] || 0;
+                    product.variantStock = parseInt(product.quantity) || 0;
                 });
                 
                 // Step 2: Group products by title and calculate total stock per product
