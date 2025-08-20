@@ -259,12 +259,10 @@
     <script>
         let allProducts = [];
         
-        // API configuration - production-ready proxy
-        const isDevelopment = (window.location.hostname === 'localhost' || window.location.protocol === 'file:');
-        const apiConfig = {
-            development: 'http://localhost:3002/api/b2b/products',
-            production: '/production-api.php'
-        };
+        // API configuration
+        const apiUrl = (window.location.hostname === 'localhost' || window.location.protocol === 'file:') 
+            ? 'http://localhost:3002/api/b2b/products'  // Localhost
+            : '/api.php';                                // Production
         
         // Load tax rates from admin panel localStorage
         function getTaxRates() {
@@ -456,7 +454,6 @@
         
         async function loadData() {
             try {
-                const apiUrl = isDevelopment ? apiConfig.development : apiConfig.production;
                 const response = await fetch(apiUrl);
                 
                 if (!response.ok) {
