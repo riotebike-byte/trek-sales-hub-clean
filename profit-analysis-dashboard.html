@@ -474,6 +474,9 @@
                         summary: calculateSummary(allProducts)
                     };
                     
+                    // Cache data for AI agent
+                    localStorage.setItem('profitAnalysisData', JSON.stringify(window.profitAnalysisData));
+                    
                     console.log('Profit analysis data loaded:', window.profitAnalysisData);
                 }
             } catch (error) {

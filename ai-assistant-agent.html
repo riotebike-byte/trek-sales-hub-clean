@@ -372,6 +372,7 @@
                     <button class="quick-btn" onclick="askQuickQuestion('Hangi kampanya önerilerin var?')">🎯 Kampanya</button>
                     <button class="quick-btn" onclick="askQuickQuestion('Market trendleri nasıl?')">📈 Trendler</button>
                     <button class="quick-btn" onclick="askQuickQuestion('Hangi ürünlerde stok artırmalıyım?')">📦 Stok</button>
+                    <button class="quick-btn" onclick="refreshProfitData()">🔄 Veri Yenile</button>
                 </div>
             </div>
         </div>
@@ -511,19 +512,45 @@
                     }
                 }
                 
-                // If no endpoint worked, try to get data from parent window
-                if (!dataLoaded && window.parent && window.parent !== window) {
+                // If no endpoint worked, try to get pre-calculated data from dashboard windows
+                if (!dataLoaded) {
                     try {
-                        const parentData = window.parent.profitAnalysisData || window.parent.mainDashboardData;
-                        if (parentData && parentData.products) {
-                            salesData = parentData.products;
+                        // Try to get data from profit analysis dashboard
+                        if (window.parent && window.parent !== window) {
+                            const parentData = window.parent.profitAnalysisData || window.parent.mainDashboardData;
+                            if (parentData && parentData.products) {
+                                salesData = parentData.products;
+                                dataLoaded = true;
+                                document.getElementById('dataStatus').textContent = `${salesData.length} ürün verisi (profit analysis) yüklendi ✅`;
+                                console.log('📊 Sales data loaded from profit analysis dashboard:', salesData.length, 'products');
+                                return;
+                            }
+                        }
+                        
+                        // Try to access other dashboard windows
+                        if (typeof window.profitAnalysisData !== 'undefined') {
+                            salesData = window.profitAnalysisData.products;
                             dataLoaded = true;
-                            document.getElementById('dataStatus').textContent = `${salesData.length} ürün verisi (parent window) yüklendi ✅`;
-                            console.log('📊 Sales data loaded from parent window:', salesData.length, 'products');
+                            document.getElementById('dataStatus').textContent = `${salesData.length} ürün verisi (profit analysis) yüklendi ✅`;
+                            console.log('📊 Sales data loaded from global profit analysis data:', salesData.length, 'products');
                             return;
                         }
+                        
+                        // Try localStorage for cached dashboard data
+                        const cachedData = localStorage.getItem('profitAnalysisData') || localStorage.getItem('mainDashboardData');
+                        if (cachedData) {
+                            const parsed = JSON.parse(cachedData);
+                            if (parsed && parsed.products) {
+                                salesData = parsed.products;
+                                dataLoaded = true;
+                                document.getElementById('dataStatus').textContent = `${salesData.length} ürün verisi (cached) yüklendi ✅`;
+                                console.log('📊 Sales data loaded from cache:', salesData.length, 'products');
+                                return;
+                            }
+                        }
+                        
                     } catch (parentError) {
-                        console.log('❌ Parent window data access failed:', parentError.message);
+                        console.log('❌ Dashboard data access failed:', parentError.message);
                     }
                 }
                 
@@ -598,16 +625,49 @@
         async function generateDataInsight() {
             if (salesData.length === 0) return "❌ Veri yok - API bağlantısı gerekli";
             
-            const insights = [
-                `📊 ${salesData.length} ürün analiz edildi. Ortalama kar marjı hesaplanıyor.`,
-                `🎯 Yüksek marjlı ürünlerde stok artırım fırsatı tespit edildi.`,
-                `💡 Çapraz satış potansiyeli olan ürün kombinasyonları bulundu.`,
-                `📈 Mevsimsel trend analizi tamamlandı - Q4 stratejisi hazır.`,
-                `⚡ Hızlı hareket eden ürünlerde kampanya fırsatı belirlendi.`,
-                `🔍 Düşük performanslı ürünler için optimizasyon önerileri hazırlandı.`,
-                `💰 Kar maksimizasyonu için fiyat ayarlama önerileri geliştirildi.`,
-                `🚀 Yeni ürün lansmanı için optimal timing tespit edildi.`
-            ];
+            // Generate dynamic insights based on actual data
+            const insights = [];
+            
+            // Check if we have profit analysis data
+            const hasMarginData = salesData.some(p => p.margin !== undefined);
+            
+            if (hasMarginData) {
+                const totalProfitPotential = salesData.reduce((sum, p) => sum + (parseFloat(p.profitPotential) || 0), 0);
+                const avgMargin = salesData.reduce((sum, p) => sum + (parseFloat(p.margin) || 0), 0) / salesData.length;
+                const highMarginProducts = salesData.filter(p => (p.margin || 0) >= 40);
+                const lowMarginProducts = salesData.filter(p => (p.margin || 0) < 15 && (p.stock || p.quantity || 0) > 10);
+                
+                insights.push(`💰 Toplam kar potansiyeli €${totalProfitPotential.toFixed(0)} - Ortalama marj %${avgMargin.toFixed(1)}`);
+                
+                if (highMarginProducts.length > 0) {
+                    insights.push(`🎯 ${highMarginProducts.length} ürün %40+ marjla - stok artırım fırsatı`);
+                }
+                
+                if (lowMarginProducts.length > 0) {
+                    insights.push(`⚠️ ${lowMarginProducts.length} düşük marjlı ürün yüksek stokta - fiyat optimizasyonu gerekli`);
+                }
+                
+                // Category analysis
+                const categoryProfits = {};
+                salesData.forEach(p => {
+                    const cat = p.category?.name || p.category || 'Diğer';
+                    if (!categoryProfits[cat]) categoryProfits[cat] = 0;
+                    categoryProfits[cat] += (p.profitPotential || 0);
+                });
+                
+                const topCategory = Object.entries(categoryProfits).sort((a, b) => b[1] - a[1])[0];
+                if (topCategory) {
+                    insights.push(`🏆 En karlı kategori: ${topCategory[0]} (€${topCategory[1].toFixed(0)})`);
+                }
+            }
+            
+            // Add general insights
+            insights.push(
+                `📊 ${salesData.length} ürün aktif olarak izleniyor`,
+                `📈 Trend analizi ve pazar fırsatları güncelleniyor`,
+                `🔍 Performans metrikleri sürekli optimize ediliyor`,
+                `🚀 Kampanya önerileri geliştirildi`
+            );
             
             return insights[Math.floor(Math.random() * insights.length)];
         }
@@ -746,6 +806,7 @@
         // Generate contextual prompt
         function generateContextualPrompt(userMessage) {
             const salesSummary = generateSalesSummary();
+            const profitAnalysis = generateProfitAnalysis();
             const recentInsights = getRecentInsights();
             const memoryContext = conversationMemory.slice(-2).join(' ');
             
@@ -754,12 +815,15 @@
 Mevcut Sales Verisi:
 ${salesSummary}
 
+Kar Marjı Analizi:
+${profitAnalysis}
+
 Son Öngörüler:
 ${recentInsights}
 
 Konuşma Geçmişi: ${memoryContext}
 
-Lütfen bu veri ve kontekst bilgileriyle kullanıcının sorusuna detaylı, yardımcı ve friendly bir şekilde cevap ver. Eğer spesifik data analysis gerekiyorsa, mevcut verilerden örnek ver.`;
+Lütfen bu veri ve kontekst bilgileriyle kullanıcının sorusuna detaylı, yardımcı ve friendly bir şekilde cevap ver. Eğer spesifik data analysis gerekiyorsa, mevcut verilerden örnek ver. Kar marjı hesaplamaları, landed cost, profit potential gibi finansal metrikleri kullanarak derinlemesine analiz yap.`;
         }
 
         // Generate sales summary
@@ -767,10 +831,45 @@ Lütfen bu veri ve kontekst bilgileriyle kullanıcının sorusuna detaylı, yard
             if (salesData.length === 0) return "❌ Sales verisi mevcut değil - Lütfen API bağlantısını kontrol edin.";
             
             const totalProducts = salesData.length;
-            const avgPrice = salesData.reduce((sum, p) => sum + (parseFloat(p.price) || 0), 0) / totalProducts;
-            const totalStock = salesData.reduce((sum, p) => sum + (parseInt(p.quantity) || 0), 0);
+            const avgPrice = salesData.reduce((sum, p) => sum + (parseFloat(p.price) || parseFloat(p.sellingPrice) || 0), 0) / totalProducts;
+            const totalStock = salesData.reduce((sum, p) => sum + (parseInt(p.quantity) || parseInt(p.stock) || 0), 0);
             
             return `${totalProducts} ürün, ortalama fiyat: €${avgPrice.toFixed(0)}, toplam stok: ${totalStock} adet`;
+        }
+
+        // Generate profit analysis summary
+        function generateProfitAnalysis() {
+            if (salesData.length === 0) return "❌ Kar marjı verisi mevcut değil";
+            
+            // Check if products have calculated profit metrics
+            const productsWithMargin = salesData.filter(p => p.margin !== undefined || p.profitPotential !== undefined || p.landedCost !== undefined);
+            
+            if (productsWithMargin.length === 0) {
+                return "Kar marjı hesaplamaları henüz yapılmamış - Profit Analysis Dashboard'dan veri gerekli";
+            }
+            
+            // Calculate profit metrics
+            const totalProfitPotential = salesData.reduce((sum, p) => sum + (parseFloat(p.profitPotential) || 0), 0);
+            const avgMargin = salesData.reduce((sum, p) => sum + (parseFloat(p.margin) || 0), 0) / salesData.length;
+            const totalLandedCost = salesData.reduce((sum, p) => sum + ((parseFloat(p.landedCost) || 0) * (parseInt(p.stock) || parseInt(p.quantity) || 0)), 0);
+            
+            // Margin categories
+            const excellentMargin = salesData.filter(p => (p.margin || 0) >= 40).length;
+            const goodMargin = salesData.filter(p => (p.margin || 0) >= 25 && (p.margin || 0) < 40).length;
+            const averageMargin = salesData.filter(p => (p.margin || 0) >= 15 && (p.margin || 0) < 25).length;
+            const lowMargin = salesData.filter(p => (p.margin || 0) < 15).length;
+            
+            // Top profitable products
+            const topProfitable = [...salesData]
+                .filter(p => p.profitPotential && p.profitPotential > 0)
+                .sort((a, b) => (b.profitPotential || 0) - (a.profitPotential || 0))
+                .slice(0, 3)
+                .map(p => `${p.title}: €${(p.profitPotential || 0).toFixed(0)}`)
+                .join(', ');
+            
+            return `Toplam kar potansiyeli: €${totalProfitPotential.toFixed(0)}, Ortalama marj: %${avgMargin.toFixed(1)}, Toplam landed cost: €${totalLandedCost.toFixed(0)}
+Marj dağılımı: Mükemmel(>40%): ${excellentMargin}, İyi(25-40%): ${goodMargin}, Ortalama(15-25%): ${averageMargin}, Düşük(<15%): ${lowMargin}
+En karlı ürünler: ${topProfitable || 'Hesaplanmamış'}`;
         }
 
         // Get recent insights
@@ -817,6 +916,36 @@ Lütfen bu veri ve kontekst bilgileriyle kullanıcının sorusuna detaylı, yard
         function askQuickQuestion(question) {
             messageInput.value = question;
             sendMessage();
+        }
+
+        // Refresh profit data
+        async function refreshProfitData() {
+            console.log('🔄 Refreshing profit analysis data...');
+            document.getElementById('dataStatus').textContent = 'Profit analiz verisi güncelleniyor...';
+            
+            try {
+                // Try to get fresh data from profit analysis dashboard
+                const cachedData = localStorage.getItem('profitAnalysisData');
+                if (cachedData) {
+                    const parsed = JSON.parse(cachedData);
+                    const dataAge = Date.now() - new Date(parsed.timestamp).getTime();
+                    
+                    // If data is older than 5 minutes, try to refresh
+                    if (dataAge > 5 * 60 * 1000) {
+                        console.log('⚠️ Cached data is older than 5 minutes, trying to refresh...');
+                        await loadSalesData();
+                    } else {
+                        salesData = parsed.products;
+                        document.getElementById('dataStatus').textContent = `${salesData.length} ürün verisi (güncel) ✅`;
+                        console.log('✅ Using recent cached profit analysis data');
+                    }
+                } else {
+                    await loadSalesData();
+                }
+            } catch (error) {
+                console.error('❌ Failed to refresh profit data:', error);
+                document.getElementById('dataStatus').textContent = '❌ Veri güncellenemiyor';
+            }
         }
 
         // Event listeners
