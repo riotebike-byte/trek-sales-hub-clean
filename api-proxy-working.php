@@ -104,6 +104,16 @@ try {
             $product['code'] = $product['id'];
         }
         
+        // Add compatibility fields for dashboard
+        if (isset($product['stock'])) {
+            $product['quantity'] = $product['stock'];
+        }
+        
+        // Add buyingPrice as 70% of selling price (estimated)
+        if (isset($product['price']) && $product['price'] > 0) {
+            $product['buyingPrice'] = $product['price'] * 0.7;
+        }
+        
         // Only add if we have essential fields
         if (!empty($product['id']) && !empty($product['title'])) {
             $products[] = $product;

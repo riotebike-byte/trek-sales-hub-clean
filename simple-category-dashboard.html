@@ -262,7 +262,7 @@
         // API Base URL - production ready
         const apiBase = (window.location.hostname === 'localhost' || window.location.protocol === 'file:') ? 
                        'http://localhost:3002/api/b2b' : 
-                       '/api/b2b';
+                       '/api-proxy-working.php?endpoint=';
         
         // Load tax rates from admin panel localStorage
         function getTaxRates() {
@@ -453,9 +453,17 @@
         
         async function loadData() {
             try {
-                const response = await fetch(`${apiBase}/products`);
+                const response = await fetch(apiBase.includes('localhost') ? `${apiBase}/products` : `${apiBase}products`);
                 const data = await response.json();
-                allProducts = data.data.products;
+                
+                // Handle different API response formats
+                if (data.data && data.data.products) {
+                    allProducts = data.data.products; // Node.js proxy format
+                } else if (data.success && data.data) {
+                    allProducts = data.data; // PHP proxy format
+                } else {
+                    throw new Error('Unexpected API response format');
+                }
                 
                 // Group products by title first, then by category
                 const productGroups = {};
