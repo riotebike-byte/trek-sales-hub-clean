@@ -474,69 +474,67 @@
                 productGroups[title].totalStock += parseInt(product.quantity) || 0;
             });
             
-            // Group by category
-            const categoryGroups = {};
+            // Create product-based ranking data (instead of category-based)
+            const productRankingData = [];
+            
             Object.values(productGroups).forEach(productGroup => {
-                if (productGroup.totalStock <= 0) return;
+                if (productGroup.totalStock <= 0) return; // Skip products with no stock
                 
                 const representativeProduct = productGroup.variants[0];
                 const categoryInfo = mapToCategory(representativeProduct);
-                const category = categoryInfo.key;
                 
-                if (!categoryGroups[category]) {
-                    categoryGroups[category] = {
-                        category: category,
-                        categoryName: categoryInfo.name,
-                        taxRate: categoryInfo.taxRate,
-                        totalStock: 0,
-                        totalStockValue: 0,
-                        totalSalesPotential: 0,
-                        totalProfitPotential: 0,
-                        productCount: 0,
-                        marginSum: 0
-                    };
-                }
+                // Calculate average prices from all variants
+                const validVariants = productGroup.variants.filter(v => 
+                    (parseFloat(v.buyingPrice) || 0) > 0 && (parseFloat(v.price) || 0) > 0
+                );
                 
-                const avgBuyingPrice = productGroup.variants.reduce((sum, v) => sum + (parseFloat(v.buyingPrice) || 0), 0) / productGroup.variants.length;
-                const avgSellingPrice = productGroup.variants.reduce((sum, v) => sum + (parseFloat(v.price) || 0), 0) / productGroup.variants.length;
-                const landedCost = avgBuyingPrice * (1 + categoryInfo.taxRate / 100);
-                const margin = avgSellingPrice > 0 && landedCost > 0 ? ((avgSellingPrice - landedCost) / avgSellingPrice) * 100 : 0;
-                
-                categoryGroups[category].totalStock += productGroup.totalStock;
-                categoryGroups[category].productCount++;
-                
-                if (avgBuyingPrice > 0 && avgSellingPrice > 0) {
+                if (validVariants.length > 0) {
+                    const avgBuyingPrice = validVariants.reduce((sum, v) => sum + (parseFloat(v.buyingPrice) || 0), 0) / validVariants.length;
+                    const avgSellingPrice = validVariants.reduce((sum, v) => sum + (parseFloat(v.price) || 0), 0) / validVariants.length;
+                    const landedCost = avgBuyingPrice * (1 + categoryInfo.taxRate / 100);
+                    const margin = avgSellingPrice > 0 && landedCost > 0 ? ((avgSellingPrice - landedCost) / avgSellingPrice) * 100 : 0;
+                    const profitPotential = (avgSellingPrice - landedCost) * productGroup.totalStock;
                     const stockValue = landedCost * productGroup.totalStock;
                     const salesPotential = avgSellingPrice * productGroup.totalStock;
-                    const profitPotential = (avgSellingPrice - landedCost) * productGroup.totalStock;
                     
-                    categoryGroups[category].totalStockValue += stockValue;
-                    categoryGroups[category].totalSalesPotential += salesPotential;
-                    categoryGroups[category].totalProfitPotential += profitPotential;
-                    categoryGroups[category].marginSum += margin * productGroup.totalStock;
+                    productRankingData.push({
+                        title: productGroup.title,
+                        code: representativeProduct.code,
+                        brand: representativeProduct.brand,
+                        category: categoryInfo.key,
+                        categoryName: categoryInfo.name,
+                        totalStock: productGroup.totalStock,
+                        variantCount: productGroup.variants.length,
+                        avgBuyingPrice: avgBuyingPrice,
+                        avgSellingPrice: avgSellingPrice,
+                        landedCost: landedCost,
+                        avgMargin: margin, // Keep for compatibility
+                        margin: margin,
+                        profitPotential: profitPotential,
+                        totalProfitPotential: profitPotential, // Keep for compatibility
+                        totalStockValue: stockValue,
+                        totalSalesPotential: salesPotential,
+                        taxRate: categoryInfo.taxRate,
+                        roi: stockValue > 0 ? (profitPotential / stockValue * 100) : 0
+                    });
                 }
             });
             
-            // Calculate averages
-            Object.keys(categoryGroups).forEach(category => {
-                const group = categoryGroups[category];
-                group.avgMargin = group.totalStock > 0 ? group.marginSum / group.totalStock : 0;
-            });
+            // Sort by profit potential (highest first)
+            const sortedProducts = productRankingData
+                .sort((a, b) => b.profitPotential - a.profitPotential);
             
-            // Sort by profit potential
-            const sortedCategories = Object.values(categoryGroups)
-                .sort((a, b) => b.totalProfitPotential - a.totalProfitPotential);
-            
-            profitRankingData = sortedCategories;
+            profitRankingData = sortedProducts;
             
             agentData = {
                 timestamp: new Date().toISOString(),
                 filter: 'all',
-                filteredCategories: sortedCategories.map(c => c.categoryName),
-                profitRanking: sortedCategories
+                filteredProducts: sortedProducts.map(p => p.title),
+                productRanking: sortedProducts
             };
             
-            console.log('✅ Processed', profitRankingData.length, 'categories from API data');
+            console.log('✅ Processed', profitRankingData.length, 'product cards from API data');
+            console.log('📦 Sample product:', profitRankingData[0]);
         }
         
         
@@ -551,105 +549,107 @@
             let html = '';
             
             if (profitRankingData.length > 0) {
-                console.log('✅ Sales recommendations using real data:', profitRankingData.length, 'categories');
+                console.log('✅ Sales recommendations using real data:', profitRankingData.length, 'products');
                 // Calculate total metrics for advanced analysis
-                const totalStockValue = profitRankingData.reduce((sum, cat) => sum + (cat.totalStockValue || 0), 0);
-                const totalProfitPotential = profitRankingData.reduce((sum, cat) => sum + (cat.totalProfitPotential || cat.profitPotential || 0), 0);
+                const totalStockValue = profitRankingData.reduce((sum, product) => sum + (product.totalStockValue || 0), 0);
+                const totalProfitPotential = profitRankingData.reduce((sum, product) => sum + (product.profitPotential || 0), 0);
                 
-                // Top performing category with advanced insights
-                const topCategory = profitRankingData[0];
-                const stockValue = topCategory.totalStockValue || 0;
-                const profitPotential = topCategory.totalProfitPotential || topCategory.profitPotential || 0;
+                // Top performing product with advanced insights
+                const topProduct = profitRankingData[0];
+                const stockValue = topProduct.totalStockValue || 0;
+                const profitPotential = topProduct.profitPotential || 0;
                 const profitShare = totalProfitPotential > 0 ? (profitPotential / totalProfitPotential * 100) : 0;
                 const roi = stockValue > 0 ? (profitPotential / stockValue * 100) : 0;
                 
                 html += `
                     <div class="recommendation-card high-priority">
-                        <div class="recommendation-title">🏆 Priority Focus: ${topCategory.categoryName || topCategory.category}</div>
+                        <div class="recommendation-title">🏆 Top Product: ${topProduct.title}</div>
                         <div class="recommendation-desc">
-                            Dominates with €${profitPotential.toLocaleString()} profit potential (${profitShare.toFixed(1)}% of total). 
-                            ROI: ${roi.toFixed(1)}%. Deploy 40% of marketing budget here.
+                            Highest profit potential: €${profitPotential.toLocaleString()} (${profitShare.toFixed(1)}% of total). 
+                            ${topProduct.variantCount} variants, ${(topProduct.margin || 0).toFixed(1)}% margin, ROI: ${roi.toFixed(1)}%. 
+                            Focus marketing spend here.
                         </div>
                         <div class="recommendation-metrics">
                             <div class="metric-item">💰 €${profitPotential.toLocaleString()}</div>
-                            <div class="metric-item">📊 ${(topCategory.avgMargin || 0).toFixed(1)}% margin</div>
-                            <div class="metric-item">📦 ${topCategory.totalStock || 0} stock</div>
+                            <div class="metric-item">📊 ${(topProduct.margin || 0).toFixed(1)}% margin</div>
+                            <div class="metric-item">📦 ${topProduct.totalStock || 0} stock</div>
                             <div class="metric-item">🎯 ${roi.toFixed(1)}% ROI</div>
                         </div>
                     </div>
                 `;
                 
-                // High margin, low stock opportunities
-                const highMarginLowStock = profitRankingData.filter(cat => 
-                    (cat.avgMargin || 0) > 35 && (cat.totalStock || 0) < 50
-                ).sort((a, b) => (b.avgMargin || 0) - (a.avgMargin || 0));
+                // High margin, low stock product opportunities
+                const highMarginLowStock = profitRankingData.filter(product => 
+                    (product.margin || 0) > 35 && (product.totalStock || 0) < 50
+                ).sort((a, b) => (b.margin || 0) - (a.margin || 0));
 
                 if (highMarginLowStock.length > 0) {
                     const opportunity = highMarginLowStock[0];
                     const currentInvestment = opportunity.totalStockValue || 0;
                     const potentialIncrease = currentInvestment * 2;
-                    const potentialProfit = potentialIncrease * (opportunity.avgMargin || 0) / 100;
+                    const potentialProfit = potentialIncrease * (opportunity.margin || 0) / 100;
 
                     html += `
                         <div class="recommendation-card high-priority">
-                            <div class="recommendation-title">💎 High-Margin Opportunity: ${opportunity.categoryName || opportunity.category}</div>
+                            <div class="recommendation-title">💎 High-Margin Product: ${opportunity.title}</div>
                             <div class="recommendation-desc">
-                                ${(opportunity.avgMargin || 0).toFixed(1)}% margin but only ${opportunity.totalStock || 0} stock! 
-                                Double investment (+€${potentialIncrease.toLocaleString()}) = +€${potentialProfit.toLocaleString()} profit.
+                                ${(opportunity.margin || 0).toFixed(1)}% margin but only ${opportunity.totalStock || 0} stock! 
+                                Product code: ${opportunity.code || 'N/A'}. Double stock investment (+€${potentialIncrease.toLocaleString()}) = +€${potentialProfit.toLocaleString()} profit.
                             </div>
                             <div class="recommendation-metrics">
-                                <div class="metric-item">📈 ${(opportunity.avgMargin || 0).toFixed(1)}% margin</div>
-                                <div class="metric-item">⚡ Low stock risk</div>
+                                <div class="metric-item">📈 ${(opportunity.margin || 0).toFixed(1)}% margin</div>
+                                <div class="metric-item">🏷️ ${opportunity.variantCount} variants</div>
                                 <div class="metric-item">💰 +€${potentialProfit.toLocaleString()} potential</div>
                             </div>
                         </div>
                     `;
                 }
                 
-                // Most efficient category by profit per unit
-                const categoriesByEfficiency = profitRankingData
-                    .filter(cat => (cat.totalStock || 0) > 0)
-                    .map(cat => ({
-                        ...cat,
-                        profitPerUnit: (cat.totalProfitPotential || cat.profitPotential || 0) / (cat.totalStock || 1)
+                // Most efficient product by profit per unit
+                const productsByEfficiency = profitRankingData
+                    .filter(product => (product.totalStock || 0) > 0)
+                    .map(product => ({
+                        ...product,
+                        profitPerUnit: (product.profitPotential || 0) / (product.totalStock || 1)
                     }))
                     .sort((a, b) => b.profitPerUnit - a.profitPerUnit);
 
-                if (categoriesByEfficiency.length > 0) {
-                    const mostEfficient = categoriesByEfficiency[0];
+                if (productsByEfficiency.length > 0) {
+                    const mostEfficient = productsByEfficiency[0];
                     html += `
                         <div class="recommendation-card medium-priority">
-                            <div class="recommendation-title">⚡ Most Efficient: ${mostEfficient.categoryName || mostEfficient.category}</div>
+                            <div class="recommendation-title">⚡ Most Efficient Product: ${mostEfficient.title}</div>
                             <div class="recommendation-desc">
                                 €${mostEfficient.profitPerUnit.toFixed(0)} profit per unit - highest efficiency. 
-                                Perfect for targeted marketing campaigns.
+                                ${mostEfficient.variantCount} variants, ${mostEfficient.categoryName} category. Perfect for targeted campaigns.
                             </div>
                             <div class="recommendation-metrics">
                                 <div class="metric-item">⚡ €${mostEfficient.profitPerUnit.toFixed(0)}/unit</div>
-                                <div class="metric-item">📊 ${(mostEfficient.avgMargin || 0).toFixed(1)}% margin</div>
+                                <div class="metric-item">📊 ${(mostEfficient.margin || 0).toFixed(1)}% margin</div>
+                                <div class="metric-item">🏷️ ${mostEfficient.code || 'N/A'}</div>
                             </div>
                         </div>
                     `;
                 }
                 
-                // Underperforming categories with specific action plans
-                const underperforming = profitRankingData.filter(cat => 
-                    (cat.avgMargin || 0) < 15 && (cat.totalStockValue || 0) > totalStockValue * 0.05
+                // Underperforming products with specific action plans
+                const underperforming = profitRankingData.filter(product => 
+                    (product.margin || 0) < 15 && (product.totalStockValue || 0) > totalStockValue * 0.01
                 ).sort((a, b) => (b.totalStockValue || 0) - (a.totalStockValue || 0));
 
                 if (underperforming.length > 0) {
-                    const worstCategory = underperforming[0];
-                    const currentMargin = worstCategory.avgMargin || 0;
+                    const worstProduct = underperforming[0];
+                    const currentMargin = worstProduct.margin || 0;
                     const targetMargin = 15;
                     const priceIncreaseNeeded = Math.ceil(targetMargin - currentMargin);
-                    const potentialImprovement = (worstCategory.totalStockValue || 0) * (targetMargin / 100);
+                    const potentialImprovement = (worstProduct.totalStockValue || 0) * (targetMargin / 100);
 
                     html += `
                         <div class="recommendation-card medium-priority">
-                            <div class="recommendation-title">🚨 Fix Underperformer: ${worstCategory.categoryName || worstCategory.category}</div>
+                            <div class="recommendation-title">🚨 Fix Underperformer: ${worstProduct.title}</div>
                             <div class="recommendation-desc">
-                                Only ${currentMargin.toFixed(1)}% margin on €${(worstCategory.totalStockValue || 0).toLocaleString()} investment. 
-                                Increase prices ${priceIncreaseNeeded}% → +€${potentialImprovement.toLocaleString()} profit.
+                                Only ${currentMargin.toFixed(1)}% margin on €${(worstProduct.totalStockValue || 0).toLocaleString()} investment. 
+                                Code: ${worstProduct.code || 'N/A'}. Increase prices ${priceIncreaseNeeded}% → +€${potentialImprovement.toLocaleString()} profit.
                             </div>
                             <div class="recommendation-metrics">
                                 <div class="metric-item">📉 ${currentMargin.toFixed(1)}% margin</div>
@@ -660,39 +660,39 @@
                     `;
                 }
                 
-                // Fast-moving categories good for campaigns
-                const fastMoving = profitRankingData.filter(cat => 
-                    (cat.totalStock || 0) > 20 && (cat.avgMargin || 0) > 20
+                // High-stock products good for campaigns
+                const campaignReady = profitRankingData.filter(product => 
+                    (product.totalStock || 0) > 20 && (product.margin || 0) > 20
                 ).sort((a, b) => (b.totalStock || 0) - (a.totalStock || 0));
 
-                if (fastMoving.length > 0) {
-                    const topMover = fastMoving[0];
+                if (campaignReady.length > 0) {
+                    const topMover = campaignReady[0];
                     html += `
                         <div class="recommendation-card medium-priority">
-                            <div class="recommendation-title">🚀 Campaign Ready: ${topMover.categoryName || topMover.category}</div>
+                            <div class="recommendation-title">🚀 Campaign Ready Product: ${topMover.title}</div>
                             <div class="recommendation-desc">
-                                High stock (${topMover.totalStock}) + good margin (${(topMover.avgMargin || 0).toFixed(1)}%) = 
-                                perfect for aggressive sales campaign. Expected fast ROI.
+                                High stock (${topMover.totalStock}) + good margin (${(topMover.margin || 0).toFixed(1)}%) = 
+                                perfect for aggressive campaign. ${topMover.variantCount} variants available. Fast ROI expected.
                             </div>
                             <div class="recommendation-metrics">
                                 <div class="metric-item">📦 ${topMover.totalStock} stock</div>
-                                <div class="metric-item">📊 ${(topMover.avgMargin || 0).toFixed(1)}% margin</div>
-                                <div class="metric-item">🚀 Campaign ready</div>
+                                <div class="metric-item">📊 ${(topMover.margin || 0).toFixed(1)}% margin</div>
+                                <div class="metric-item">🚀 ${topMover.categoryName}</div>
                             </div>
                         </div>
                     `;
                 }
                 
-                // Category-based optimization for older logic compatibility
-                const lowMarginCategories = profitRankingData.filter(cat => (cat.avgMargin || 0) < 25);
-                if (lowMarginCategories.length > 1) { // Skip if only one (already covered above)
-                    lowMarginCategories.slice(1).forEach(cat => {
+                // Additional low-margin products to optimize
+                const lowMarginProducts = profitRankingData.filter(product => (product.margin || 0) < 25 && (product.margin || 0) >= 10);
+                if (lowMarginProducts.length > 1) { // Show a few more optimization opportunities
+                    lowMarginProducts.slice(0, 2).forEach(product => {
                         html += `
                             <div class="recommendation-card low-priority">
-                                <div class="recommendation-title">⚠️ Optimize ${cat.categoryName || cat.category}</div>
+                                <div class="recommendation-title">⚠️ Optimize Product: ${product.title}</div>
                                 <div class="recommendation-desc">
-                                    Low margin (${(cat.avgMargin || 0).toFixed(1)}%) detected. Consider bundle deals or volume discounts 
-                                    to increase velocity and total profit.
+                                    Low margin (${(product.margin || 0).toFixed(1)}%) detected. Code: ${product.code || 'N/A'}. 
+                                    Consider bundle deals or volume discounts to increase velocity and total profit.
                                 </div>
                                 <div class="recommendation-metrics">
                                     <div class="metric-item">📈 Increase velocity</div>
