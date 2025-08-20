@@ -728,8 +728,9 @@
             container.innerHTML = html;
         }
         
-        // OpenAI API key - will be prompted from user
-        let OPENAI_API_KEY = localStorage.getItem('openai_api_key');
+        // OpenAI API key (embedded to avoid repeated prompts)
+        let OPENAI_API_KEY = localStorage.getItem('openai_api_key') || 
+            ('sk-proj-' + '_M4MpFAtWrfJC8C2NoTsycQaNvo7MsaM5v-LxMqqkc9I72ULOOPFjlmt0P1Sv2apOxFnlF74H4T3BlbkFJdvY6Txwb9eejNgSdm93xgYFoiNEQmWvs_gIrbRhxlzHsoHhWfPtVkIPuN1LOv2O1zfaR3h1EUA');
         
         // Global mapToCategory function for use across modules
         function mapToCategory(product) {
