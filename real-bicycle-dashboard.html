@@ -371,96 +371,125 @@
             return parseFloat(product.tax) || parseFloat(product.vatRate) || 20;
         }
         
-        // Import tax calculation function (imp_tax) for landed cost - ONLY SPECIAL CASES
+        // Import tax calculation function using category schema
         function getImportTax(product) {
-            const title = (product.title || '').toUpperCase();
-            const category = (product.category || '').toUpperCase();
-            
-            // MADONE - 35% import tax (special case)
-            if (title.includes('MADONE') || category.includes('MADONE')) {
-                return 35;
-            }
-            
-            // DSW prefix - 70% import tax (special case)
-            if (title.startsWith('DSW ') || category.startsWith('DSW ')) {
-                return 70;
-            }
-            
-            // Default import tax rate
-            return 20;
+            const categoryInfo = mapToCategory(product);
+            return categoryInfo.taxRate;
         }
         
-        // Map BizimHesap categories to our simplified category system
-        function mapToSimplifiedCategory(product) {
+        // Real category schema with tax rates
+        const categorySchema = {
+            "dsw-bisiklet": {
+                name: "DSW BİSİKLET",
+                categories: ["FX", "DS", "MARLIN"],
+                taxRate: 70
+            },
+            "nci-bisiklet": {
+                name: "NCI BİSİKLET", 
+                categories: ["MADONE", "EMONDA", "DOMANE", "POWERFLY", "PROCALIBER", "CHECKPOINT", "SPEED CONCEPT", "RAIL", "DOMANE+", "SUPERCALIBER", "VERVE+", "FUEL EXE", "MARLİN+", "FX+", "KADRO", "TOWNIE GO!", "DS+", "TOP FUEL"],
+                taxRate: 35
+            },
+            "dsw-aksesuar": {
+                name: "DSW AKSESUAR",
+                categories: ["VERVE", "AYDINLATMA", "ÇANTA", "İÇ LASTİK", "GİDON BOĞAZI", "BAGAJ-SEPET", "MATARA-KAFES", "ELCİK-GİDON BANDI", "KADRO KULAĞI", "PEDAL", "POMPA", "ZİL", "KİLİT", "KASK", "ELDİVEN", "DIŞ LASTİK", "SELE-SELE BORUSU", "ERKEK AYAKKABI", "Tanımsız", "ÇAMURLUK", "ANAHTAR TAKIMI", "PARK AYAĞI", "YEDEK PARÇA", "ELECTRA KADIN BİSİKLET"],
+                taxRate: 60
+            },
+            "nci-aksesuar": {
+                name: "NCI AKSESUAR",
+                categories: ["JANT SETİ", "GİDON", "BLENDR AYDINLATMA MONTAJ"],
+                taxRate: 40
+            },
+            "gobik": {
+                name: "GOBİK",
+                categories: ["İÇLİK", "FORMA", "ÇORAP", "RÜZGARLIK-YAĞMURLUK", "TAYT-ŞORT", "KOL VE DİZ ISITICI"],
+                taxRate: 33
+            },
+            "trieye": {
+                name: "TriEye",
+                categories: ["Gözlük"],
+                taxRate: 68
+            },
+            "bryton": {
+                name: "Bryton", 
+                categories: ["KM SAATİ"],
+                taxRate: 65
+            },
+            "saris": {
+                name: "Saris",
+                categories: ["ARAÇ ARKASI TAŞIYICI"],
+                taxRate: 65
+            }
+        };
+
+        // Map BizimHesap categories to our schema
+        function mapToCategory(product) {
             const title = (product.title || '').toUpperCase();
             const category = (product.category || '').toUpperCase();
             const brand = (product.brand || '').toUpperCase();
             
-            // GOBİK tekstil - GOBİK marka giyim + forma/taytlar
-            if (brand.includes('GOBIK') || brand.includes('GOBİK') || 
-                title.includes('GOBIK') || title.includes('GOBİK') ||
-                title.includes('FORMA') || title.includes('TAYT') || title.includes('ŞORT') || title.includes('SORT') ||
-                category.includes('FORMA') || category.includes('TAYT') || category.includes('ŞORT') || category.includes('SORT') ||
-                category.includes('GİYİM') || category.includes('GIYIM') ||
-                category.includes('ELDİVEN') || category.includes('ELDIVEN') ||
-                category.includes('ÇORAP') || category.includes('CORAP') ||
-                title.includes('JERSEY') || title.includes('CYCLING')) {
-                return 'gobik_tekstil';
+            // Check each category schema
+            for (const [schemaKey, schemaData] of Object.entries(categorySchema)) {
+                for (const cat of schemaData.categories) {
+                    const catUpper = cat.toUpperCase();
+                    
+                    // Check in product category, title, or brand
+                    if (category.includes(catUpper) || 
+                        title.includes(catUpper) || 
+                        brand.includes(catUpper)) {
+                        return {
+                            key: schemaKey,
+                            name: schemaData.name,
+                            taxRate: schemaData.taxRate
+                        };
+                    }
+                }
             }
             
-            // TriEye gözlük
-            if (brand.includes('TRIEYE') || title.includes('TRIEYE') || 
-                category.includes('GÖZLÜK') || category.includes('GOZLUK')) {
-                return 'trieye_gözlük';
+            // Special handling for DSW prefix products
+            if (title.startsWith('DSW ')) {
+                // Check if it's a bike or accessory
+                const dswBikeCategories = categorySchema["dsw-bisiklet"].categories;
+                for (const cat of dswBikeCategories) {
+                    if (title.includes(cat.toUpperCase()) || category.includes(cat.toUpperCase())) {
+                        return {
+                            key: "dsw-bisiklet",
+                            name: categorySchema["dsw-bisiklet"].name,
+                            taxRate: categorySchema["dsw-bisiklet"].taxRate
+                        };
+                    }
+                }
+                // Default to DSW aksesuar
+                return {
+                    key: "dsw-aksesuar", 
+                    name: categorySchema["dsw-aksesuar"].name,
+                    taxRate: categorySchema["dsw-aksesuar"].taxRate
+                };
             }
             
-            // Bryton GPS/bilgisayar
-            if (brand.includes('BRYTON') || title.includes('BRYTON') || 
-                category.includes('BİLGİSAYAR') || category.includes('BILGISAYAR') ||
-                category.includes('GPS')) {
-                return 'bryton_gpscom';
-            }
-            
-            // Elektrikli bisiklet - 🔋 işaretli bisikletler
-            if (title.includes('🔋') || category.includes('🔋') || 
-                category.includes('ELEKTRİKLİ') || category.includes('ELEKTRIKLI') ||
-                title.includes('POWERFLY') || title.includes('DOMANE +') || 
-                title.includes('FUEL EXE') || title.includes('RAIL') ||
-                title.includes('DS +') || title.includes('FX+') || 
-                title.includes('VERVE +') || title.includes('TOWNIE GO')) {
-                return 'elektrikli_bisiklet';
-            }
-            
-            // Normal bisiklet
+            // Default - check for general bike indicators
             if (category.includes('BİSİKLET') || category.includes('BISIKLET') ||
-                title.includes('MADONE') || title.includes('EMONDA') || title.includes('DOMANE') ||
-                title.includes('CHECKPOINT') || title.includes('CHECKMATE') || 
-                title.includes('MARLIN') || title.includes('FUEL') || title.includes('RAIL') ||
-                title.includes('PROCALIBER') || title.includes('SUPERCALIBER') ||
-                title.includes('VERVE') || title.includes('ELECTRA') ||
-                category.includes('YOL') || category.includes('GRAVEL') || 
-                category.includes('DAĞ') || category.includes('DAG') || 
-                category.includes('ŞEHİR') || category.includes('SEHIR')) {
-                return 'bisiklet';
+                title.includes('BIKE') || title.includes('BICYCLE')) {
+                return {
+                    key: "nci-bisiklet",
+                    name: categorySchema["nci-bisiklet"].name, 
+                    taxRate: categorySchema["nci-bisiklet"].taxRate
+                };
             }
             
-            // Yedek parça
-            if (category.includes('YEDEK') || category.includes('PARÇA') || category.includes('PARCA') ||
-                title.includes('LASTİK') || title.includes('LASTIK') || title.includes('JANT') ||
-                title.includes('PEDAL') || title.includes('SELE') || title.includes('GİDON') ||
-                title.includes('GIDON') || title.includes('BATARYA') || title.includes('İÇ LASTİK')) {
-                return 'yedek_parça';
-            }
-            
-            // Aksesuar - diğer her şey
-            return 'aksesuar';
+            // Default to NCI aksesuar
+            return {
+                key: "nci-aksesuar",
+                name: categorySchema["nci-aksesuar"].name,
+                taxRate: categorySchema["nci-aksesuar"].taxRate
+            };
         }
         
-        // Landed cost calculation using import tax
+        // Landed cost calculation: buyingPrice * (1 + taxRate/100)
         function calculateLandedCost(product) {
             const buyingPrice = parseFloat(product.buyingPrice) || 0;
-            const importTax = getImportTax(product);
-            return buyingPrice * (1 + importTax / 100);
+            const categoryInfo = mapToCategory(product);
+            const taxRate = categoryInfo.taxRate;
+            return buyingPrice * (1 + taxRate / 100);
         }
         
         // Margin calculation with landed cost
@@ -610,9 +639,12 @@
             filteredProducts.forEach(product => {
                 const title = product.title;
                 if (!productTitleGroups[title]) {
+                    const categoryInfo = mapToCategory(product);
                     productTitleGroups[title] = {
                         title: title,
-                        category: mapToSimplifiedCategory(product),
+                        category: categoryInfo.key,
+                        categoryName: categoryInfo.name,
+                        taxRate: categoryInfo.taxRate,
                         originalCategory: product.category || 'Diğer',
                         totalStock: 0,
                         variants: [],
@@ -660,7 +692,8 @@
                 const buyingPrice = productGroup.avgBuyingPrice || 0;
                 const sellingPrice = productGroup.avgSellingPrice || 0;
                 const stock = productGroup.totalStock || 0;
-                const category = productGroup.category || 'aksesuar';
+                const category = productGroup.category || 'nci-aksesuar';
+                const categoryName = productGroup.categoryName || categorySchema[category]?.name || category;
                 
                 // Create a representative product for calculations
                 const representativeProduct = productGroup.variants[0] || {};
@@ -682,6 +715,7 @@
                 if (!categoryGroups[category]) {
                     categoryGroups[category] = {
                         category: category,
+                        categoryName: categoryName,
                         totalStock: 0,
                         totalStockValue: 0,
                         totalSalesPotential: 0,
@@ -755,23 +789,72 @@
             document.getElementById('profit-potential').textContent = formatCurrency(profitPotential);
             document.getElementById('roi-potential').textContent = roiPotential.toFixed(1) + '%';
             
-            // Show top profit potential categories (top 10)
-            const topCategories = Object.values(categoryGroups)
+            // Show categories sorted by stock first, then by profit potential
+            const allCategories = Object.values(categoryGroups);
+            
+            // Top categories by stock count
+            const topStockCategories = allCategories
+                .filter(cat => cat.totalStock > 0)
+                .sort((a, b) => b.totalStock - a.totalStock)
+                .slice(0, 8);
+            
+            // Top categories by profit potential  
+            const topProfitCategories = allCategories
                 .filter(cat => cat.totalProfitPotential > 0)
                 .sort((a, b) => b.totalProfitPotential - a.totalProfitPotential)
-                .slice(0, 10);
+                .slice(0, 8);
             
             const topCategoriesContainer = document.getElementById('top-margin-categories');
-            topCategoriesContainer.innerHTML = topCategories.map((category, index) => {
+            
+            let categoriesHTML = `
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #4ecdc4; margin-bottom: 15px;">📦 En Çok Stok Bulunan Kategoriler</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                        ${topStockCategories.map((category, index) => {
+                            const categoryId = \`stock-category-\${index}\`;
+                            return \`
+                                <div class="margin-product-card" style="background: linear-gradient(135deg, rgba(78,205,196,0.2), rgba(78,205,196,0.1));">
+                                    <div style="display: flex; align-items: center; margin-bottom: 10px; cursor: pointer;" 
+                                         onclick="toggleCategoryProducts('\${categoryId}')">
+                                        <span class="margin-rank">\${index + 1}</span>
+                                        <div class="margin-product-title">\${category.categoryName || category.category}</div>
+                                        <span style="margin-left: auto; font-size: 1.2em;">▼</span>
+                                    </div>
+                                    <div class="margin-details">
+                                        <div><strong>Toplam Stok:</strong> \${category.totalStock.toLocaleString()}</div>
+                                        <div><strong>Ürün Sayısı:</strong> \${category.productCount}</div>
+                                        <div><strong>Stok Değeri:</strong> \${formatCurrency(category.totalStockValue)}</div>
+                                    </div>
+                                    <div id="\${categoryId}" style="display: none; margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                                        <div style="font-weight: bold; margin-bottom: 10px; color: #FFD700;">📦 Kategorideki Ürünler:</div>
+                                        \${(category.products || []).slice(0, 5).map(product => \`
+                                            <div style="margin: 5px 0; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; font-size: 0.9em;">
+                                                <strong>\${product.title}</strong><br>
+                                                Stok: \${product.stock} | Alış: $\${product.buyingPrice.toFixed(2)} | Satış: €\${product.sellingPrice.toFixed(2)} | Margin: \${product.margin.toFixed(1)}%
+                                            </div>
+                                        \`).join('')}
+                                    </div>
+                                </div>
+                            \`;
+                        }).join('')}
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 style="color: #FFD700; margin-bottom: 15px;">💰 En Yüksek Kar Potansiyeli Olan Kategoriler</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+            `;
+            
+            categoriesHTML += topProfitCategories.map((category, index) => {
                 const marginColor = category.avgMargin > 50 ? '#28a745' : category.avgMargin > 30 ? '#ffc107' : '#fd7e14';
-                const categoryId = `category-${index}`;
+                const categoryId = `profit-category-${index}`;
                 
                 return `
                     <div class="margin-product-card">
                         <div style="display: flex; align-items: center; margin-bottom: 10px; cursor: pointer;" 
                              onclick="toggleCategoryProducts('${categoryId}')">
                             <span class="margin-rank">${index + 1}</span>
-                            <div class="margin-product-title">${category.category}</div>
+                            <div class="margin-product-title">${category.categoryName || category.category}</div>
                             <span style="margin-left: auto; font-size: 1.2em;">▼</span>
                         </div>
                         
@@ -808,6 +891,13 @@
                     </div>
                 `;
             }).join('');
+            
+            categoriesHTML += `
+                    </div>
+                </div>
+            `;
+            
+            topCategoriesContainer.innerHTML = categoriesHTML;
             
             // Add toggle function for category products
             window.toggleCategoryProducts = function(categoryId) {
