@@ -363,102 +363,16 @@
         const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         const apiBase = isLocalhost ? 'http://localhost:3002/api/b2b' : '/api-b2b-proxy.php/b2b';
         
-        // Brand configuration with tax rates
-        const brandConfig = {
-            'DSW': {
-                name: 'DSW',
-                categories: ['bisiklet', 'aksesuar'],
-                taxRate: 20,
-                keywords: ['dsw', 'trek'],
-                description: 'DSW Bisiklet ve Aksesuarları'
-            },
-            'NCI': {
-                name: 'NCI',
-                categories: ['bisiklet', 'aksesuar'],
-                taxRate: 20,
-                keywords: ['nci', 'specialized'],
-                description: 'NCI Bisiklet ve Aksesuarları'
-            },
-            'GOBIK': {
-                name: 'GOBİK',
-                categories: ['giyim'],
-                taxRate: 18,
-                keywords: ['gobik', 'gob', 'giyim', 'forma'],
-                description: 'GOBİK Spor Giyim'
-            },
-            'TRIEYE': {
-                name: 'TriEye',
-                categories: ['aksesuar'],
-                taxRate: 18,
-                keywords: ['trieye', 'tri', 'gözlük'],
-                description: 'TriEye Gözlük ve Aksesuarları'
-            },
-            'BRYTON': {
-                name: 'Bryton',
-                categories: ['elektronik'],
-                taxRate: 18,
-                keywords: ['bryton', 'gps', 'bilgisayar'],
-                description: 'Bryton GPS ve Bisiklet Bilgisayarı'
-            },
-            'BONTRAGER': {
-                name: 'Bontrager',
-                categories: ['aksesuar', 'parça'],
-                taxRate: 20,
-                keywords: ['bontrager', 'trek'],
-                description: 'Bontrager Aksesuar ve Parçaları'
-            },
-            'SRAM': {
-                name: 'SRAM',
-                categories: ['parça'],
-                taxRate: 20,
-                keywords: ['sram', 'rockshox', 'zipp'],
-                description: 'SRAM Bisiklet Parçaları'
-            },
-            'SHIMANO': {
-                name: 'Shimano',
-                categories: ['parça'],
-                taxRate: 20,
-                keywords: ['shimano', 'ultegra', 'dura-ace', '105', 'tiagra'],
-                description: 'Shimano Bisiklet Parçaları'
-            }
-        };
-        
         // Category mappings loaded from localStorage or default
         let categoryMappings = {};
-        
-        // Detect brand from product
-        function detectBrand(product) {
-            const text = `${product.title || ''} ${product.category || ''} ${product.brand || ''}`.toLowerCase();
-            
-            for (const [brandKey, brandInfo] of Object.entries(brandConfig)) {
-                if (brandInfo.keywords.some(keyword => text.includes(keyword.toLowerCase()))) {
-                    return brandKey;
-                }
-            }
-            
-            return null;
-        }
         
         // Get KDV (VAT) from BizimHesap data - DO NOT MODIFY
         function getKDV(product) {
             return parseFloat(product.tax) || parseFloat(product.vatRate) || 20;
         }
         
-        // Import tax calculation function (imp_tax) for landed cost
+        // Import tax calculation function (imp_tax) for landed cost - ONLY SPECIAL CASES
         function getImportTax(product) {
-            const brand = detectBrand(product);
-            
-            if (brand && brandConfig[brand]) {
-                return brandConfig[brand].taxRate;
-            } else if (categoryMappings) {
-                for (const [upperCat, mapping] of Object.entries(categoryMappings)) {
-                    if (mapping.categories && mapping.categories.includes(product.category)) {
-                        return mapping.taxRate || 20;
-                    }
-                }
-            }
-            
-            // Check for specific product names
             const title = (product.title || '').toUpperCase();
             const category = (product.category || '').toUpperCase();
             
@@ -472,7 +386,8 @@
                 return 70;
             }
             
-            return 20; // Default import tax rate
+            // Default import tax rate
+            return 20;
         }
         
         
@@ -542,7 +457,27 @@
                     product.totalStock = allInventory[product.id] || 0;
                 });
                 
-                filteredProducts = [...allProducts];
+                // Group products by title to check variant stock
+                const productGroups = {};
+                allProducts.forEach(product => {
+                    const title = product.title;
+                    if (!productGroups[title]) {
+                        productGroups[title] = [];
+                    }
+                    productGroups[title].push(product);
+                });
+                
+                // Filter products - only show if at least one variant has stock > 0
+                filteredProducts = allProducts.filter(product => {
+                    const title = product.title;
+                    const variants = productGroups[title] || [product];
+                    
+                    // Check if at least one variant has positive stock
+                    const hasStock = variants.some(variant => (variant.totalStock || 0) > 0);
+                    return hasStock;
+                });
+                
+                console.log(`Filtered ${allProducts.length} products to ${filteredProducts.length} with stock`);
                 
                 updateSummary();
                 updateProfitAnalysis();
@@ -565,12 +500,12 @@
         
         // Update summary statistics
         function updateSummary() {
-            const totalProducts = allProducts.length;
-            const totalStock = allProducts.reduce((sum, p) => sum + (p.totalStock || 0), 0);
-            const inStockProducts = allProducts.filter(p => (p.totalStock || 0) > 0).length;
+            const totalProducts = filteredProducts.length;
+            const totalStock = filteredProducts.reduce((sum, p) => sum + (p.totalStock || 0), 0);
+            const inStockProducts = filteredProducts.filter(p => (p.totalStock || 0) > 0).length;
             
             // Calculate average margin
-            const productsWithMargin = allProducts.filter(p => {
+            const productsWithMargin = filteredProducts.filter(p => {
                 return parseFloat(p.price) > 0 && parseFloat(p.buyingPrice) > 0;
             });
             
@@ -594,7 +529,8 @@
             const categoryGroups = {};
             const productsByCategory = {};
             
-            allProducts.forEach(product => {
+            // Use filteredProducts instead of allProducts to exclude zero-stock products
+            filteredProducts.forEach(product => {
                 const buyingPrice = parseFloat(product.buyingPrice) || 0;
                 const sellingPrice = parseFloat(product.price) || 0;
                 const stock = product.totalStock || 0;
@@ -755,7 +691,7 @@
         // Populate filter dropdowns
         function populateFilters() {
             // Brand filter
-            const brands = [...new Set(allProducts.map(p => p.brand).filter(b => b))].sort();
+            const brands = [...new Set(filteredProducts.map(p => p.brand).filter(b => b))].sort();
             const brandSelect = document.getElementById('brand-filter');
             brandSelect.innerHTML = '<option value="">Tüm Markalar</option>';
             brands.forEach(brand => {
@@ -772,7 +708,14 @@
             const selectedBrand = document.getElementById('brand-filter').value;
             const stockFilter = document.getElementById('stock-filter').value;
             
-            filteredProducts = allProducts.filter(product => {
+            // Start with products that have at least one variant with stock
+            const baseProducts = allProducts.filter(product => {
+                const title = product.title;
+                const variants = allProducts.filter(p => p.title === title);
+                return variants.some(variant => (variant.totalStock || 0) > 0);
+            });
+            
+            filteredProducts = baseProducts.filter(product => {
                 // Search filter
                 const matchesSearch = !searchTerm || 
                     product.title.toLowerCase().includes(searchTerm) ||
