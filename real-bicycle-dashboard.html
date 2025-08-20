@@ -500,9 +500,29 @@
         
         // Update summary statistics
         function updateSummary() {
-            const totalProducts = filteredProducts.length;
-            const totalStock = filteredProducts.reduce((sum, p) => sum + (p.totalStock || 0), 0);
-            const inStockProducts = filteredProducts.filter(p => (p.totalStock || 0) > 0).length;
+            // Group by title to get unique products (not variants)
+            const uniqueProducts = {};
+            filteredProducts.forEach(product => {
+                const title = product.title;
+                if (!uniqueProducts[title]) {
+                    uniqueProducts[title] = {
+                        title: title,
+                        totalStock: 0,
+                        hasStock: false,
+                        variants: []
+                    };
+                }
+                uniqueProducts[title].totalStock += (product.totalStock || 0);
+                if ((product.totalStock || 0) > 0) {
+                    uniqueProducts[title].hasStock = true;
+                }
+                uniqueProducts[title].variants.push(product);
+            });
+            
+            const uniqueProductArray = Object.values(uniqueProducts);
+            const totalProducts = uniqueProductArray.length;
+            const totalStock = uniqueProductArray.reduce((sum, p) => sum + p.totalStock, 0);
+            const inStockProducts = uniqueProductArray.filter(p => p.hasStock).length;
             
             // Calculate average margin
             const productsWithMargin = filteredProducts.filter(p => {
@@ -520,6 +540,46 @@
         
         // Update profit analysis
         function updateProfitAnalysis() {
+            // First, group by product title to avoid duplicate counting
+            const productTitleGroups = {};
+            filteredProducts.forEach(product => {
+                const title = product.title;
+                if (!productTitleGroups[title]) {
+                    productTitleGroups[title] = {
+                        title: title,
+                        category: product.category || 'Diğer',
+                        totalStock: 0,
+                        variants: [],
+                        avgBuyingPrice: 0,
+                        avgSellingPrice: 0,
+                        buyingPriceSum: 0,
+                        sellingPriceSum: 0,
+                        validVariants: 0
+                    };
+                }
+                
+                const stock = product.totalStock || 0;
+                const buyingPrice = parseFloat(product.buyingPrice) || 0;
+                const sellingPrice = parseFloat(product.price) || 0;
+                
+                productTitleGroups[title].totalStock += stock;
+                productTitleGroups[title].variants.push(product);
+                
+                if (buyingPrice > 0 && sellingPrice > 0) {
+                    productTitleGroups[title].buyingPriceSum += buyingPrice;
+                    productTitleGroups[title].sellingPriceSum += sellingPrice;
+                    productTitleGroups[title].validVariants++;
+                }
+            });
+            
+            // Calculate averages for each product group
+            Object.values(productTitleGroups).forEach(group => {
+                if (group.validVariants > 0) {
+                    group.avgBuyingPrice = group.buyingPriceSum / group.validVariants;
+                    group.avgSellingPrice = group.sellingPriceSum / group.validVariants;
+                }
+            });
+            
             // Calculate total stock value, sales potential, and profit potential
             let totalStockValue = 0;
             let salesPotential = 0;
@@ -529,14 +589,21 @@
             const categoryGroups = {};
             const productsByCategory = {};
             
-            // Use filteredProducts instead of allProducts to exclude zero-stock products
-            filteredProducts.forEach(product => {
-                const buyingPrice = parseFloat(product.buyingPrice) || 0;
-                const sellingPrice = parseFloat(product.price) || 0;
-                const stock = product.totalStock || 0;
-                const landedCost = calculateLandedCost(product);
-                const margin = calculateMargin(product);
-                const category = product.category || 'Diğer';
+            // Use product title groups instead of individual variants
+            Object.values(productTitleGroups).forEach(productGroup => {
+                const buyingPrice = productGroup.avgBuyingPrice || 0;
+                const sellingPrice = productGroup.avgSellingPrice || 0;
+                const stock = productGroup.totalStock || 0;
+                const category = productGroup.category || 'Diğer';
+                
+                // Create a representative product for calculations
+                const representativeProduct = productGroup.variants[0] || {};
+                const landedCost = calculateLandedCost({
+                    ...representativeProduct,
+                    buyingPrice: buyingPrice
+                });
+                const margin = sellingPrice > 0 && landedCost > 0 ? 
+                    ((sellingPrice - landedCost) / sellingPrice) * 100 : 0;
                 
                 // Calculate stock value for EVERY product (landed cost * stock)
                 let stockValue = 0;
@@ -563,7 +630,15 @@
                     productsByCategory[category] = [];
                 }
                 
-                // For sales and profit potential, only count positive stock
+                // Add ALL stock to category totals (not just positive stock with prices)
+                categoryGroups[category].totalStock += stock;
+                
+                // Add stock value to category (for ALL products that have buying price)
+                if (stockValue > 0) {
+                    categoryGroups[category].totalStockValue += stockValue;
+                }
+                
+                // For sales and profit potential, only count positive stock with valid prices
                 if (buyingPrice > 0 && sellingPrice > 0 && stock > 0) {
                     // Sales potential (selling price * stock)
                     const productSalesPotential = sellingPrice * stock;
@@ -573,26 +648,24 @@
                     const productProfitPotential = (sellingPrice - landedCost) * stock;
                     profitPotential += productProfitPotential;
                     
-                    // Add to category totals
-                    categoryGroups[category].totalStock += stock;
-                    categoryGroups[category].totalStockValue += stockValue;
+                    // Add to category sales and profit totals
                     categoryGroups[category].totalSalesPotential += productSalesPotential;
                     categoryGroups[category].totalProfitPotential += productProfitPotential;
                     categoryGroups[category].productCount++;
                     categoryGroups[category].marginSum += margin;
-                    categoryGroups[category].importTaxSum += getImportTax(product);
+                    categoryGroups[category].importTaxSum += getImportTax(representativeProduct);
                     
                     // Store product for expandable view
                     productsByCategory[category].push({
-                        title: product.title,
-                        brand: product.brand,
+                        title: productGroup.title,
+                        brand: representativeProduct.brand,
                         stock: stock,
                         buyingPrice: buyingPrice,
                         sellingPrice: sellingPrice,
                         landedCost: landedCost,
                         margin: margin,
                         profitPotential: productProfitPotential,
-                        importTax: getImportTax(product)
+                        importTax: getImportTax(representativeProduct)
                     });
                 }
             });
