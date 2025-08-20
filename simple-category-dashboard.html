@@ -254,14 +254,17 @@
     <script>
         let allProducts = [];
         
-        // API Base URL
-        const apiBase = 'http://localhost:3002/api/b2b';
+        // API Base URL - production ready
+        const apiBase = window.location.hostname === 'localhost' ? 
+                       'http://localhost:3002/api/b2b' : 
+                       '/api/b2b';
         
         // Load tax rates from admin panel localStorage
         function getTaxRates() {
             const defaults = {
-                bike: 35, madone: 35, emonda: 35, fx: 35, domane: 35,
-                dsw: 70, ds: 70, gobik: 33, trieye: 68, bryton: 65, accessory: 40
+                bike: 35, madone: 35, emonda: 35, fx: 35, 'fx-plus': 35,
+                domane: 35, 'domane-plus': 35, dsw: 70, ds: 70, 'ds-plus': 70,
+                gobik: 33, trieye: 68, bryton: 65, accessory: 40
             };
             
             const rates = { ...defaults };
@@ -281,21 +284,22 @@
             const brand = (product.brand || '').toUpperCase();
             const taxRates = getTaxRates();
             
+            
             // Special brand cases first - Handle DSW products
             if (title.startsWith('DSW ')) {
-                // Check for DS+ models first (most specific)
+                // DS+ (elektrikli) vs DS (normal) - AYRI KATEGORİLER
                 if (title.includes('DS+') || title.includes('DS +') || 
                     title.includes('DS+ ') || title.includes('DS +2') || 
                     title.includes('DS +7') || title.includes('DS+ 2') || 
                     title.includes('DS+ 7') || title.includes('DS +4') || 
                     title.includes('DS+ 4') || title.includes('DS +5') || 
                     title.includes('DS+ 5')) {
-                    return { key: "ds-plus", name: "DS+", taxRate: taxRates.ds };
+                    return { key: "ds-plus", name: "DS+ SERİSİ", taxRate: taxRates['ds-plus'] };
                 }
                 // Check for regular DS models (after DS+ check)
                 if (title.includes(' DS ') || title.includes('DS ') && 
                     !title.includes('DS+') && !title.includes('DS +') && !title.includes('DS+ ')) {
-                    return { key: "ds", name: "DS", taxRate: taxRates.ds };
+                    return { key: "ds", name: "DS SERİSİ", taxRate: taxRates.ds };
                 }
                 // Other DSW products
                 return { key: "dsw-other", name: "DSW DİĞER", taxRate: taxRates.dsw };
@@ -313,18 +317,22 @@
             // Bisiklet kategorisi kontrolü
             if (apiCategory.includes('BİSİKLET') || apiCategory.includes('BISIKLET')) {
                 
-                // FX+ (elektrikli) vs FX (normal)
-                if (title.includes('FX+')) {
-                    return { key: "fx-plus", name: "FX+", taxRate: taxRates.fx };
-                } else if (title.includes('FX')) {
-                    return { key: "fx", name: "FX", taxRate: taxRates.fx };
+                // ÖNCELİKLE + OLANLAR (en spesifik)
+                if (title.includes('FX+') || title.includes('FX +')) {
+                    return { key: "fx-plus", name: "FX+ SERİSİ", taxRate: taxRates['fx-plus'] };
                 }
                 
-                // DOMANE+ (elektrikli) vs DOMANE (normal)  
-                if (title.includes('DOMANE+')) {
-                    return { key: "domane-plus", name: "DOMANE+", taxRate: taxRates.domane };
-                } else if (title.includes('DOMANE')) {
-                    return { key: "domane", name: "DOMANE", taxRate: taxRates.domane };
+                if (title.includes('DOMANE+') || title.includes('DOMANE +')) {
+                    return { key: "domane-plus", name: "DOMANE+ SERİSİ", taxRate: taxRates['domane-plus'] };
+                }
+                
+                // SONRA NORMAL OLANLAR (+ içermeyenler)
+                if (title.includes('FX') && !title.includes('FX+') && !title.includes('FX +')) {
+                    return { key: "fx", name: "FX SERİSİ", taxRate: taxRates.fx };
+                }
+                
+                if (title.includes('DOMANE') && !title.includes('DOMANE+') && !title.includes('DOMANE +')) {
+                    return { key: "domane", name: "DOMANE SERİSİ", taxRate: taxRates.domane };
                 }
                 
                 // Other specific models
@@ -437,13 +445,6 @@
                     const categoryInfo = mapToCategory(representativeProduct);
                     const category = categoryInfo.key;
                     
-                    // Debug FX products - daha detaylı
-                    if (productGroup.title.toUpperCase().includes('FX')) {
-                        const title = representativeProduct.title.toUpperCase();
-                        const hasPlus = title.includes('FX+') || title.includes('FX +');
-                        console.log(`FX Debug: "${productGroup.title}" → HasPlus: ${hasPlus} → Category: ${category} (${categoryInfo.name})`);
-                        console.log(`  Title check: "${title}"`);
-                    }
                     
                     if (!categoryGroups[category]) {
                         categoryGroups[category] = {

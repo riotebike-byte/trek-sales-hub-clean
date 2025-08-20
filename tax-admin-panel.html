@@ -254,15 +254,27 @@
                 </div>
                 
                 <div class="tax-row bike">
-                    <div class="category-name">🚴 FX / FX+</div>
+                    <div class="category-name">🚴 FX (Normal)</div>
                     <input type="number" class="tax-input" id="fx-tax" min="0" max="100" step="0.1" placeholder="35">
                     <button class="save-btn" onclick="saveTaxRate('fx')">Kaydet</button>
                 </div>
                 
                 <div class="tax-row bike">
-                    <div class="category-name">🚴 DOMANE / DOMANE+</div>
+                    <div class="category-name">⚡ FX+ (Elektrikli)</div>
+                    <input type="number" class="tax-input" id="fx-plus-tax" min="0" max="100" step="0.1" placeholder="35">
+                    <button class="save-btn" onclick="saveTaxRate('fx-plus')">Kaydet</button>
+                </div>
+                
+                <div class="tax-row bike">
+                    <div class="category-name">🚴 DOMANE (Normal)</div>
                     <input type="number" class="tax-input" id="domane-tax" min="0" max="100" step="0.1" placeholder="35">
                     <button class="save-btn" onclick="saveTaxRate('domane')">Kaydet</button>
+                </div>
+                
+                <div class="tax-row bike">
+                    <div class="category-name">⚡ DOMANE+ (Elektrikli)</div>
+                    <input type="number" class="tax-input" id="domane-plus-tax" min="0" max="100" step="0.1" placeholder="35">
+                    <button class="save-btn" onclick="saveTaxRate('domane-plus')">Kaydet</button>
                 </div>
                 
                 <div class="tax-row dsw">
@@ -272,9 +284,15 @@
                 </div>
                 
                 <div class="tax-row dsw">
-                    <div class="category-name">🏔️ DS / DS+</div>
+                    <div class="category-name">🏔️ DS (Normal)</div>
                     <input type="number" class="tax-input" id="ds-tax" min="0" max="100" step="0.1" placeholder="70">
                     <button class="save-btn" onclick="saveTaxRate('ds')">Kaydet</button>
+                </div>
+                
+                <div class="tax-row dsw">
+                    <div class="category-name">⚡ DS+ (Elektrikli)</div>
+                    <input type="number" class="tax-input" id="ds-plus-tax" min="0" max="100" step="0.1" placeholder="70">
+                    <button class="save-btn" onclick="saveTaxRate('ds-plus')">Kaydet</button>
                 </div>
                 
                 <div class="tax-row gobik">
@@ -341,9 +359,12 @@
             madone: 35,
             emonda: 35,
             fx: 35,
+            'fx-plus': 35,
             domane: 35,
+            'domane-plus': 35,
             dsw: 70,
             ds: 70,
+            'ds-plus': 70,
             gobik: 33,
             trieye: 68,
             bryton: 65,
@@ -392,10 +413,13 @@
                 bike: 'Bisiklet',
                 madone: 'MADONE',
                 emonda: 'EMONDA', 
-                fx: 'FX/FX+',
-                domane: 'DOMANE/+',
+                fx: 'FX',
+                'fx-plus': 'FX+',
+                domane: 'DOMANE',
+                'domane-plus': 'DOMANE+',
                 dsw: 'DSW',
-                ds: 'DS/DS+',
+                ds: 'DS',
+                'ds-plus': 'DS+',
                 gobik: 'GOBİK',
                 trieye: 'TRIEYE',
                 bryton: 'BRYTON',
