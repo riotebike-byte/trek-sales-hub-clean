@@ -363,24 +363,156 @@
         const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         const apiBase = isLocalhost ? 'http://localhost:3002/api/b2b' : '/api-b2b-proxy.php/b2b';
         
-        // Tax calculation function
+        // Tax calculation function - EXACT CATEGORY SCHEMA
         function getTaxRate(product) {
-            const category = (product.category || '').toLowerCase();
-            const title = (product.title || '').toLowerCase();
+            const category = (product.category || '').toUpperCase();
+            const title = (product.title || '').toUpperCase();
             
-            // MADONE kategorisi için 35%
-            if (title.includes('madone') || category.includes('madone')) {
+            // MADONE - 35% vergi
+            if (category.includes('MADONE') || title.includes('MADONE')) {
                 return 35;
             }
             
-            // DSW kategorileri için 70%
-            const dswCategories = ['dsw', 'ön sipariş', 'önsipariş'];
-            if (dswCategories.some(cat => category.includes(cat) || title.includes(cat))) {
+            // DSW CATEGORIES - 70% vergi
+            const dswCategories = [
+                'DSW DOMANE AL 2',
+                'DSW DOMANE AL 3', 
+                'DSW DOMANE AL 4',
+                'DSW DUAL SPORT 1',
+                'DSW DUAL SPORT 2',
+                'DSW DUAL SPORT 3',
+                'DSW FX 1',
+                'DSW FX 2',
+                'DSW FX 3',
+                'DSW MARLIN 4',
+                'DSW MARLIN 5',
+                'DSW MARLIN 6',
+                'DSW MARLIN 7',
+                'DSW MARLIN 8',
+                'DSW PRECALIBER 16',
+                'DSW PRECALIBER 20',
+                'DSW PRECALIBER 24',
+                'DSW VERVE 1',
+                'DSW VERVE 2'
+            ];
+            
+            // Check if category matches any DSW category
+            if (dswCategories.some(dsw => category.includes(dsw))) {
                 return 70;
             }
             
-            // Diğer ürünler için API'den gelen tax değeri veya varsayılan 20%
-            return parseFloat(product.tax) || 20;
+            // NCI CATEGORIES - 20% vergi  
+            const nciCategories = [
+                'NCI CHECKPOINT ALR 4',
+                'NCI CHECKPOINT ALR 5',
+                'NCI CHECKPOINT SL 5',
+                'NCI CHECKPOINT SL 6',
+                'NCI CHECKPOINT SL 7',
+                'NCI CHECKPOINT SLR 7',
+                'NCI DOMANE AL 2',
+                'NCI DOMANE AL 3',
+                'NCI DOMANE AL 4',
+                'NCI DOMANE AL 5',
+                'NCI DOMANE SL 5',
+                'NCI DOMANE SL 6',
+                'NCI DOMANE SL 7',
+                'NCI DOMANE SLR 6',
+                'NCI DOMANE SLR 7',
+                'NCI DOMANE SLR 9',
+                'NCI DUAL SPORT 1',
+                'NCI DUAL SPORT 2',
+                'NCI DUAL SPORT 3',
+                'NCI EMONDA ALR 4',
+                'NCI EMONDA ALR 5',
+                'NCI EMONDA SL 5',
+                'NCI EMONDA SL 6',
+                'NCI EMONDA SL 7',
+                'NCI EMONDA SLR 6',
+                'NCI EMONDA SLR 7',
+                'NCI EMONDA SLR 9',
+                'NCI FX 1',
+                'NCI FX 2',
+                'NCI FX 3',
+                'NCI FX SPORT 4',
+                'NCI FX SPORT 5',
+                'NCI FX SPORT 6',
+                'NCI FUEL EX 5',
+                'NCI FUEL EX 7',
+                'NCI FUEL EX 8',
+                'NCI FUEL EX 9',
+                'NCI FUEL EXE 9.5',
+                'NCI FUEL EXE 9.7',
+                'NCI FUEL EXE 9.8',
+                'NCI FUEL EXE 9.9',
+                'NCI MARLIN 4',
+                'NCI MARLIN 5',
+                'NCI MARLIN 6',
+                'NCI MARLIN 7',
+                'NCI MARLIN 8',
+                'NCI POWERFLY 4',
+                'NCI POWERFLY 5',
+                'NCI POWERFLY 7',
+                'NCI POWERFLY FS 4',
+                'NCI POWERFLY FS 5',
+                'NCI POWERFLY FS 7',
+                'NCI POWERFLY FS 9',
+                'NCI PRECALIBER 16',
+                'NCI PRECALIBER 20',
+                'NCI PRECALIBER 24',
+                'NCI PROCALIBER 9.5',
+                'NCI PROCALIBER 9.6',
+                'NCI PROCALIBER 9.7',
+                'NCI PROCALIBER 9.8',
+                'NCI RAIL 5',
+                'NCI RAIL 7',
+                'NCI RAIL 9',
+                'NCI RAIL 9.7',
+                'NCI RAIL 9.8',
+                'NCI RAIL 9.9',
+                'NCI ROSCOE 6',
+                'NCI ROSCOE 7',
+                'NCI ROSCOE 8',
+                'NCI ROSCOE 9',
+                'NCI SLASH 7',
+                'NCI SLASH 8',
+                'NCI SLASH 9',
+                'NCI SLASH 9.7',
+                'NCI SLASH 9.8',
+                'NCI SLASH 9.9',
+                'NCI SPEED CONCEPT SL 6',
+                'NCI SPEED CONCEPT SL 7',
+                'NCI SPEED CONCEPT SLR 6',
+                'NCI SPEED CONCEPT SLR 7',
+                'NCI SPEED CONCEPT SLR 9',
+                'NCI SUPERCALIBER 9.5',
+                'NCI SUPERCALIBER 9.6',
+                'NCI SUPERCALIBER 9.7',
+                'NCI SUPERCALIBER 9.8',
+                'NCI SUPERCALIBER 9.9',
+                'NCI TOP FUEL 5',
+                'NCI TOP FUEL 7',
+                'NCI TOP FUEL 8',
+                'NCI TOP FUEL 9',
+                'NCI TOP FUEL 9.7',
+                'NCI TOP FUEL 9.8',
+                'NCI TOP FUEL 9.9',
+                'NCI VERVE 1',
+                'NCI VERVE 2',
+                'NCI VERVE 3',
+                'NCI VERVE+ 1',
+                'NCI VERVE+ 2',
+                'NCI VERVE+ 3',
+                'NCI X-CALIBER 7',
+                'NCI X-CALIBER 8',
+                'NCI X-CALIBER 9'
+            ];
+            
+            if (nciCategories.some(nci => category.includes(nci))) {
+                return 20;
+            }
+            
+            // Default 20% for other products
+            return 20;
         }
         
         // Landed cost calculation
@@ -498,6 +630,9 @@
             let profitPotential = 0;
             let validProducts = [];
             
+            // Group products by title for variant aggregation
+            const productGroups = {};
+            
             allProducts.forEach(product => {
                 const buyingPrice = parseFloat(product.buyingPrice) || 0;
                 const sellingPrice = parseFloat(product.price) || 0;
@@ -505,25 +640,68 @@
                 const landedCost = calculateLandedCost(product);
                 const margin = calculateMargin(product);
                 
-                if (buyingPrice > 0 && sellingPrice > 0 && stock > 0) {
-                    // Stock value based on landed cost
-                    const stockValue = landedCost * stock;
+                // Calculate stock value for EVERY product (landed cost * stock)
+                if (buyingPrice > 0 && stock !== 0) {
+                    const stockValue = landedCost * Math.abs(stock);
                     totalStockValue += stockValue;
-                    
+                }
+                
+                // For sales and profit potential, only count positive stock
+                if (buyingPrice > 0 && sellingPrice > 0 && stock > 0) {
                     // Sales potential (selling price * stock)
                     const productSalesPotential = sellingPrice * stock;
                     salesPotential += productSalesPotential;
                     
-                    // Profit potential (margin * selling price * stock)
+                    // Profit potential ((selling price - landed cost) * stock)
                     const productProfitPotential = (sellingPrice - landedCost) * stock;
                     profitPotential += productProfitPotential;
                     
+                    // Group by product title for display
+                    const title = product.title;
+                    if (!productGroups[title]) {
+                        productGroups[title] = {
+                            ...product,
+                            totalStock: 0,
+                            avgBuyingPrice: 0,
+                            avgSellingPrice: 0,
+                            avgLandedCost: 0,
+                            totalStockValue: 0,
+                            totalProfitPotential: 0,
+                            variants: [],
+                            buyingPriceSum: 0,
+                            sellingPriceSum: 0,
+                            landedCostSum: 0,
+                            validVariantCount: 0
+                        };
+                    }
+                    
+                    productGroups[title].totalStock += stock;
+                    productGroups[title].totalStockValue += stockValue;
+                    productGroups[title].totalProfitPotential += productProfitPotential;
+                    productGroups[title].variants.push(product.variant || '');
+                    productGroups[title].buyingPriceSum += buyingPrice;
+                    productGroups[title].sellingPriceSum += sellingPrice;
+                    productGroups[title].landedCostSum += landedCost;
+                    productGroups[title].validVariantCount++;
+                }
+            });
+            
+            // Calculate averages and prepare valid products for display
+            Object.keys(productGroups).forEach(title => {
+                const group = productGroups[title];
+                if (group.validVariantCount > 0) {
+                    group.avgBuyingPrice = group.buyingPriceSum / group.validVariantCount;
+                    group.avgSellingPrice = group.sellingPriceSum / group.validVariantCount;
+                    group.avgLandedCost = group.landedCostSum / group.validVariantCount;
+                    group.margin = ((group.avgSellingPrice - group.avgLandedCost) / group.avgSellingPrice) * 100;
+                    
                     validProducts.push({
-                        ...product,
-                        margin: margin,
-                        landedCost: landedCost,
-                        stockValue: stockValue,
-                        profitPotential: productProfitPotential
+                        ...group,
+                        buyingPrice: group.avgBuyingPrice,
+                        price: group.avgSellingPrice,
+                        landedCost: group.avgLandedCost,
+                        stockValue: group.totalStockValue,
+                        profitPotential: group.totalProfitPotential
                     });
                 }
             });
@@ -545,6 +723,8 @@
             const topMarginContainer = document.getElementById('top-margin-products');
             topMarginContainer.innerHTML = topMarginProducts.map((product, index) => {
                 const marginColor = product.margin > 50 ? '#28a745' : product.margin > 30 ? '#ffc107' : '#fd7e14';
+                const taxRate = getTaxRate(product);
+                const variantCount = product.variants ? product.variants.filter(v => v).length : 0;
                 
                 return `
                     <div class="margin-product-card">
@@ -554,10 +734,13 @@
                         </div>
                         
                         <div class="margin-details">
+                            <div><strong>Kategori:</strong> ${product.category || '-'}</div>
                             <div><strong>Marka:</strong> ${product.brand || '-'}</div>
-                            <div><strong>Stok:</strong> ${product.totalStock}</div>
-                            <div><strong>Alış:</strong> ${product.buyingPrice.toFixed(2)} ${product.buyingCurrency || 'USD'}</div>
-                            <div><strong>Satış:</strong> ${product.price.toFixed(2)} ${product.currency || 'EUR'}</div>
+                            <div><strong>Toplam Stok:</strong> ${product.totalStock || product.totalStock}</div>
+                            <div><strong>Varyant Sayısı:</strong> ${variantCount > 0 ? variantCount : 1}</div>
+                            <div><strong>Ort. Alış:</strong> ${product.buyingPrice.toFixed(2)} ${product.buyingCurrency || 'USD'}</div>
+                            <div><strong>Ort. Satış:</strong> ${product.price.toFixed(2)} ${product.currency || 'EUR'}</div>
+                            <div><strong>Vergi Oranı:</strong> %${taxRate}</div>
                             <div><strong>Landed Cost:</strong> ${product.landedCost.toFixed(2)}€</div>
                             <div style="color: ${marginColor}; font-weight: bold;">
                                 <strong>Margin: ${product.margin.toFixed(1)}%</strong>
@@ -565,8 +748,8 @@
                         </div>
                         
                         <div style="margin-top: 10px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 6px;">
-                            <div style="font-size: 0.9em;"><strong>Stok Değeri:</strong> ${formatCurrency(product.stockValue)}</div>
-                            <div style="font-size: 0.9em; color: #28a745;"><strong>Kar Potansiyeli:</strong> ${formatCurrency(product.profitPotential)}</div>
+                            <div style="font-size: 0.9em;"><strong>Toplam Stok Değeri:</strong> ${formatCurrency(product.stockValue)}</div>
+                            <div style="font-size: 0.9em; color: #28a745;"><strong>Toplam Kar Potansiyeli:</strong> ${formatCurrency(product.profitPotential)}</div>
                         </div>
                     </div>
                 `;
