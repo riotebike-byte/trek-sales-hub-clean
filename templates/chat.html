@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trek Sales AI Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .chat-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            margin-left: auto;
+        }
+
+        .message.assistant {
+            margin-right: auto;
+        }
+
+        .message-content {
+            padding: 15px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #2c3e50;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 5px;
+        }
+
+        .products-section {
+            margin-top: 10px;
+            padding: 10px;
+            background: #ecf0f1;
+            border-radius: 8px;
+        }
+
+        .product-item {
+            background: white;
+            margin: 5px 0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border-left: 3px solid #3498db;
+            font-size: 12px;
+        }
+
+        .product-source {
+            font-weight: bold;
+            color: #2980b9;
+        }
+
+        .chat-input {
+            display: flex;
+            padding: 20px;
+            border-top: 1px solid #eee;
+            background: white;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .chat-input input:focus {
+            border-color: #3498db;
+        }
+
+        .send-btn, .refresh-btn {
+            margin-left: 10px;
+            padding: 12px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .refresh-btn {
+            background: #27ae60;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background: #2980b9;
+        }
+
+        .refresh-btn:hover {
+            background: #229954;
+        }
+
+        .send-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .quick-actions {
+            padding: 10px 20px;
+            background: #ecf0f1;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            padding: 6px 12px;
+            background: #95a5a6;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .quick-btn:hover {
+            background: #7f8c8d;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .message {
+                max-width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚲 Trek Sales AI Chatbot</h1>
+            <div class="stats">
+                <span id="salesCount">Sales: Yükleniyor...</span>
+                <span id="trekCount">Trek: Yükleniyor...</span>
+                <span>Model: GPT-5</span>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <div class="quick-actions">
+                <button class="quick-btn" onclick="sendQuickMessage('Sales analiz raporu ver')">📊 Sales Analizi</button>
+                <button class="quick-btn" onclick="sendQuickMessage('En karlı ürünler neler?')">💰 Karlı Ürünler</button>
+                <button class="quick-btn" onclick="sendQuickMessage('FX bisiklet modelleri')">🚲 FX Modelleri</button>
+                <button class="quick-btn" onclick="sendQuickMessage('Madone fiyatları')">🏆 Madone</button>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message assistant">
+                    <div class="message-content">
+                        Merhaba! Ben Trek Sales Hub'ınızın AI asistanıyım. 
+                        <br><br>
+                        Size nasıl yardımcı olabilirim?
+                        <ul style="margin-top: 10px;">
+                            <li>📊 Sales analizleri</li>
+                            <li>🔍 Ürün arama</li>
+                            <li>💰 Kar marjı hesaplamaları</li>
+                            <li>📈 Trend analizleri</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                AI düşünüyor...
+            </div>
+
+            <div class="chat-input">
+                <input type="text" id="messageInput" placeholder="Mesajınızı yazın..." maxlength="500">
+                <button class="send-btn" id="sendBtn">Gönder</button>
+                <button class="refresh-btn" onclick="refreshData()">🔄</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const loading = document.getElementById('loading');
+
+        // Load initial stats
+        refreshData();
+
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Disable input
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            loading.style.display = 'block';
+
+            // Add user message
+            addMessage('user', message);
+            messageInput.value = '';
+
+            // Send to API
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                
+                if (data.error) {
+                    addMessage('assistant', `Üzgünüm, bir hata oluştu: ${data.error}`);
+                } else {
+                    addMessage('assistant', data.response, data.products);
+                    
+                    // Update stats
+                    if (data.stats) {
+                        document.getElementById('salesCount').textContent = `Sales: ${data.stats.sales_products}`;
+                        document.getElementById('trekCount').textContent = `Trek: ${data.stats.trek_products}`;
+                    }
+                }
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                addMessage('assistant', `Bağlantı hatası: ${error.message}`);
+            })
+            .finally(() => {
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+                messageInput.focus();
+            });
+        }
+
+        function addMessage(sender, content, products = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            let productsHtml = '';
+            if (products && products.length > 0) {
+                productsHtml = '<div class="products-section"><strong>Bulunan Ürünler:</strong>';
+                products.forEach(product => {
+                    productsHtml += `
+                        <div class="product-item">
+                            <span class="product-source">[${product.source}]</span> 
+                            ${product.title} - ${product.price}
+                            ${product.margin ? ` (Marj: ${product.margin})` : ''}
+                        </div>
+                    `;
+                });
+                productsHtml += '</div>';
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    ${content}
+                    ${productsHtml}
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function sendQuickMessage(message) {
+            messageInput.value = message;
+            sendMessage();
+        }
+
+        function refreshData() {
+            fetch('/api/refresh', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('salesCount').textContent = `Sales: ${data.sales_count}`;
+                    document.getElementById('trekCount').textContent = `Trek: ${data.trek_count}`;
+                } else {
+                    console.error('Refresh failed:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Refresh error:', error);
+            });
+        }
+
+        // Event listeners
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Auto-focus input
+        messageInput.focus();
+    </script>
+</body>
+</html>
