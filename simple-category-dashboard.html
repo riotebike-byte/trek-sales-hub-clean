@@ -597,7 +597,7 @@
                             <span>📊 Ortalama Marj: <span class="${getMarginColorClass(category.avgMargin || 0)}">${(category.avgMargin || 0).toFixed(1)}%</span></span>
                         </div>
                         
-                        <button class="show-products-btn" onclick="showCategoryProducts('${category.category}', ${JSON.stringify(category.categoryName)})">
+                        <button class="show-products-btn" onclick="showCategoryProducts('${category.category}', '${category.categoryName.replace(/'/g, "\\'")}')">
                             📋 Ürünleri Göster
                         </button>
                     </div>
