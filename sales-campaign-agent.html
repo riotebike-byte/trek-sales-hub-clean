@@ -446,21 +446,61 @@
                 return rates;
             };
             
-            // Category mapping - simplified version
+            // Category mapping - use API category with tax rate mapping for specific models
             const mapToCategory = (product) => {
                 const title = (product.title || '').toUpperCase();
+                const apiCategory = product.category || 'GENEL';
                 const taxRates = getTaxRates();
                 
-                if (title.includes('MADONE')) return { key: "madone", name: "MADONE", taxRate: taxRates.madone };
-                if (title.includes('EMONDA')) return { key: "emonda", name: "EMONDA", taxRate: taxRates.emonda };
-                if (title.includes('FX+') || title.includes('FX +')) return { key: "fx-plus", name: "FX+ SERİSİ", taxRate: taxRates['fx-plus'] };
-                if (title.includes('DOMANE+') || title.includes('DOMANE +')) return { key: "domane-plus", name: "DOMANE+ SERİSİ", taxRate: taxRates['domane-plus'] };
-                if (title.includes('FX')) return { key: "fx", name: "FX SERİSİ", taxRate: taxRates.fx };
-                if (title.includes('DOMANE')) return { key: "domane", name: "DOMANE SERİSİ", taxRate: taxRates.domane };
-                if (title.includes('MARLIN')) return { key: "marlin", name: "MARLIN", taxRate: taxRates.bike };
-                if (title.includes('POWERFLY')) return { key: "powerfly", name: "POWERFLY", taxRate: taxRates.bike };
+                // Use API category as primary source
+                let categoryName = apiCategory;
+                let taxRate = taxRates.accessory; // default tax rate
                 
-                return { key: "other", name: "DİĞER", taxRate: taxRates.accessory };
+                // Determine tax rate based on specific models (for tax calculation accuracy)
+                if (title.includes('MADONE')) {
+                    taxRate = taxRates.madone;
+                } else if (title.includes('EMONDA')) {
+                    taxRate = taxRates.emonda;
+                } else if (title.includes('FX+') || title.includes('FX +')) {
+                    taxRate = taxRates['fx-plus'];
+                } else if (title.includes('DOMANE+') || title.includes('DOMANE +')) {
+                    taxRate = taxRates['domane-plus'];
+                } else if (title.includes('FX')) {
+                    taxRate = taxRates.fx;
+                } else if (title.includes('DOMANE')) {
+                    taxRate = taxRates.domane;
+                } else if (title.includes('MARLIN') || title.includes('POWERFLY') || title.includes('FUEL') || 
+                          title.includes('RAIL') || title.includes('SLASH') || title.includes('CHECKPOINT')) {
+                    taxRate = taxRates.bike;
+                } else if (title.startsWith('DSW ')) {
+                    if (title.includes('DS+') || title.includes('DS +')) {
+                        taxRate = taxRates['ds-plus'];
+                    } else if (title.includes(' DS ')) {
+                        taxRate = taxRates.ds;
+                    } else {
+                        taxRate = taxRates.dsw;
+                    }
+                } else if (title.includes('GOBIK')) {
+                    taxRate = taxRates.gobik;
+                } else if (title.includes('TRIEYE')) {
+                    taxRate = taxRates.trieye;
+                } else if (title.includes('BRYTON')) {
+                    taxRate = taxRates.bryton;
+                } else if (apiCategory.includes('BİSİKLET') || apiCategory.includes('BISIKLET')) {
+                    taxRate = taxRates.bike;
+                }
+                
+                // Create category key from API category for grouping
+                const categoryKey = apiCategory.toLowerCase()
+                    .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
+                    .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
+                    .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                
+                return { 
+                    key: categoryKey, 
+                    name: categoryName, // Use API category name directly
+                    taxRate: taxRate 
+                };
             };
             
             // Group products
