@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Rate Admin Panel</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+        
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+        
+        .header h1 {
+            color: #FFD700;
+            margin: 0 0 10px 0;
+        }
+        
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .tax-settings {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .tax-settings h2 {
+            color: #FFD700;
+            margin: 0 0 20px 0;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+            padding-bottom: 10px;
+        }
+        
+        .tax-row {
+            display: grid;
+            grid-template-columns: 1fr 120px 100px;
+            gap: 15px;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .tax-row.bike {
+            border-left-color: #4CAF50;
+        }
+        
+        .tax-row.dsw {
+            border-left-color: #FF9800;
+        }
+        
+        .tax-row.gobik {
+            border-left-color: #9C27B0;
+        }
+        
+        .tax-row.accessories {
+            border-left-color: #2196F3;
+        }
+        
+        .category-name {
+            color: #FFD700;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .tax-input {
+            padding: 10px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 1em;
+            text-align: center;
+        }
+        
+        .tax-input:focus {
+            outline: none;
+            border-color: #FFD700;
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .save-btn {
+            padding: 8px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .save-btn:hover {
+            background: #45a049;
+        }
+        
+        .current-rates {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .rate-display {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .rate-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .rate-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .rate-label {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .actions {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .action-btn {
+            padding: 15px 30px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .save-all-btn {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .save-all-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .reset-btn {
+            background: #FF5722;
+            color: white;
+        }
+        
+        .reset-btn:hover {
+            background: #e64a19;
+            transform: translateY(-2px);
+        }
+        
+        .dashboard-btn {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .dashboard-btn:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+        }
+        
+        .status-message {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+        
+        .status-success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4CAF50;
+            color: #4CAF50;
+        }
+        
+        .status-error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid #f44336;
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="header">
+            <h1>🔧 Import Tax Rate Admin Panel</h1>
+            <p>Kategori bazında import tax oranlarını yönetin</p>
+        </div>
+        
+        <div class="status-message" id="statusMessage"></div>
+        
+        <div class="admin-grid">
+            <div class="tax-settings">
+                <h2>📝 Tax Rate Ayarları</h2>
+                
+                <div class="tax-row bike">
+                    <div class="category-name">🚴 Bisiklet Kategorileri</div>
+                    <input type="number" class="tax-input" id="bike-tax" min="0" max="100" step="0.1" placeholder="35">
+                    <button class="save-btn" onclick="saveTaxRate('bike')">Kaydet</button>
+                </div>
+                
+                <div class="tax-row bike">
+                    <div class="category-name">🚴 MADONE</div>
+                    <input type="number" class="tax-input" id="madone-tax" min="0" max="100" step="0.1" placeholder="35">
+                    <button class="save-btn" onclick="saveTaxRate('madone')">Kaydet</button>
+                </div>
+                
+                <div class="tax-row bike">
+                    <div class="category-name">🚴 EMONDA</div>
+                    <input type="number" class="tax-input" id="emonda-tax" min="0" max="100" step="0.1" placeholder="35">
+                    <button class="save-btn" onclick="saveTaxRate('emonda')">Kaydet</button>
+                </div>
+                
+                <div class="tax-row bike">
+                    <div class="category-name">🚴 FX / FX+</div>
+                    <input type="number" class="tax-input" id="fx-tax" min="0" max="100" step="0.1" placeholder="35">
+                    <button class="save-btn" onclick="saveTaxRate('fx')">Kaydet</button>
+                </div>
+                
+                <div class="tax-row bike">
+                    <div class="category-name">🚴 DOMANE / DOMANE+</div>
+                    <input type="number" class="tax-input" id="domane-tax" min="0" max="100" step="0.1" placeholder="35">
+                    <button class="save-btn" onclick="saveTaxRate('domane')">Kaydet</button>
+                </div>
+                
+                <div class="tax-row dsw">
+                    <div class="category-name">🏔️ DSW Kategorileri</div>
+                    <input type="number" class="tax-input" id="dsw-tax" min="0" max="100" step="0.1" placeholder="70">
+                    <button class="save-btn" onclick="saveTaxRate('dsw')">Kaydet</button>
+                </div>
+                
+                <div class="tax-row dsw">
+                    <div class="category-name">🏔️ DS / DS+</div>
+                    <input type="number" class="tax-input" id="ds-tax" min="0" max="100" step="0.1" placeholder="70">
+                    <button class="save-btn" onclick="saveTaxRate('ds')">Kaydet</button>
+                </div>
+                
+                <div class="tax-row gobik">
+                    <div class="category-name">👕 GOBİK</div>
+                    <input type="number" class="tax-input" id="gobik-tax" min="0" max="100" step="0.1" placeholder="33">
+                    <button class="save-btn" onclick="saveTaxRate('gobik')">Kaydet</button>
+                </div>
+                
+                <div class="tax-row accessories">
+                    <div class="category-name">🕶️ TRIEYE</div>
+                    <input type="number" class="tax-input" id="trieye-tax" min="0" max="100" step="0.1" placeholder="68">
+                    <button class="save-btn" onclick="saveTaxRate('trieye')">Kaydet</button>
+                </div>
+                
+                <div class="tax-row accessories">
+                    <div class="category-name">📱 BRYTON GPS</div>
+                    <input type="number" class="tax-input" id="bryton-tax" min="0" max="100" step="0.1" placeholder="65">
+                    <button class="save-btn" onclick="saveTaxRate('bryton')">Kaydet</button>
+                </div>
+                
+                <div class="tax-row accessories">
+                    <div class="category-name">🔧 Genel Aksesuar</div>
+                    <input type="number" class="tax-input" id="accessory-tax" min="0" max="100" step="0.1" placeholder="40">
+                    <button class="save-btn" onclick="saveTaxRate('accessory')">Kaydet</button>
+                </div>
+            </div>
+            
+            <div class="current-rates">
+                <h2>📊 Mevcut Tax Rate'ler</h2>
+                
+                <div class="rate-display" id="currentRates">
+                    <!-- Current rates will be loaded here -->
+                </div>
+                
+                <div style="margin-top: 30px; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                    <h3 style="color: #FFD700; margin: 0 0 15px 0;">💡 Landed Cost Hesaplama</h3>
+                    <p style="margin: 5px 0; color: rgba(255,255,255,0.8);">
+                        <strong>Formül:</strong> Landed Cost = Buying Price × (1 + Tax Rate / 100)
+                    </p>
+                    <p style="margin: 5px 0; color: rgba(255,255,255,0.8);">
+                        <strong>Örnek:</strong> $1000 × (1 + 35/100) = $1350
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button class="action-btn save-all-btn" onclick="saveAllRates()">
+                💾 Tüm Ayarları Kaydet
+            </button>
+            <button class="action-btn reset-btn" onclick="resetToDefaults()">
+                🔄 Varsayılan Değerlere Dön
+            </button>
+            <button class="action-btn dashboard-btn" onclick="openDashboard()">
+                📊 Dashboard'a Git
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Default tax rates
+        const defaultTaxRates = {
+            bike: 35,
+            madone: 35,
+            emonda: 35,
+            fx: 35,
+            domane: 35,
+            dsw: 70,
+            ds: 70,
+            gobik: 33,
+            trieye: 68,
+            bryton: 65,
+            accessory: 40
+        };
+        
+        // Load current rates from localStorage
+        function loadCurrentRates() {
+            const rates = { ...defaultTaxRates };
+            
+            // Load from localStorage if available
+            Object.keys(rates).forEach(key => {
+                const stored = localStorage.getItem(`taxRate_${key}`);
+                if (stored !== null) {
+                    rates[key] = parseFloat(stored);
+                }
+            });
+            
+            return rates;
+        }
+        
+        // Display current rates
+        function displayCurrentRates() {
+            const rates = loadCurrentRates();
+            const container = document.getElementById('currentRates');
+            
+            container.innerHTML = Object.entries(rates).map(([key, rate]) => `
+                <div class="rate-card">
+                    <div class="rate-value">${rate}%</div>
+                    <div class="rate-label">${getCategoryLabel(key)}</div>
+                </div>
+            `).join('');
+            
+            // Also update input fields
+            Object.entries(rates).forEach(([key, rate]) => {
+                const input = document.getElementById(`${key}-tax`);
+                if (input) {
+                    input.value = rate;
+                }
+            });
+        }
+        
+        // Get category label
+        function getCategoryLabel(key) {
+            const labels = {
+                bike: 'Bisiklet',
+                madone: 'MADONE',
+                emonda: 'EMONDA', 
+                fx: 'FX/FX+',
+                domane: 'DOMANE/+',
+                dsw: 'DSW',
+                ds: 'DS/DS+',
+                gobik: 'GOBİK',
+                trieye: 'TRIEYE',
+                bryton: 'BRYTON',
+                accessory: 'Aksesuar'
+            };
+            return labels[key] || key;
+        }
+        
+        // Save individual tax rate
+        function saveTaxRate(category) {
+            const input = document.getElementById(`${category}-tax`);
+            const rate = parseFloat(input.value);
+            
+            if (isNaN(rate) || rate < 0 || rate > 100) {
+                showStatus('Geçersiz tax rate! 0-100 arasında olmalı.', 'error');
+                return;
+            }
+            
+            localStorage.setItem(`taxRate_${category}`, rate.toString());
+            showStatus(`${getCategoryLabel(category)} tax rate'i ${rate}% olarak kaydedildi!`, 'success');
+            
+            setTimeout(() => {
+                displayCurrentRates();
+            }, 500);
+        }
+        
+        // Save all rates
+        function saveAllRates() {
+            let savedCount = 0;
+            
+            Object.keys(defaultTaxRates).forEach(key => {
+                const input = document.getElementById(`${key}-tax`);
+                if (input && input.value) {
+                    const rate = parseFloat(input.value);
+                    if (!isNaN(rate) && rate >= 0 && rate <= 100) {
+                        localStorage.setItem(`taxRate_${key}`, rate.toString());
+                        savedCount++;
+                    }
+                }
+            });
+            
+            showStatus(`${savedCount} kategori tax rate'i kaydedildi!`, 'success');
+            
+            setTimeout(() => {
+                displayCurrentRates();
+            }, 500);
+        }
+        
+        // Reset to defaults
+        function resetToDefaults() {
+            if (confirm('Tüm tax rate\'leri varsayılan değerlere sıfırlamak istediğinizden emin misiniz?')) {
+                Object.keys(defaultTaxRates).forEach(key => {
+                    localStorage.removeItem(`taxRate_${key}`);
+                });
+                
+                showStatus('Tüm tax rate\'ler varsayılan değerlere sıfırlandı!', 'success');
+                
+                setTimeout(() => {
+                    displayCurrentRates();
+                }, 500);
+            }
+        }
+        
+        // Show status message
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status-message status-${type}`;
+            statusEl.style.display = 'block';
+            
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Open dashboard
+        function openDashboard() {
+            window.open('simple-category-dashboard.html', '_blank');
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            displayCurrentRates();
+        });
+        
+        // Export tax rates for use in dashboard
+        window.getTaxRates = function() {
+            return loadCurrentRates();
+        };
+    </script>
+</body>
+</html>

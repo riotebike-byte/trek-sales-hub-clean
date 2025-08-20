@@ -213,9 +213,14 @@
             <div class="profit-analysis">
                 <div class="profit-header">
                     <div class="profit-title">💰 Kategori Bazlı Kar Analizi</div>
-                    <button onclick="refreshData()" style="background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 25px; font-weight: bold; cursor: pointer;">
-                        🔄 Yenile
-                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="openAdminPanel()" style="background: #FF9800; color: white; border: none; padding: 12px 24px; border-radius: 25px; font-weight: bold; cursor: pointer;">
+                            🔧 Tax Admin
+                        </button>
+                        <button onclick="refreshData()" style="background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 25px; font-weight: bold; cursor: pointer;">
+                            🔄 Yenile
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="categories-grid" id="categories-grid">
@@ -252,11 +257,29 @@
         // API Base URL
         const apiBase = 'http://localhost:3002/api/b2b';
         
-        // Enhanced category mapping for specific bike models
+        // Load tax rates from admin panel localStorage
+        function getTaxRates() {
+            const defaults = {
+                bike: 35, madone: 35, emonda: 35, fx: 35, domane: 35,
+                dsw: 70, ds: 70, gobik: 33, trieye: 68, bryton: 65, accessory: 40
+            };
+            
+            const rates = { ...defaults };
+            Object.keys(rates).forEach(key => {
+                const stored = localStorage.getItem(`taxRate_${key}`);
+                if (stored !== null) {
+                    rates[key] = parseFloat(stored);
+                }
+            });
+            return rates;
+        }
+        
+        // Enhanced category mapping with dynamic tax rates
         function mapToCategory(product) {
             const title = (product.title || '').toUpperCase();
             const apiCategory = product.category || 'GENEL';
             const brand = (product.brand || '').toUpperCase();
+            const taxRates = getTaxRates();
             
             // Special brand cases first - Handle DSW products
             if (title.startsWith('DSW ')) {
@@ -267,24 +290,24 @@
                     title.includes('DS+ 7') || title.includes('DS +4') || 
                     title.includes('DS+ 4') || title.includes('DS +5') || 
                     title.includes('DS+ 5')) {
-                    return { key: "ds-plus", name: "DS+", taxRate: 70 };
+                    return { key: "ds-plus", name: "DS+", taxRate: taxRates.ds };
                 }
                 // Check for regular DS models (after DS+ check)
                 if (title.includes(' DS ') || title.includes('DS ') && 
                     !title.includes('DS+') && !title.includes('DS +') && !title.includes('DS+ ')) {
-                    return { key: "ds", name: "DS", taxRate: 70 };
+                    return { key: "ds", name: "DS", taxRate: taxRates.ds };
                 }
                 // Other DSW products
-                return { key: "dsw-other", name: "DSW DİĞER", taxRate: 70 };
+                return { key: "dsw-other", name: "DSW DİĞER", taxRate: taxRates.dsw };
             }
             if (brand.includes('GOBIK') || title.includes('GOBIK')) {
-                return { key: "gobik", name: "GOBİK", taxRate: 33 };
+                return { key: "gobik", name: "GOBİK", taxRate: taxRates.gobik };
             }
             if (brand.includes('TRIEYE') || title.includes('TRIEYE')) {
-                return { key: "trieye", name: "TRIEYE GÖZLÜK", taxRate: 68 };
+                return { key: "trieye", name: "TRIEYE GÖZLÜK", taxRate: taxRates.trieye };
             }
             if (brand.includes('BRYTON') || title.includes('BRYTON')) {
-                return { key: "bryton", name: "BRYTON GPS", taxRate: 65 };
+                return { key: "bryton", name: "BRYTON GPS", taxRate: taxRates.bryton };
             }
             
             // Bisiklet kategorisi kontrolü
@@ -292,63 +315,49 @@
                 
                 // FX+ (elektrikli) vs FX (normal)
                 if (title.includes('FX+')) {
-                    return { key: "fx-plus", name: "FX+", taxRate: 35 };
+                    return { key: "fx-plus", name: "FX+", taxRate: taxRates.fx };
                 } else if (title.includes('FX')) {
-                    return { key: "fx", name: "FX", taxRate: 35 };
+                    return { key: "fx", name: "FX", taxRate: taxRates.fx };
                 }
                 
                 // DOMANE+ (elektrikli) vs DOMANE (normal)  
                 if (title.includes('DOMANE+')) {
-                    return { key: "domane-plus", name: "DOMANE+", taxRate: 35 };
+                    return { key: "domane-plus", name: "DOMANE+", taxRate: taxRates.domane };
                 } else if (title.includes('DOMANE')) {
-                    return { key: "domane", name: "DOMANE", taxRate: 35 };
-                }
-                
-                // DOMANE+ models first (most specific)
-                if (title.includes('DOMANE+') || title.includes('DOMANE +') ||
-                    title.includes('DOMANE+ ') || title.includes('DOMANE +AL') ||
-                    title.includes('DOMANE+ AL') || title.includes('DOMANE +HP') ||
-                    title.includes('DOMANE+ HP')) {
-                    return { key: "domane-plus", name: "DOMANE+", taxRate: 35 };
-                }
-                
-                if (title.includes('DOMANE') && 
-                    !title.includes('DOMANE+') && !title.includes('DOMANE +') && !title.includes('DOMANE+ ') &&
-                    !title.includes('DOMANE +AL') && !title.includes('DOMANE+ AL') && !title.includes('DOMANE +HP') && !title.includes('DOMANE+ HP')) {
-                    return { key: "domane", name: "DOMANE", taxRate: 35 };
+                    return { key: "domane", name: "DOMANE", taxRate: taxRates.domane };
                 }
                 
                 // Other specific models
                 if (title.includes('MADONE')) {
-                    return { key: "madone", name: "MADONE", taxRate: 35 };
+                    return { key: "madone", name: "MADONE", taxRate: taxRates.madone };
                 }
                 if (title.includes('EMONDA')) {
-                    return { key: "emonda", name: "EMONDA", taxRate: 35 };
+                    return { key: "emonda", name: "EMONDA", taxRate: taxRates.emonda };
                 }
                 if (title.includes('MARLIN')) {
-                    return { key: "marlin", name: "MARLIN", taxRate: 35 };
+                    return { key: "marlin", name: "MARLIN", taxRate: taxRates.bike };
                 }
                 if (title.includes('CHECKPOINT')) {
-                    return { key: "checkpoint", name: "CHECKPOINT", taxRate: 35 };
+                    return { key: "checkpoint", name: "CHECKPOINT", taxRate: taxRates.bike };
                 }
                 if (title.includes('POWERFLY')) {
-                    return { key: "powerfly", name: "POWERFLY", taxRate: 35 };
+                    return { key: "powerfly", name: "POWERFLY", taxRate: taxRates.bike };
                 }
                 if (title.includes('FUEL')) {
-                    return { key: "fuel", name: "FUEL", taxRate: 35 };
+                    return { key: "fuel", name: "FUEL", taxRate: taxRates.bike };
                 }
                 if (title.includes('RAIL')) {
-                    return { key: "rail", name: "RAIL", taxRate: 35 };
+                    return { key: "rail", name: "RAIL", taxRate: taxRates.bike };
                 }
                 if (title.includes('VERVE')) {
-                    return { key: "verve", name: "VERVE", taxRate: 35 };
+                    return { key: "verve", name: "VERVE", taxRate: taxRates.bike };
                 }
                 if (title.includes('SLASH')) {
-                    return { key: "slash", name: "SLASH", taxRate: 35 };
+                    return { key: "slash", name: "SLASH", taxRate: taxRates.bike };
                 }
                 
                 // Generic bicycle
-                return { key: "bisiklet", name: "BİSİKLET", taxRate: 35 };
+                return { key: "bisiklet", name: "BİSİKLET", taxRate: taxRates.bike };
             }
             
             // Use API category directly
@@ -357,14 +366,14 @@
                 .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
                 .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
             
-            // Tax rate based on category
-            let taxRate = 40;
+            // Tax rate based on category - use dynamic rates
+            let taxRate = taxRates.accessory; // default
             if (apiCategory.includes('BİSİKLET') || apiCategory.includes('BISIKLET')) {
-                taxRate = 35;
+                taxRate = taxRates.bike;
             } else if (apiCategory.includes('GİYİM') || apiCategory.includes('FORMA') || apiCategory.includes('KASK')) {
-                taxRate = 33;
+                taxRate = taxRates.gobik; // clothing similar to gobik
             } else if (apiCategory.includes('GPS') || apiCategory.includes('BİLGİSAYAR')) {
-                taxRate = 65;
+                taxRate = taxRates.bryton; // gps similar to bryton
             }
             
             return { key: categoryKey, name: apiCategory, taxRate: taxRate };
@@ -651,6 +660,10 @@
             document.getElementById('loading').style.display = 'block';
             document.getElementById('dashboard-content').style.display = 'none';
             loadData();
+        }
+        
+        function openAdminPanel() {
+            window.open('tax-admin-panel.html', '_blank');
         }
         
         function showCategoryProducts(categoryKey, categoryName) {
