@@ -534,11 +534,11 @@
                 
             } catch (error) {
                 console.error('❌ Sales data load error:', error);
-                document.getElementById('dataStatus').textContent = 'Demo veri kullanılıyor 📋';
+                document.getElementById('dataStatus').textContent = '❌ Veri yüklenemedi - Lütfen API bağlantısını kontrol edin';
                 
-                // Use enhanced demo data for demonstration
-                salesData = generateDemoData();
-                console.log('📊 Using demo data:', salesData.length, 'products');
+                // No fallback data - require real data
+                salesData = [];
+                console.log('❌ No data available - fallback disabled');
             }
         }
 
@@ -596,7 +596,7 @@
 
         // Generate data-driven insights
         async function generateDataInsight() {
-            if (salesData.length === 0) return "Veri bekleniyor...";
+            if (salesData.length === 0) return "❌ Veri yok - API bağlantısı gerekli";
             
             const insights = [
                 `📊 ${salesData.length} ürün analiz edildi. Ortalama kar marjı hesaplanıyor.`,
@@ -719,7 +719,7 @@
                     'Authorization': `Bearer ${OPENAI_API_KEY}`
                 },
                 body: JSON.stringify({
-                    model: 'gpt-4',
+                    model: 'gpt-5-chat-latest',
                     messages: [
                         {
                             role: 'system',
@@ -764,7 +764,7 @@ Lütfen bu veri ve kontekst bilgileriyle kullanıcının sorusuna detaylı, yard
 
         // Generate sales summary
         function generateSalesSummary() {
-            if (salesData.length === 0) return "Henüz sales verisi yüklenmedi.";
+            if (salesData.length === 0) return "❌ Sales verisi mevcut değil - Lütfen API bağlantısını kontrol edin.";
             
             const totalProducts = salesData.length;
             const avgPrice = salesData.reduce((sum, p) => sum + (parseFloat(p.price) || 0), 0) / totalProducts;
