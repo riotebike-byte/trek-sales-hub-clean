@@ -43,6 +43,96 @@
             margin-bottom: 30px;
         }
         
+        .profit-analysis {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+        
+        .profit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .profit-title {
+            font-size: 1.8em;
+            color: #FFD700;
+            font-weight: bold;
+        }
+        
+        .top-margin-products {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .margin-product-card {
+            background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,165,0,0.1));
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 215, 0, 0.4);
+        }
+        
+        .margin-rank {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8em;
+            margin-right: 10px;
+        }
+        
+        .margin-product-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        
+        .margin-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        
+        .potential-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .potential-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .potential-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #FFD700;
+            margin: 5px 0;
+        }
+        
+        .potential-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
         .summary-card {
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(15px);
@@ -204,6 +294,40 @@
                 </div>
             </div>
             
+            <!-- Profit Analysis Panel -->
+            <div class="profit-analysis">
+                <div class="profit-header">
+                    <div class="profit-title">💰 Kar Potansiyeli ve En Karlı Ürünler</div>
+                </div>
+                
+                <div class="potential-metrics">
+                    <div class="potential-card">
+                        <div class="potential-label">Toplam Stok Değeri</div>
+                        <div class="potential-value" id="total-stock-value">0€</div>
+                    </div>
+                    <div class="potential-card">
+                        <div class="potential-label">Satış Potansiyeli</div>
+                        <div class="potential-value" id="sales-potential">0€</div>
+                    </div>
+                    <div class="potential-card">
+                        <div class="potential-label">Toplam Kar Potansiyeli</div>
+                        <div class="potential-value" id="profit-potential">0€</div>
+                    </div>
+                    <div class="potential-card">
+                        <div class="potential-label">ROI Potansiyeli</div>
+                        <div class="potential-value" id="roi-potential">0%</div>
+                    </div>
+                </div>
+                
+                <div style="margin: 20px 0; font-size: 1.2em; font-weight: bold; color: #FFD700;">
+                    🏆 En Yüksek Kar Marjı Olan Ürünler (Stokta Olanlar)
+                </div>
+                
+                <div class="top-margin-products" id="top-margin-products">
+                    <!-- Top margin products will be loaded here -->
+                </div>
+            </div>
+            
             <!-- Products Table -->
             <div class="products-table">
                 <div class="filter-controls">
@@ -328,6 +452,7 @@
                 filteredProducts = [...allProducts];
                 
                 updateSummary();
+                updateProfitAnalysis();
                 populateFilters();
                 renderProducts();
                 
@@ -363,6 +488,100 @@
             document.getElementById('total-stock').textContent = totalStock.toLocaleString();
             document.getElementById('in-stock-products').textContent = inStockProducts.toLocaleString();
             document.getElementById('avg-margin').textContent = avgMargin.toFixed(1) + '%';
+        }
+        
+        // Update profit analysis
+        function updateProfitAnalysis() {
+            // Calculate total stock value, sales potential, and profit potential
+            let totalStockValue = 0;
+            let salesPotential = 0;
+            let profitPotential = 0;
+            let validProducts = [];
+            
+            allProducts.forEach(product => {
+                const buyingPrice = parseFloat(product.buyingPrice) || 0;
+                const sellingPrice = parseFloat(product.price) || 0;
+                const stock = product.totalStock || 0;
+                const landedCost = calculateLandedCost(product);
+                const margin = calculateMargin(product);
+                
+                if (buyingPrice > 0 && sellingPrice > 0 && stock > 0) {
+                    // Stock value based on landed cost
+                    const stockValue = landedCost * stock;
+                    totalStockValue += stockValue;
+                    
+                    // Sales potential (selling price * stock)
+                    const productSalesPotential = sellingPrice * stock;
+                    salesPotential += productSalesPotential;
+                    
+                    // Profit potential (margin * selling price * stock)
+                    const productProfitPotential = (sellingPrice - landedCost) * stock;
+                    profitPotential += productProfitPotential;
+                    
+                    validProducts.push({
+                        ...product,
+                        margin: margin,
+                        landedCost: landedCost,
+                        stockValue: stockValue,
+                        profitPotential: productProfitPotential
+                    });
+                }
+            });
+            
+            // Calculate ROI potential
+            const roiPotential = totalStockValue > 0 ? (profitPotential / totalStockValue) * 100 : 0;
+            
+            // Update UI
+            document.getElementById('total-stock-value').textContent = formatCurrency(totalStockValue);
+            document.getElementById('sales-potential').textContent = formatCurrency(salesPotential);
+            document.getElementById('profit-potential').textContent = formatCurrency(profitPotential);
+            document.getElementById('roi-potential').textContent = roiPotential.toFixed(1) + '%';
+            
+            // Show top margin products (top 10)
+            const topMarginProducts = validProducts
+                .sort((a, b) => b.margin - a.margin)
+                .slice(0, 10);
+            
+            const topMarginContainer = document.getElementById('top-margin-products');
+            topMarginContainer.innerHTML = topMarginProducts.map((product, index) => {
+                const marginColor = product.margin > 50 ? '#28a745' : product.margin > 30 ? '#ffc107' : '#fd7e14';
+                
+                return `
+                    <div class="margin-product-card">
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <span class="margin-rank">${index + 1}</span>
+                            <div class="margin-product-title">${product.title}</div>
+                        </div>
+                        
+                        <div class="margin-details">
+                            <div><strong>Marka:</strong> ${product.brand || '-'}</div>
+                            <div><strong>Stok:</strong> ${product.totalStock}</div>
+                            <div><strong>Alış:</strong> ${product.buyingPrice.toFixed(2)} ${product.buyingCurrency || 'USD'}</div>
+                            <div><strong>Satış:</strong> ${product.price.toFixed(2)} ${product.currency || 'EUR'}</div>
+                            <div><strong>Landed Cost:</strong> ${product.landedCost.toFixed(2)}€</div>
+                            <div style="color: ${marginColor}; font-weight: bold;">
+                                <strong>Margin: ${product.margin.toFixed(1)}%</strong>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 10px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 6px;">
+                            <div style="font-size: 0.9em;"><strong>Stok Değeri:</strong> ${formatCurrency(product.stockValue)}</div>
+                            <div style="font-size: 0.9em; color: #28a745;"><strong>Kar Potansiyeli:</strong> ${formatCurrency(product.profitPotential)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Format currency helper
+        function formatCurrency(amount) {
+            if (amount >= 1000000) {
+                return (amount / 1000000).toFixed(1) + 'M€';
+            } else if (amount >= 1000) {
+                return (amount / 1000).toFixed(1) + 'K€';
+            } else {
+                return amount.toFixed(0) + '€';
+            }
         }
         
         // Populate filter dropdowns
@@ -494,6 +713,12 @@
             document.getElementById('loading').style.display = 'block';
             document.getElementById('dashboard-content').style.display = 'none';
             loadData();
+        }
+        
+        // Update all analyses when filters change
+        function updateAnalyses() {
+            updateSummary();
+            updateProfitAnalysis();
         }
         
         // Event listeners
