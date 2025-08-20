@@ -734,8 +734,8 @@
                         marginText = 'Good';
                     }
                     
-                    const landedCost = cat.totalInvestment / cat.totalStock;
-                    const sellingPrice = (cat.totalInvestment + cat.profitPotential) / cat.totalStock;
+                    const landedCost = (cat.totalStockValue || 0) / (cat.totalStock || 1);
+                    const sellingPrice = ((cat.totalStockValue || 0) + (cat.totalProfitPotential || 0)) / (cat.totalStock || 1);
                     
                     html += `
                         <div class="margin-card">
@@ -822,13 +822,13 @@
             }
         }
         
-        // Real OpenAI GPT-4 API Integration
+        // Advanced AI-Powered Analysis with Product-Level Insights
         async function generateAIRecommendations() {
             const container = document.getElementById('aiRecommendations');
             container.innerHTML = `
                 <div style="text-align: center; padding: 40px 0;">
                     <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #4CAF50; animation: spin 1s ease-in-out infinite;"></div>
-                    <div style="margin-top: 15px; color: #4CAF50; font-weight: bold;">🤖 GPT-4 analyzing your profit data...</div>
+                    <div style="margin-top: 15px; color: #4CAF50; font-weight: bold;">🤖 AI analyzing margins & profit potential...</div>
                 </div>
                 <style>
                     @keyframes spin { to { transform: rotate(360deg); } }
@@ -885,25 +885,37 @@
                         model: 'gpt-4',
                         messages: [{
                             role: 'system',
-                            content: 'You are a profit optimization expert analyzing Trek bicycle inventory data. Provide 4 specific, actionable recommendations based on the real profit margin data. Format as JSON with title, type (critical/opportunity/insight/forecast), and content fields.'
+                            content: 'You are an advanced profit optimization AI analyzing Trek bicycle inventory. Analyze both product-level margins AND profit potential. Provide 4 specific, data-driven recommendations with exact numbers. Format as JSON array with title, type (critical/opportunity/insight/forecast), and content fields. Focus on: margin distribution, profit concentration, ROI optimization, and 90-day forecast.'
                         }, {
                             role: 'user',
-                            content: `Analyze this real profit data and provide specific recommendations:
+                            content: `Analyze this real-time profit data with BOTH margin and profit focus:
 
-Portfolio Overview:
-- Total Investment: €${dataForAI.summary.totalStockValue.toLocaleString()}
-- Total Profit Potential: €${dataForAI.summary.totalProfit.toLocaleString()}
-- Portfolio ROI: ${dataForAI.summary.roiPercentage}%
-- Average Margin: ${dataForAI.summary.avgMargin}%
-- Categories: ${dataForAI.summary.totalCategories}
-- Low Margin Categories: ${dataForAI.summary.lowMarginCount}
+PORTFOLIO METRICS:
+• Total Investment: €${dataForAI.summary.totalStockValue.toLocaleString()}
+• Total Profit Potential: €${dataForAI.summary.totalProfit.toLocaleString()}
+• Portfolio ROI: ${dataForAI.summary.roiPercentage}%
+• Weighted Avg Margin: ${dataForAI.summary.avgMargin}%
+• Total Categories: ${dataForAI.summary.totalCategories}
+• Low Margin (<25%): ${dataForAI.summary.lowMarginCount} categories
 
-Category Details:
-${dataForAI.categories.map(cat => 
-    `${cat.name}: ${cat.margin}% margin, €${cat.profit.toLocaleString()} profit, €${cat.stockValue.toLocaleString()} invested, ${cat.productCount} products, ${cat.stock} units`
+CATEGORY PERFORMANCE (sorted by profit):
+${dataForAI.categories.map((cat, idx) => 
+    `${idx + 1}. ${cat.name}:
+   - Margin: ${cat.margin}% (${cat.margin >= 40 ? 'EXCELLENT' : cat.margin >= 25 ? 'GOOD' : cat.margin >= 15 ? 'AVERAGE' : cat.margin >= 5 ? 'LOW' : 'POOR'})
+   - Profit: €${cat.profit.toLocaleString()}
+   - Stock Value: €${cat.stockValue.toLocaleString()}
+   - ROI: ${((cat.profit / cat.stockValue) * 100).toFixed(1)}%
+   - Products: ${cat.productCount} items
+   - Stock: ${cat.stock} units`
 ).join('\n')}
 
-Provide 4 recommendations in JSON format with specific euro amounts and category names.`
+Provide 4 recommendations:
+1. Margin-Based Action Plan (identify low performers, quantify improvement potential)
+2. Profit Concentration Analysis (top 3 drivers, scaling opportunities)
+3. ROI Optimization Strategy (best/worst ROI, reallocation suggestions)
+4. 90-Day Forecast (specific actions with euro impacts)
+
+Include EXACT numbers, category names, and percentage improvements.`
                         }],
                         max_tokens: 1500,
                         temperature: 0.7
@@ -955,34 +967,80 @@ Provide 4 recommendations in JSON format with specific euro amounts and category
         function generateFallbackRecommendations(dataForAI) {
             const sortedByMargin = [...profitRankingData].sort((a, b) => b.avgMargin - a.avgMargin);
             const sortedByProfit = [...profitRankingData].sort((a, b) => (b.totalProfitPotential || b.profitPotential || 0) - (a.totalProfitPotential || a.profitPotential || 0));
+            const sortedByROI = [...profitRankingData].map(cat => ({
+                ...cat,
+                roi: cat.totalStockValue > 0 ? (cat.totalProfitPotential / cat.totalStockValue) * 100 : 0
+            })).sort((a, b) => b.roi - a.roi);
+            
             const bestMarginCategory = sortedByMargin[0];
             const worstMarginCategory = sortedByMargin[sortedByMargin.length - 1];
             const mostProfitableCategory = sortedByProfit[0];
+            const bestROICategory = sortedByROI[0];
+            
+            // Analyze margin distribution
+            const lowMarginCategories = profitRankingData.filter(cat => cat.avgMargin < 25);
+            const highMarginCategories = profitRankingData.filter(cat => cat.avgMargin > 40);
+            const totalProfit = dataForAI.summary.totalProfit;
+            const totalStockValue = dataForAI.summary.totalStockValue;
+            const avgMargin = dataForAI.summary.avgMargin;
+            const roiPercentage = dataForAI.summary.roiPercentage;
+            
+            // Product-level analysis
+            const marginRanges = {
+                excellent: { min: 40, count: 0, profit: 0, stock: 0 },
+                good: { min: 25, max: 40, count: 0, profit: 0, stock: 0 },
+                average: { min: 15, max: 25, count: 0, profit: 0, stock: 0 },
+                low: { min: 5, max: 15, count: 0, profit: 0, stock: 0 },
+                poor: { max: 5, count: 0, profit: 0, stock: 0 }
+            };
+            
+            profitRankingData.forEach(cat => {
+                const margin = cat.avgMargin;
+                if (margin >= 40) {
+                    marginRanges.excellent.count++;
+                    marginRanges.excellent.profit += cat.totalProfitPotential || 0;
+                    marginRanges.excellent.stock += cat.totalStock || 0;
+                } else if (margin >= 25) {
+                    marginRanges.good.count++;
+                    marginRanges.good.profit += cat.totalProfitPotential || 0;
+                    marginRanges.good.stock += cat.totalStock || 0;
+                } else if (margin >= 15) {
+                    marginRanges.average.count++;
+                    marginRanges.average.profit += cat.totalProfitPotential || 0;
+                    marginRanges.average.stock += cat.totalStock || 0;
+                } else if (margin >= 5) {
+                    marginRanges.low.count++;
+                    marginRanges.low.profit += cat.totalProfitPotential || 0;
+                    marginRanges.low.stock += cat.totalStock || 0;
+                } else {
+                    marginRanges.poor.count++;
+                    marginRanges.poor.profit += cat.totalProfitPotential || 0;
+                    marginRanges.poor.stock += cat.totalStock || 0;
+                }
+            });
             
             return [
                 {
-                    title: "🎯 Critical Margin Analysis",
+                    title: "🎯 Margin-Based Action Plan",
                     type: "critical",
                     content: lowMarginCategories.length > 0 
-                        ? `${lowMarginCategories.length} categories below 25% margin threshold. Priority: "${worstMarginCategory?.categoryName}" at ${worstMarginCategory?.avgMargin.toFixed(1)}% margin with €${Math.round(worstMarginCategory?.totalStockValue || 0).toLocaleString()} stock value. Immediate cost review needed - potential €${Math.round((worstMarginCategory?.totalProfitPotential || 0) * 0.3).toLocaleString()} recovery possible.`
-                        : `Excellent performance! All categories above 25% margin. Best performer: "${bestMarginCategory?.categoryName}" at ${bestMarginCategory?.avgMargin.toFixed(1)}% margin. Consider replicating this success across other categories.`
+                        ? `Critical: ${lowMarginCategories.length} categories (${marginRanges.low.stock + marginRanges.poor.stock} units) below 25% margin, losing €${Math.round((marginRanges.low.profit + marginRanges.poor.profit) * 0.15).toLocaleString()} potential profit. Immediate action on "${worstMarginCategory?.categoryName}": Current ${worstMarginCategory?.avgMargin.toFixed(1)}% → Target 25% = +€${Math.round((worstMarginCategory?.totalProfitPotential || 0) * 0.4).toLocaleString()} profit.`
+                        : `Excellence achieved! ${highMarginCategories.length} categories with >40% margin generating €${Math.round(marginRanges.excellent.profit).toLocaleString()} profit. "${bestMarginCategory?.categoryName}" leads at ${bestMarginCategory?.avgMargin.toFixed(1)}% margin. Replicate this model: optimal pricing + cost control = success.`
                 },
                 {
-                    title: "📈 Investment ROI Insights",
+                    title: "📊 Profit Concentration Analysis",
                     type: "opportunity",
-                    content: `Current portfolio ROI: ${roiPercentage.toFixed(1)}% (€${Math.round(totalProfit).toLocaleString()} profit on €${Math.round(totalStockValue).toLocaleString()} investment). Top profit generator: "${mostProfitableCategory?.categoryName}" contributing €${Math.round(mostProfitableCategory?.totalProfitPotential || 0).toLocaleString()}. Scale this category by 20% for projected €${Math.round((mostProfitableCategory?.totalProfitPotential || 0) * 0.2).toLocaleString()} additional profit.`
+                    content: `Top 3 profit drivers: "${sortedByProfit[0]?.categoryName}" (€${Math.round(sortedByProfit[0]?.totalProfitPotential || 0).toLocaleString()}), "${sortedByProfit[1]?.categoryName}" (€${Math.round(sortedByProfit[1]?.totalProfitPotential || 0).toLocaleString()}), "${sortedByProfit[2]?.categoryName}" (€${Math.round(sortedByProfit[2]?.totalProfitPotential || 0).toLocaleString()}) = ${((((sortedByProfit[0]?.totalProfitPotential || 0) + (sortedByProfit[1]?.totalProfitPotential || 0) + (sortedByProfit[2]?.totalProfitPotential || 0)) / totalProfit) * 100).toFixed(0)}% of total profit. Focus: Increase inventory by 25% = +€${Math.round(((sortedByProfit[0]?.totalProfitPotential || 0) + (sortedByProfit[1]?.totalProfitPotential || 0) + (sortedByProfit[2]?.totalProfitPotential || 0)) * 0.25).toLocaleString()}.`
                 },
                 {
-                    title: "💡 Dynamic Pricing Strategy",
+                    title: "💡 ROI Optimization Strategy",
                     type: "insight",
-                    content: avgMargin > 25 
-                        ? `Strong ${avgMargin.toFixed(1)}% portfolio margin suggests pricing power. Test 3-5% price increases on "${bestMarginCategory?.categoryName}" (${bestMarginCategory?.productCount} products, ${bestMarginCategory?.totalStock} units). Potential additional profit: €${Math.round((bestMarginCategory?.totalSalesPotential || 0) * 0.04).toLocaleString()}.`
-                        : `Portfolio margin ${avgMargin.toFixed(1)}% needs optimization. Focus on cost reduction for "${worstMarginCategory?.categoryName}" or 5-8% price increases. Target: bring all categories above 25% margin baseline.`
+                    content: `Best ROI: "${bestROICategory?.categoryName}" delivers ${bestROICategory?.roi.toFixed(1)}% return (€${Math.round(bestROICategory?.totalProfitPotential || 0).toLocaleString()} profit / €${Math.round(bestROICategory?.totalStockValue || 0).toLocaleString()} investment). Portfolio ROI: ${roiPercentage}%. Strategy: Shift 15% budget from low-ROI "${worstMarginCategory?.categoryName}" (${((worstMarginCategory?.totalProfitPotential || 0) / (worstMarginCategory?.totalStockValue || 1) * 100).toFixed(1)}% ROI) to high-performers = +€${Math.round(totalProfit * 0.08).toLocaleString()} profit.`
                 },
                 {
-                    title: "🔮 Smart Inventory Forecast",
+                    title: "🔮 Data-Driven 90-Day Forecast",
                     type: "forecast",
-                    content: `Q1 projection: €${Math.round(totalProfit * 1.15).toLocaleString()} profit (+15% growth). Key drivers: Optimize "${worstMarginCategory?.categoryName}" margins (+€${Math.round((worstMarginCategory?.totalProfitPotential || 0) * 0.25).toLocaleString()}), scale "${mostProfitableCategory?.categoryName}" inventory (+€${Math.round((mostProfitableCategory?.totalProfitPotential || 0) * 0.15).toLocaleString()}). Total opportunity: €${Math.round(totalProfit * 0.4).toLocaleString()}.`
+                    content: `Projected Q1: €${Math.round(totalProfit * 1.18).toLocaleString()} profit (+18%). Action plan: 1) Fix ${lowMarginCategories.length} low-margin categories (+€${Math.round((marginRanges.low.profit + marginRanges.poor.profit) * 0.3).toLocaleString()}), 2) Scale top 3 performers 20% (+€${Math.round(((sortedByProfit[0]?.totalProfitPotential || 0) + (sortedByProfit[1]?.totalProfitPotential || 0) + (sortedByProfit[2]?.totalProfitPotential || 0)) * 0.2).toLocaleString()}), 3) 3% price increase on ${marginRanges.excellent.count + marginRanges.good.count} high-margin categories (+€${Math.round((marginRanges.excellent.profit + marginRanges.good.profit) * 0.03).toLocaleString()}). Total opportunity: €${Math.round(totalProfit * 0.45).toLocaleString()}.`
                 }
             ];
         }
