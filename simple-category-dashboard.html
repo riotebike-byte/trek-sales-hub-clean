@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Kategorili Dashboard</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+        
+        .dashboard-container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .loading {
+            text-align: center;
+            font-size: 1.2em;
+            margin: 50px 0;
+        }
+        
+        .profit-analysis {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+        
+        .profit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .profit-title {
+            font-size: 1.8em;
+            color: #FFD700;
+            font-weight: bold;
+        }
+        
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .category-card {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+            min-height: 160px;
+        }
+        
+        .category-rank {
+            position: absolute;
+            top: -15px;
+            right: 15px;
+            background: #FFD700;
+            color: #000;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .category-name {
+            color: #FFD700;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            margin-top: 5px;
+        }
+        
+        .category-profit {
+            color: #4CAF50;
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+        
+        .category-details {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+        
+        .category-detail-row {
+            display: flex;
+            align-items: center;
+            margin: 4px 0;
+        }
+        
+        .show-products-btn {
+            width: 100%;
+            background: rgba(255,215,0,0.2);
+            color: #FFD700;
+            border: 1px solid #FFD700;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 12px;
+            font-weight: bold;
+        }
+        
+        .show-products-btn:hover {
+            background: rgba(255,215,0,0.3);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 1200px;
+            max-height: 80%;
+            overflow-y: auto;
+            color: white;
+        }
+        
+        .close {
+            color: #FFD700;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 20px;
+        }
+        
+        .close:hover {
+            color: #FFA500;
+        }
+        
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .product-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(255,215,0,0.3);
+        }
+        
+        .product-title {
+            color: #FFD700;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .product-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>🚴 API Kategorili Kar Potansiyeli Analizi</h1>
+            <p>Gerçek API kategorileri kullanılıyor</p>
+        </div>
+        
+        <div id="loading" class="loading">
+            📊 API'den veriler yükleniyor...
+        </div>
+        
+        <div id="dashboard-content" style="display: none;">
+            <!-- Summary Metrics -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;" id="summary-metrics">
+                <!-- Summary cards will be loaded here -->
+            </div>
+            
+            <div class="profit-analysis">
+                <div class="profit-header">
+                    <div class="profit-title">💰 Kategori Bazlı Kar Analizi</div>
+                    <button onclick="refreshData()" style="background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 25px; font-weight: bold; cursor: pointer;">
+                        🔄 Yenile
+                    </button>
+                </div>
+                
+                <div class="categories-grid" id="categories-grid">
+                    <!-- Categories will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- Category Details Section -->
+            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+                <h3 style="color: #FFD700; margin-bottom: 20px; text-align: center;">📂 Kategori Detayları</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;" id="category-details">
+                    <!-- Category details will be loaded here -->
+                </div>
+            </div>
+        </div>
+        
+        <div id="error-message" style="display: none;"></div>
+        
+        <!-- Products Modal -->
+        <div id="productsModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeProductsModal()">&times;</span>
+                <h2 id="modalTitle"></h2>
+                <div id="modalProducts" class="product-grid">
+                    <!-- Products will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allProducts = [];
+        
+        // API Base URL
+        const apiBase = 'http://localhost:3002/api/b2b';
+        
+        // Enhanced category mapping for specific bike models
+        function mapToCategory(product) {
+            const title = (product.title || '').toUpperCase();
+            const apiCategory = product.category || 'GENEL';
+            const brand = (product.brand || '').toUpperCase();
+            
+            // Special brand cases first - Handle DSW products
+            if (title.startsWith('DSW ')) {
+                // Check for DS+ models first (most specific)
+                if (title.includes('DS+') || title.includes('DS +') || 
+                    title.includes('DS+ ') || title.includes('DS +2') || 
+                    title.includes('DS +7') || title.includes('DS+ 2') || 
+                    title.includes('DS+ 7') || title.includes('DS +4') || 
+                    title.includes('DS+ 4') || title.includes('DS +5') || 
+                    title.includes('DS+ 5')) {
+                    return { key: "ds-plus", name: "DS+", taxRate: 70 };
+                }
+                // Check for regular DS models (after DS+ check)
+                if (title.includes(' DS ') || title.includes('DS ') && 
+                    !title.includes('DS+') && !title.includes('DS +') && !title.includes('DS+ ')) {
+                    return { key: "ds", name: "DS", taxRate: 70 };
+                }
+                // Other DSW products
+                return { key: "dsw-other", name: "DSW DİĞER", taxRate: 70 };
+            }
+            if (brand.includes('GOBIK') || title.includes('GOBIK')) {
+                return { key: "gobik", name: "GOBİK", taxRate: 33 };
+            }
+            if (brand.includes('TRIEYE') || title.includes('TRIEYE')) {
+                return { key: "trieye", name: "TRIEYE GÖZLÜK", taxRate: 68 };
+            }
+            if (brand.includes('BRYTON') || title.includes('BRYTON')) {
+                return { key: "bryton", name: "BRYTON GPS", taxRate: 65 };
+            }
+            
+            // Bisiklet kategorisi kontrolü
+            if (apiCategory.includes('BİSİKLET') || apiCategory.includes('BISIKLET')) {
+                
+                // FX+ (elektrikli) vs FX (normal)
+                if (title.includes('FX+')) {
+                    return { key: "fx-plus", name: "FX+", taxRate: 35 };
+                } else if (title.includes('FX')) {
+                    return { key: "fx", name: "FX", taxRate: 35 };
+                }
+                
+                // DOMANE+ (elektrikli) vs DOMANE (normal)  
+                if (title.includes('DOMANE+')) {
+                    return { key: "domane-plus", name: "DOMANE+", taxRate: 35 };
+                } else if (title.includes('DOMANE')) {
+                    return { key: "domane", name: "DOMANE", taxRate: 35 };
+                }
+                
+                // DOMANE+ models first (most specific)
+                if (title.includes('DOMANE+') || title.includes('DOMANE +') ||
+                    title.includes('DOMANE+ ') || title.includes('DOMANE +AL') ||
+                    title.includes('DOMANE+ AL') || title.includes('DOMANE +HP') ||
+                    title.includes('DOMANE+ HP')) {
+                    return { key: "domane-plus", name: "DOMANE+", taxRate: 35 };
+                }
+                
+                if (title.includes('DOMANE') && 
+                    !title.includes('DOMANE+') && !title.includes('DOMANE +') && !title.includes('DOMANE+ ') &&
+                    !title.includes('DOMANE +AL') && !title.includes('DOMANE+ AL') && !title.includes('DOMANE +HP') && !title.includes('DOMANE+ HP')) {
+                    return { key: "domane", name: "DOMANE", taxRate: 35 };
+                }
+                
+                // Other specific models
+                if (title.includes('MADONE')) {
+                    return { key: "madone", name: "MADONE", taxRate: 35 };
+                }
+                if (title.includes('EMONDA')) {
+                    return { key: "emonda", name: "EMONDA", taxRate: 35 };
+                }
+                if (title.includes('MARLIN')) {
+                    return { key: "marlin", name: "MARLIN", taxRate: 35 };
+                }
+                if (title.includes('CHECKPOINT')) {
+                    return { key: "checkpoint", name: "CHECKPOINT", taxRate: 35 };
+                }
+                if (title.includes('POWERFLY')) {
+                    return { key: "powerfly", name: "POWERFLY", taxRate: 35 };
+                }
+                if (title.includes('FUEL')) {
+                    return { key: "fuel", name: "FUEL", taxRate: 35 };
+                }
+                if (title.includes('RAIL')) {
+                    return { key: "rail", name: "RAIL", taxRate: 35 };
+                }
+                if (title.includes('VERVE')) {
+                    return { key: "verve", name: "VERVE", taxRate: 35 };
+                }
+                if (title.includes('SLASH')) {
+                    return { key: "slash", name: "SLASH", taxRate: 35 };
+                }
+                
+                // Generic bicycle
+                return { key: "bisiklet", name: "BİSİKLET", taxRate: 35 };
+            }
+            
+            // Use API category directly
+            const categoryKey = apiCategory.toLowerCase()
+                .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
+                .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
+                .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            
+            // Tax rate based on category
+            let taxRate = 40;
+            if (apiCategory.includes('BİSİKLET') || apiCategory.includes('BISIKLET')) {
+                taxRate = 35;
+            } else if (apiCategory.includes('GİYİM') || apiCategory.includes('FORMA') || apiCategory.includes('KASK')) {
+                taxRate = 33;
+            } else if (apiCategory.includes('GPS') || apiCategory.includes('BİLGİSAYAR')) {
+                taxRate = 65;
+            }
+            
+            return { key: categoryKey, name: apiCategory, taxRate: taxRate };
+        }
+        
+        // Calculate landed cost
+        function calculateLandedCost(product) {
+            const buyingPrice = parseFloat(product.buyingPrice) || 0;
+            const categoryInfo = mapToCategory(product);
+            return buyingPrice * (1 + categoryInfo.taxRate / 100);
+        }
+        
+        // Calculate margin
+        function calculateMargin(product) {
+            const sellingPrice = parseFloat(product.price) || 0;
+            const landedCost = calculateLandedCost(product);
+            if (sellingPrice === 0 || landedCost === 0) return 0;
+            return ((sellingPrice - landedCost) / sellingPrice) * 100;
+        }
+        
+        // Format currency
+        function formatCurrency(amount) {
+            if (amount >= 1000000) {
+                return (amount / 1000000).toFixed(1) + 'M€';
+            } else if (amount >= 1000) {
+                return (amount / 1000).toFixed(1) + 'K€';
+            } else {
+                return amount.toFixed(0) + '€';
+            }
+        }
+        
+        async function loadData() {
+            try {
+                const response = await fetch(`${apiBase}/products`);
+                const data = await response.json();
+                allProducts = data.data.products;
+                
+                // Group products by title first, then by category
+                const productGroups = {};
+                allProducts.forEach(product => {
+                    const title = product.title;
+                    if (!productGroups[title]) {
+                        productGroups[title] = {
+                            title: title,
+                            variants: [],
+                            totalStock: 0
+                        };
+                    }
+                    productGroups[title].variants.push(product);
+                    productGroups[title].totalStock += parseInt(product.quantity) || 0;
+                });
+                
+                // Group by category
+                const categoryGroups = {};
+                const productsByCategory = {};
+                
+                Object.values(productGroups).forEach(productGroup => {
+                    if (productGroup.totalStock <= 0) return; // Skip products with no stock
+                    
+                    const representativeProduct = productGroup.variants[0];
+                    const categoryInfo = mapToCategory(representativeProduct);
+                    const category = categoryInfo.key;
+                    
+                    // Debug FX products - daha detaylı
+                    if (productGroup.title.toUpperCase().includes('FX')) {
+                        const title = representativeProduct.title.toUpperCase();
+                        const hasPlus = title.includes('FX+') || title.includes('FX +');
+                        console.log(`FX Debug: "${productGroup.title}" → HasPlus: ${hasPlus} → Category: ${category} (${categoryInfo.name})`);
+                        console.log(`  Title check: "${title}"`);
+                    }
+                    
+                    if (!categoryGroups[category]) {
+                        categoryGroups[category] = {
+                            category: category,
+                            categoryName: categoryInfo.name,
+                            taxRate: categoryInfo.taxRate,
+                            totalStock: 0,
+                            totalStockValue: 0,
+                            totalSalesPotential: 0,
+                            totalProfitPotential: 0,
+                            productCount: 0,
+                            marginSum: 0
+                        };
+                        productsByCategory[category] = [];
+                    }
+                    
+                    const avgBuyingPrice = productGroup.variants.reduce((sum, v) => sum + (parseFloat(v.buyingPrice) || 0), 0) / productGroup.variants.length;
+                    const avgSellingPrice = productGroup.variants.reduce((sum, v) => sum + (parseFloat(v.price) || 0), 0) / productGroup.variants.length;
+                    const landedCost = avgBuyingPrice * (1 + categoryInfo.taxRate / 100);
+                    const margin = avgSellingPrice > 0 && landedCost > 0 ? ((avgSellingPrice - landedCost) / avgSellingPrice) * 100 : 0;
+                    
+                    categoryGroups[category].totalStock += productGroup.totalStock;
+                    categoryGroups[category].productCount++;
+                    
+                    if (avgBuyingPrice > 0 && avgSellingPrice > 0) {
+                        const stockValue = landedCost * productGroup.totalStock;
+                        const salesPotential = avgSellingPrice * productGroup.totalStock;
+                        const profitPotential = (avgSellingPrice - landedCost) * productGroup.totalStock;
+                        
+                        categoryGroups[category].totalStockValue += stockValue;
+                        categoryGroups[category].totalSalesPotential += salesPotential;
+                        categoryGroups[category].totalProfitPotential += profitPotential;
+                        categoryGroups[category].marginSum += margin;
+                        
+                        // Store product for details
+                        productsByCategory[category].push({
+                            title: productGroup.title,
+                            stock: productGroup.totalStock,
+                            sellingPrice: avgSellingPrice,
+                            landedCost: landedCost,
+                            margin: margin,
+                            profitPotential: profitPotential
+                        });
+                    }
+                });
+                
+                // Calculate averages and add products
+                Object.keys(categoryGroups).forEach(category => {
+                    const group = categoryGroups[category];
+                    group.avgMargin = group.productCount > 0 ? group.marginSum / group.productCount : 0;
+                    group.products = productsByCategory[category] || [];
+                });
+                
+                // Sort by profit potential
+                const sortedCategories = Object.values(categoryGroups)
+                    .sort((a, b) => b.totalProfitPotential - a.totalProfitPotential)
+                    .slice(0, 16);
+                
+                renderSummaryMetrics(categoryGroups);
+                renderCategories(sortedCategories);
+                renderCategoryDetails(sortedCategories.slice(0, 12));
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('loading').style.display = 'none';
+                const errorDiv = document.getElementById('error-message');
+                errorDiv.innerHTML = `<div style="color: #ff4757; text-align: center; padding: 20px;">❌ Veri yüklenirken hata: ${error.message}</div>`;
+                errorDiv.style.display = 'block';
+            }
+        }
+        
+        function renderCategories(categories) {
+            const grid = document.getElementById('categories-grid');
+            
+            grid.innerHTML = categories.map((category, index) => `
+                <div class="category-card">
+                    <div class="category-rank">${index + 1}</div>
+                    
+                    <div class="category-name">${category.categoryName}</div>
+                    
+                    <div class="category-profit">${formatCurrency(category.totalProfitPotential)}</div>
+                    
+                    <div class="category-details">
+                        <div class="category-detail-row">
+                            <span>💰 Yatırım: ${formatCurrency(category.totalStockValue)}</span>
+                        </div>
+                        <div class="category-detail-row">
+                            <span>📈 Gelir: ${formatCurrency(category.totalSalesPotential)}</span>
+                        </div>
+                        <div class="category-detail-row">
+                            <span>📦 ${category.productCount} ürün • ${category.totalStock} stok</span>
+                        </div>
+                        <div class="category-detail-row">
+                            <span>📊 Ortalama Marj: ${category.avgMargin.toFixed(1)}%</span>
+                        </div>
+                        
+                        <button class="show-products-btn" onclick="showCategoryProducts('${category.category}', '${category.categoryName}')">
+                            📋 Ürünleri Göster
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function renderCategoryDetails(categories) {
+            const detailsContainer = document.getElementById('category-details');
+            
+            detailsContainer.innerHTML = categories.map((category, index) => {
+                const avgSellingPrice = category.totalSalesPotential > 0 ? (category.totalSalesPotential / category.totalStock).toFixed(0) : 0;
+                const avgLandedCost = category.totalStockValue > 0 ? (category.totalStockValue / category.totalStock).toFixed(0) : 0;
+                const detailsId = `details-${index}`;
+                
+                const productDetailsHTML = (category.products || []).map(product => `
+                    <div style="background: rgba(255,255,255,0.1); padding: 10px; margin: 6px 0; border-radius: 6px;">
+                        <div style="font-weight: bold; color: #FFD700; margin-bottom: 4px;">${product.title}</div>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 0.85em;">
+                            <div>Stok: <span style="color: #4CAF50; font-weight: bold;">${product.stock}</span></div>
+                            <div>Satış: <span style="font-weight: bold;">€${product.sellingPrice.toFixed(0)}</span></div>
+                            <div>L.Cost: <span style="font-weight: bold;">€${product.landedCost.toFixed(0)}</span></div>
+                            <div>Marj: <span style="color: ${product.margin > 30 ? '#4CAF50' : product.margin > 10 ? '#FFC107' : '#FF5722'}; font-weight: bold;">${product.margin.toFixed(1)}%</span></div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                return `
+                    <div style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 15px;">
+                        <div style="color: #FFD700; font-weight: bold; font-size: 1.1em; margin-bottom: 8px;">
+                            ${category.categoryName}
+                        </div>
+                        <div style="color: white; font-size: 1.3em; font-weight: bold; margin-bottom: 10px;">
+                            ${category.totalStock} adet
+                        </div>
+                        <div style="color: rgba(255,255,255,0.8); font-size: 0.9em; margin-bottom: 12px;">
+                            ${category.productCount} ürün
+                        </div>
+                        
+                        <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; margin: 4px 0;">
+                                <span style="color: rgba(255,255,255,0.7);">Satış:</span>
+                                <span style="color: white; font-weight: bold;">€${avgSellingPrice}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin: 4px 0;">
+                                <span style="color: rgba(255,255,255,0.7);">Landed Cost:</span>
+                                <span style="color: white; font-weight: bold;">€${avgLandedCost}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin: 4px 0;">
+                                <span style="color: rgba(255,255,255,0.7);">Gerçek Marj:</span>
+                                <span style="color: white; font-weight: bold;">${category.avgMargin.toFixed(1)}%</span>
+                            </div>
+                        </div>
+                        
+                        <button onclick="toggleDetails('${detailsId}')" 
+                               style="width: 100%; background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer;">
+                            Varyant Stokları
+                        </button>
+                        
+                        <div id="${detailsId}" style="display: none; margin-top: 12px; max-height: 300px; overflow-y: auto;">
+                            ${productDetailsHTML}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renderSummaryMetrics(categoryGroups) {
+            const summaryContainer = document.getElementById('summary-metrics');
+            
+            // Calculate totals
+            let totalStockValue = 0;
+            let totalSalesPotential = 0;
+            let totalProfitPotential = 0;
+            let totalProducts = 0;
+            
+            Object.values(categoryGroups).forEach(category => {
+                totalStockValue += category.totalStockValue;
+                totalSalesPotential += category.totalSalesPotential;
+                totalProfitPotential += category.totalProfitPotential;
+                totalProducts += category.productCount;
+            });
+            
+            const roiPotential = totalStockValue > 0 ? (totalProfitPotential / totalStockValue) * 100 : 0;
+            
+            summaryContainer.innerHTML = `
+                <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(15px); border-radius: 15px; padding: 20px; text-align: center;">
+                    <h3 style="color: #FFD700; margin: 0 0 10px 0;">Toplam Stok Değeri</h3>
+                    <div style="font-size: 1.8em; font-weight: bold; color: #87CEEB;">${formatCurrency(totalStockValue)}</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(15px); border-radius: 15px; padding: 20px; text-align: center;">
+                    <h3 style="color: #FFD700; margin: 0 0 10px 0;">Gelir Tahmini</h3>
+                    <div style="font-size: 1.8em; font-weight: bold; color: #4CAF50;">${formatCurrency(totalSalesPotential)}</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(15px); border-radius: 15px; padding: 20px; text-align: center;">
+                    <h3 style="color: #FFD700; margin: 0 0 10px 0;">Kar Potansiyeli</h3>
+                    <div style="font-size: 1.8em; font-weight: bold; color: #FFD700;">${formatCurrency(totalProfitPotential)}</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(15px); border-radius: 15px; padding: 20px; text-align: center;">
+                    <h3 style="color: #FFD700; margin: 0 0 10px 0;">ROI Potansiyeli</h3>
+                    <div style="font-size: 1.8em; font-weight: bold; color: #FF6B6B;">${roiPotential.toFixed(1)}%</div>
+                </div>
+            `;
+        }
+        
+        function toggleDetails(detailsId) {
+            const element = document.getElementById(detailsId);
+            if (element) {
+                element.style.display = element.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+        
+        function refreshData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('dashboard-content').style.display = 'none';
+            loadData();
+        }
+        
+        function showCategoryProducts(categoryKey, categoryName) {
+            const modal = document.getElementById('productsModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalProducts = document.getElementById('modalProducts');
+            
+            modalTitle.textContent = `${categoryName} - Ana Ürün Kartları`;
+            
+            // Group products by title first (to combine variants)
+            const productGroups = {};
+            
+            allProducts.forEach(product => {
+                const categoryInfo = mapToCategory(product);
+                if (categoryInfo.key === categoryKey) {
+                    const title = product.title;
+                    if (!productGroups[title]) {
+                        productGroups[title] = {
+                            title: title,
+                            code: product.code,
+                            brand: product.brand,
+                            variants: [],
+                            totalStock: 0,
+                            avgBuyingPrice: 0,
+                            avgSellingPrice: 0,
+                            importTax: categoryInfo.taxRate
+                        };
+                    }
+                    
+                    const stock = parseInt(product.quantity) || 0;
+                    productGroups[title].variants.push(product);
+                    productGroups[title].totalStock += stock;
+                }
+            });
+            
+            // Calculate averages and create main product cards
+            let categoryProducts = [];
+            Object.values(productGroups).forEach(group => {
+                if (group.totalStock > 0) {
+                    // Calculate average prices from all variants
+                    const validVariants = group.variants.filter(v => 
+                        (parseFloat(v.buyingPrice) || 0) > 0 && (parseFloat(v.price) || 0) > 0
+                    );
+                    
+                    if (validVariants.length > 0) {
+                        const avgBuyingPrice = validVariants.reduce((sum, v) => sum + (parseFloat(v.buyingPrice) || 0), 0) / validVariants.length;
+                        const avgSellingPrice = validVariants.reduce((sum, v) => sum + (parseFloat(v.price) || 0), 0) / validVariants.length;
+                        const landedCost = avgBuyingPrice * (1 + group.importTax / 100);
+                        const margin = avgSellingPrice > 0 && landedCost > 0 ? ((avgSellingPrice - landedCost) / avgSellingPrice) * 100 : 0;
+                        
+                        categoryProducts.push({
+                            title: group.title,
+                            code: group.code,
+                            brand: group.brand,
+                            stock: group.totalStock,
+                            variantCount: group.variants.length,
+                            buyingPrice: avgBuyingPrice,
+                            sellingPrice: avgSellingPrice,
+                            landedCost: landedCost,
+                            margin: margin,
+                            profitPotential: (avgSellingPrice - landedCost) * group.totalStock,
+                            importTax: group.importTax
+                        });
+                    }
+                }
+            });
+            
+            // Sort by profit potential descending
+            categoryProducts.sort((a, b) => b.profitPotential - a.profitPotential);
+            
+            // Render main product cards
+            modalProducts.innerHTML = categoryProducts.map(product => {
+                const marginColor = product.margin > 30 ? '#4CAF50' : 
+                                   product.margin > 10 ? '#FFC107' : '#FF5722';
+                
+                return `
+                    <div class="product-item">
+                        <div class="product-title">${product.title}</div>
+                        <div class="product-details">
+                            <div><strong>Kod:</strong> ${product.code || '-'}</div>
+                            <div><strong>Marka:</strong> ${product.brand || '-'}</div>
+                            <div><strong>Toplam Stok:</strong> <span style="color: #4CAF50; font-weight: bold;">${product.stock}</span></div>
+                            <div><strong>Varyant Sayısı:</strong> <span style="color: #87CEEB;">${product.variantCount}</span></div>
+                            <div><strong>Ort. Alış:</strong> $${product.buyingPrice.toFixed(2)}</div>
+                            <div><strong>Ort. Satış:</strong> €${product.sellingPrice.toFixed(2)}</div>
+                            <div><strong>Ort. L.Cost:</strong> €${product.landedCost.toFixed(2)}</div>
+                            <div><strong>Import Tax:</strong> <span style="color: #87CEEB;">${product.importTax}%</span></div>
+                            <div><strong>Ort. Marj:</strong> <span style="color: ${marginColor}; font-weight: bold;">${product.margin.toFixed(1)}%</span></div>
+                        </div>
+                        <div style="text-align: center; margin-top: 10px; padding: 8px; background: rgba(76,175,80,0.2); border-radius: 6px;">
+                            <strong>Toplam Kar Potansiyeli: <span style="color: #4CAF50;">€${product.profitPotential.toFixed(0)}</span></strong>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            if (categoryProducts.length === 0) {
+                modalProducts.innerHTML = '<div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.7);">Bu kategoride stoklu ürün bulunamadı.</div>';
+            }
+            
+            modal.style.display = 'block';
+        }
+        
+        function closeProductsModal() {
+            document.getElementById('productsModal').style.display = 'none';
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('productsModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+        
+        // Make functions available globally
+        window.toggleDetails = toggleDetails;
+        window.showCategoryProducts = showCategoryProducts;
+        window.closeProductsModal = closeProductsModal;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>
