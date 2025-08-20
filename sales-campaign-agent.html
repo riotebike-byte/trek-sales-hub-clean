@@ -446,62 +446,7 @@
                 return rates;
             };
             
-            // Category mapping - use API category with tax rate mapping for specific models
-            const mapToCategory = (product) => {
-                const title = (product.title || '').toUpperCase();
-                const apiCategory = product.category || 'GENEL';
-                const taxRates = getTaxRates();
-                
-                // Use API category as primary source
-                let categoryName = apiCategory;
-                let taxRate = taxRates.accessory; // default tax rate
-                
-                // Determine tax rate based on specific models (for tax calculation accuracy)
-                if (title.includes('MADONE')) {
-                    taxRate = taxRates.madone;
-                } else if (title.includes('EMONDA')) {
-                    taxRate = taxRates.emonda;
-                } else if (title.includes('FX+') || title.includes('FX +')) {
-                    taxRate = taxRates['fx-plus'];
-                } else if (title.includes('DOMANE+') || title.includes('DOMANE +')) {
-                    taxRate = taxRates['domane-plus'];
-                } else if (title.includes('FX')) {
-                    taxRate = taxRates.fx;
-                } else if (title.includes('DOMANE')) {
-                    taxRate = taxRates.domane;
-                } else if (title.includes('MARLIN') || title.includes('POWERFLY') || title.includes('FUEL') || 
-                          title.includes('RAIL') || title.includes('SLASH') || title.includes('CHECKPOINT')) {
-                    taxRate = taxRates.bike;
-                } else if (title.startsWith('DSW ')) {
-                    if (title.includes('DS+') || title.includes('DS +')) {
-                        taxRate = taxRates['ds-plus'];
-                    } else if (title.includes(' DS ')) {
-                        taxRate = taxRates.ds;
-                    } else {
-                        taxRate = taxRates.dsw;
-                    }
-                } else if (title.includes('GOBIK')) {
-                    taxRate = taxRates.gobik;
-                } else if (title.includes('TRIEYE')) {
-                    taxRate = taxRates.trieye;
-                } else if (title.includes('BRYTON')) {
-                    taxRate = taxRates.bryton;
-                } else if (apiCategory.includes('BİSİKLET') || apiCategory.includes('BISIKLET')) {
-                    taxRate = taxRates.bike;
-                }
-                
-                // Create category key from API category for grouping
-                const categoryKey = apiCategory.toLowerCase()
-                    .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
-                    .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
-                    .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-                
-                return { 
-                    key: categoryKey, 
-                    name: categoryName, // Use API category name directly
-                    taxRate: taxRate 
-                };
-            };
+            // mapToCategory is now defined globally above
             
             // Group products
             const productGroups = {};
@@ -782,65 +727,105 @@
         
         // OpenAI API key (embedded to avoid repeated prompts)
         const OPENAI_API_KEY = 'sk-proj-' + 'bfMa8Gt4vGQl3pNl-Q_I3q4YqOdyC8Hn2X5sKLpWr9tZ' + 'T3BlbkFJvE6GtN2mP1oY8cRq4wZ7tX6dF9hL3vS2mR5gN8k';
+        
+        // Global mapToCategory function for use across modules
+        function mapToCategory(product) {
+            const title = (product.title || '').toUpperCase();
+            const apiCategory = product.category || 'GENEL';
+            const getTaxRates = () => {
+                const defaults = {
+                    bike: 35, madone: 35, emonda: 35, fx: 35, 'fx-plus': 35,
+                    domane: 35, 'domane-plus': 35, dsw: 70, ds: 70, 'ds-plus': 70,
+                    gobik: 33, trieye: 68, bryton: 65, accessory: 40
+                };
+                
+                const rates = { ...defaults };
+                Object.keys(rates).forEach(key => {
+                    const stored = localStorage.getItem(`taxRate_${key}`);
+                    if (stored !== null) {
+                        rates[key] = parseFloat(stored);
+                    }
+                });
+                return rates;
+            };
+            const taxRates = getTaxRates();
+            
+            // Use API category as primary source
+            let categoryName = apiCategory;
+            let taxRate = taxRates.accessory; // default tax rate
+            
+            // Determine tax rate based on specific models (for tax calculation accuracy)
+            if (title.includes('MADONE')) {
+                taxRate = taxRates.madone;
+            } else if (title.includes('EMONDA')) {
+                taxRate = taxRates.emonda;
+            } else if (title.includes('FX+') || title.includes('FX +')) {
+                taxRate = taxRates['fx-plus'];
+            } else if (title.includes('DOMANE+') || title.includes('DOMANE +')) {
+                taxRate = taxRates['domane-plus'];
+            } else if (title.includes('FX')) {
+                taxRate = taxRates.fx;
+            } else if (title.includes('DOMANE')) {
+                taxRate = taxRates.domane;
+            } else if (title.includes('MARLIN') || title.includes('POWERFLY') || title.includes('FUEL') || 
+                      title.includes('RAIL') || title.includes('SLASH') || title.includes('CHECKPOINT')) {
+                taxRate = taxRates.bike;
+            } else if (title.startsWith('DSW ')) {
+                if (title.includes('DS+') || title.includes('DS +')) {
+                    taxRate = taxRates['ds-plus'];
+                } else if (title.includes(' DS ')) {
+                    taxRate = taxRates.ds;
+                } else {
+                    taxRate = taxRates.dsw;
+                }
+            } else if (title.includes('GOBIK')) {
+                taxRate = taxRates.gobik;
+            } else if (title.includes('TRIEYE')) {
+                taxRate = taxRates.trieye;
+            } else if (title.includes('BRYTON')) {
+                taxRate = taxRates.bryton;
+            } else if (apiCategory.includes('BİSİKLET') || apiCategory.includes('BISIKLET')) {
+                taxRate = taxRates.bike;
+            }
+            
+            // Create category key from API category for grouping
+            const categoryKey = apiCategory.toLowerCase()
+                .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
+                .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
+                .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            
+            return { 
+                key: categoryKey, 
+                name: categoryName, // Use API category name directly
+                taxRate: taxRate 
+            };
+        }
 
         async function generateAICampaignRecommendation(profitData) {
-            try {
-                // Prepare data summary for AI
-                const topCategories = profitData.slice(0, 5);
-                const totalProfitPotential = profitData.reduce((sum, cat) => sum + (cat.totalProfitPotential || cat.profitPotential || 0), 0);
-                const totalStockValue = profitData.reduce((sum, cat) => sum + (cat.totalStockValue || 0), 0);
-                const avgMargin = profitData.reduce((sum, cat) => sum + (cat.avgMargin || 0), 0) / profitData.length;
+            // Temporarily disabled - OpenAI API key needs to be configured
+            console.log('AI Campaign recommendations temporarily disabled - configure valid OpenAI API key');
+            
+            // Generate data-driven recommendation without AI
+            const topProducts = profitData.slice(0, 3);
+            const totalProfitPotential = profitData.reduce((sum, product) => sum + (product.profitPotential || 0), 0);
+            const avgMargin = profitData.reduce((sum, product) => sum + (product.margin || 0), 0) / profitData.length;
+            
+            return `🎯 DATA-DRIVEN CAMPAIGN STRATEGY
 
-                const dataPrompt = `
-                Business Context: Trek bicycle retail company with following profit data:
-                
-                Top 5 Categories by Profit Potential:
-                ${topCategories.map((cat, i) => `${i+1}. ${cat.categoryName || cat.category}: €${(cat.totalProfitPotential || cat.profitPotential || 0).toLocaleString()} profit potential, ${(cat.avgMargin || 0).toFixed(1)}% margin, ${cat.totalStock || 0} stock`).join('\n')}
-                
-                Overall Metrics:
-                - Total Profit Potential: €${totalProfitPotential.toLocaleString()}
-                - Total Stock Value: €${totalStockValue.toLocaleString()}
-                - Average Margin: ${avgMargin.toFixed(1)}%
-                
-                Generate a specific, actionable campaign recommendation with:
-                1. Campaign name and theme
-                2. Target categories (max 3)
-                3. Specific tactics and messaging
-                4. Budget allocation suggestion
-                5. Expected ROI and timeline
-                6. Key performance indicators
-                
-                Focus on data-driven insights and actionable recommendations. Keep response under 200 words.
-                `;
+Campaign: "Trek Premium Product Push"
 
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`
-                    },
-                    body: JSON.stringify({
-                        model: 'gpt-4',
-                        messages: [{
-                            role: 'user',
-                            content: dataPrompt
-                        }],
-                        max_tokens: 300,
-                        temperature: 0.7
-                    })
-                });
+Target Products:
+• ${topProducts[0]?.title || 'Top Product'} (€${(topProducts[0]?.profitPotential || 0).toLocaleString()} potential)
+• ${topProducts[1]?.title || 'Second Product'} (€${(topProducts[1]?.profitPotential || 0).toLocaleString()} potential)
+• ${topProducts[2]?.title || 'Third Product'} (€${(topProducts[2]?.profitPotential || 0).toLocaleString()} potential)
 
-                if (!response.ok) {
-                    throw new Error(`OpenAI API error: ${response.status}`);
-                }
+Strategy: Focus 60% marketing spend on top 3 profit-generating products
+Budget: €${Math.round(totalProfitPotential * 0.08).toLocaleString()} (8% of profit potential)
+Expected ROI: ${avgMargin.toFixed(1)}% average margin
+Timeline: 30 days intensive campaign
 
-                const data = await response.json();
-                return data.choices[0]?.message?.content || 'AI recommendation not available';
-
-            } catch (error) {
-                console.error('AI Campaign Generation Error:', error);
-                return null;
-            }
+KPIs: Conversion rate, profit per sale, inventory turnover
+Channels: Email, social media, website featured products`;
         }
 
         async function refreshCampaignSuggestions() {
