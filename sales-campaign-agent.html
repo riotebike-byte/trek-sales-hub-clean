@@ -377,9 +377,15 @@
             else {
                 console.log('🔄 Loading data directly from API...');
                 await loadDataFromAPI();
+                
+                // Check if API data was loaded successfully
+                if (profitRankingData.length > 0) {
+                    console.log('🤖 Agent loaded from API:', profitRankingData.length, 'categories');
+                    return true;
+                }
             }
             
-            // No fallback data - agent requires real profit data to function
+            // No data available from any source
             console.log('❌ No profit data available - agent requires data from profit margin dashboard or API');
             profitRankingData = [];
             allProducts = [];
