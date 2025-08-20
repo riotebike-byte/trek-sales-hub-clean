@@ -373,38 +373,16 @@
                 console.log('📊 Sample category:', profitRankingData[0]);
                 return true;
             }
-            // Then try localStorage
+            // Try loading directly from API
             else {
-                const savedData = localStorage.getItem('agentUpdateData');
-                if (savedData) {
-                    try {
-                        agentData = JSON.parse(savedData);
-                        profitRankingData = agentData.profitRanking || [];
-                        console.log('🤖 Agent loaded from localStorage:', agentData);
-                        return true;
-                    } catch (error) {
-                        console.error('Agent data load error:', error);
-                    }
-                }
+                console.log('🔄 Loading data directly from API...');
+                await loadDataFromAPI();
             }
             
-            // Final fallback: Load data directly from API
-            console.log('🔄 Loading data directly from API...');
-            await loadDataFromAPI();
-            
-            // Fallback data
-            agentData = {
-                timestamp: new Date().toISOString(),
-                filter: 'all',
-                filteredCategories: ['MADONE', 'EMONDA', 'DOMANE', 'FUEL EX'],
-                profitRanking: [
-                    { category: 'MADONE', profitPotential: 85000, totalStock: 25, avgMargin: 32.5 },
-                    { category: 'EMONDA', profitPotential: 67000, totalStock: 18, avgMargin: 28.3 },
-                    { category: 'DOMANE', profitPotential: 54000, totalStock: 22, avgMargin: 25.1 },
-                    { category: 'FUEL EX', profitPotential: 41000, totalStock: 15, avgMargin: 22.8 }
-                ]
-            };
-            profitRankingData = agentData.profitRanking;
+            // No fallback data - agent requires real profit data to function
+            console.log('❌ No profit data available - agent requires data from profit margin dashboard or API');
+            profitRankingData = [];
+            allProducts = [];
             return false;
         }
         
@@ -436,8 +414,9 @@
                 }
             } catch (error) {
                 console.error('❌ API load error:', error);
-                // Use fallback demo data
-                useFallbackData();
+                // No fallback - require real data
+                profitRankingData = [];
+                allProducts = [];
             }
         }
         
@@ -554,24 +533,6 @@
             console.log('✅ Processed', profitRankingData.length, 'categories from API data');
         }
         
-        // Fallback demo data
-        function useFallbackData() {
-            profitRankingData = [
-                { category: 'MADONE', categoryName: 'MADONE', totalProfitPotential: 85000, totalStock: 25, avgMargin: 32.5 },
-                { category: 'EMONDA', categoryName: 'EMONDA', totalProfitPotential: 67000, totalStock: 18, avgMargin: 28.3 },
-                { category: 'DOMANE', categoryName: 'DOMANE', totalProfitPotential: 54000, totalStock: 22, avgMargin: 25.1 },
-                { category: 'FUEL EX', categoryName: 'FUEL', totalProfitPotential: 41000, totalStock: 15, avgMargin: 22.8 }
-            ];
-            
-            agentData = {
-                timestamp: new Date().toISOString(),
-                filter: 'all',
-                filteredCategories: profitRankingData.map(c => c.categoryName),
-                profitRanking: profitRankingData
-            };
-            
-            console.log('🎪 Using demo data:', profitRankingData.length, 'categories');
-        }
         
         async function refreshSalesRecommendations() {
             const container = document.getElementById('salesRecommendations');
