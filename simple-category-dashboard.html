@@ -566,7 +566,7 @@
                 // Make data available globally for agents and analysis dashboard
                 window.mainDashboardData = {
                     products: allProducts,
-                    categories: categories,
+                    categories: sortedCategories,
                     timestamp: new Date().toISOString()
                 };
                 
@@ -733,7 +733,10 @@
         }
         
         function openProfitAnalysis() {
-            window.open('profit-analysis-dashboard.html', '_blank');
+            // Scroll to profit analysis section of current dashboard
+            document.querySelector('.profit-analysis').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
         }
         
         function showCategoryProducts(categoryKey, categoryName) {
