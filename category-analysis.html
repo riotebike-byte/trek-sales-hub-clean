@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kategori Analizi - Ürün Örnekleri</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #1a1a1a; color: #00ff00; }
+        .product { background: #2d2d2d; padding: 10px; margin: 5px; border-radius: 5px; font-size: 0.9em; }
+        .title { color: #ffff00; font-weight: bold; }
+        .category { color: #ff6b6b; }
+        .current-mapping { color: #4ecdc4; }
+        .stats { background: #333; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        button { padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .filter-box { background: #333; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        input { padding: 5px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Kategori Analizi - Ürün Örnekleri</h1>
+    
+    <div class="filter-box">
+        <input type="text" id="searchInput" placeholder="Ürün ara (örn: MADONE, KASK)" />
+        <button onclick="analyzeProducts()">📊 Analiz Et</button>
+        <button onclick="showBikeExamples()">🚴 Bisiklet Örnekleri</button>
+        <button onclick="showPartsExamples()">🔧 Parça Örnekleri</button>
+        <button onclick="showAccessoryExamples()">🎒 Aksesuar Örnekleri</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        const apiBase = 'http://localhost:3002/api/b2b';
+        let allProducts = [];
+        
+        // Simplified category mapping function for testing
+        function testCategoryMapping(product) {
+            const title = (product.title || '').toUpperCase();
+            const category = (product.category || '').toUpperCase();
+            const brand = (product.brand || '').toUpperCase();
+            
+            // Current mapping logic here
+            const partKeywords = ['KAPAK', 'SPACER', 'HEADSET', 'BARSTEM', 'BLENDR', 'BASE', 'PLUG', 
+                                 'COMPRESSION', 'BOLT', 'SCREW', 'NUT', 'WASHER', 'BEARING', 'SEAL'];
+            
+            const isPart = partKeywords.some(keyword => title.includes(keyword));
+            const isBicycle = (category.includes('BİSİKLET') || category.includes('BISIKLET')) && !isPart;
+            
+            if (title.includes('MADONE') && !isPart && isBicycle) {
+                return 'MADONE';
+            }
+            if (title.includes('EMONDA') && !isPart && isBicycle) {
+                return 'EMONDA';
+            }
+            // Add more logic...
+            
+            if (isPart) return 'YEDEK PARÇA';
+            return 'DİĞER';
+        }
+        
+        async function analyzeProducts() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div style="color: #ffa502;">⏳ API verileri yükleniyor...</div>';
+            
+            try {
+                const response = await fetch(`${apiBase}/products`);
+                const data = await response.json();
+                allProducts = data.data.products;
+                
+                const searchTerm = document.getElementById('searchInput').value.toUpperCase();
+                
+                let filteredProducts = allProducts;
+                if (searchTerm) {
+                    filteredProducts = allProducts.filter(p => 
+                        (p.title || '').toUpperCase().includes(searchTerm) ||
+                        (p.category || '').toUpperCase().includes(searchTerm) ||
+                        (p.brand || '').toUpperCase().includes(searchTerm)
+                    );
+                }
+                
+                let html = `<div class="stats">
+                    📦 Toplam ${allProducts.length} ürün, ${filteredProducts.length} ürün gösteriliyor
+                </div>`;
+                
+                filteredProducts.slice(0, 50).forEach((product, index) => {
+                    const mapping = testCategoryMapping(product);
+                    html += `<div class="product">
+                        <div class="title">${index + 1}. ${product.title}</div>
+                        <div>Kategori: <span class="category">${product.category || 'YOK'}</span></div>
+                        <div>Marka: ${product.brand || 'YOK'}</div>
+                        <div>Kod: ${product.code || 'YOK'}</div>
+                        <div>Stok: ${product.quantity || 0}</div>
+                        <div>Mevcut Eşleştirme: <span class="current-mapping">${mapping}</span></div>
+                    </div>`;
+                });
+                
+                resultsDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div style="color: #ff4757;">❌ Hata: ${error.message}</div>`;
+            }
+        }
+        
+        async function showBikeExamples() {
+            document.getElementById('searchInput').value = 'BİSİKLET';
+            await analyzeProducts();
+        }
+        
+        async function showPartsExamples() {
+            document.getElementById('searchInput').value = 'MADONE';
+            await analyzeProducts();
+        }
+        
+        async function showAccessoryExamples() {
+            document.getElementById('searchInput').value = 'KASK';
+            await analyzeProducts();
+        }
+        
+        // Auto-load on page load
+        document.addEventListener('DOMContentLoaded', analyzeProducts);
+    </script>
+</body>
+</html>

@@ -377,32 +377,87 @@
             return categoryInfo.taxRate;
         }
         
-        // Real category schema based on the category tree
+        // Real category schema based on screenshots - specific bike models as categories
         const categorySchema = {
-            // BİSİKLET kategorileri
-            "yol-bisikleti": {
-                name: "YOL BİSİKLETİ",
-                categories: ["MADONE", "EMONDA", "DOMANE", "SPEED CONCEPT"],
+            // Specific bike model categories (like screenshots)
+            "madone": {
+                name: "MADONE",
+                categories: ["MADONE"],
                 taxRate: 35
             },
-            "gravel": {
-                name: "GRAVEL",
-                categories: ["CHECKMATE", "CHECKPOINT"],
+            "emonda": {
+                name: "EMONDA", 
+                categories: ["EMONDA"],
                 taxRate: 35
             },
-            "elektrikli-bisiklet": {
-                name: "ELEKTRİKLİ BİSİKLET 🔋",
-                categories: ["FUEL EXE", "RAIL", "POWERFLY FS", "POWERFLY", "DOMANE+", "DOMANE +", "DS+", "DS +", "FX+", "VERVE+", "VERVE +", "TOWNIE GO!", "TOWNIE GO+", "MARLİN+", "MARLIN+"],
+            "domane": {
+                name: "DOMANE",
+                categories: ["DOMANE"],
                 taxRate: 35
             },
-            "dag-bisikleti": {
-                name: "DAĞ BİSİKLETİ", 
-                categories: ["MARLIN", "PROCALIBER", "SUPERCALIBER", "FUEL EX", "TOP FUEL"],
+            "marlin": {
+                name: "MARLIN",
+                categories: ["MARLIN"],
                 taxRate: 35
             },
-            "sehir-bisikleti": {
-                name: "ŞEHİR BİSİKLETİ",
-                categories: ["FX", "DS", "VERVE", "ELECTRA"],
+            "fx": {
+                name: "FX",
+                categories: ["FX"],
+                taxRate: 35
+            },
+            "checkpoint": {
+                name: "CHECKPOINT",
+                categories: ["CHECKPOINT"],
+                taxRate: 35
+            },
+            "procaliber": {
+                name: "PROCALİBER",
+                categories: ["PROCALIBER"],
+                taxRate: 35
+            },
+            "powerfly": {
+                name: "POWERFLY",
+                categories: ["POWERFLY"],
+                taxRate: 35
+            },
+            "rail": {
+                name: "RAIL",
+                categories: ["RAIL"],
+                taxRate: 35
+            },
+            "fuel-ex": {
+                name: "FUEL EX",
+                categories: ["FUEL EX"],
+                taxRate: 35
+            },
+            "fuel-exe": {
+                name: "FUEL EXE",
+                categories: ["FUEL EXE"],
+                taxRate: 35
+            },
+            "speed-concept": {
+                name: "SPEED CONCEPT",
+                categories: ["SPEED CONCEPT"],
+                taxRate: 35
+            },
+            "top-fuel": {
+                name: "TOP FUEL",
+                categories: ["TOP FUEL"],
+                taxRate: 35
+            },
+            "supercaliber": {
+                name: "SUPERCALIBER",
+                categories: ["SUPERCALIBER"],
+                taxRate: 35
+            },
+            "verve": {
+                name: "VERVE",
+                categories: ["VERVE"],
+                taxRate: 35
+            },
+            "electra": {
+                name: "ELECTRA",
+                categories: ["ELECTRA"],
                 taxRate: 35
             },
             
@@ -423,24 +478,77 @@
                 taxRate: 70
             },
             
-            // AKSESUAR kategorileri
-            "aksesuar": {
-                name: "AKSESUAR",
-                categories: ["ARAÇ ARKASI TAŞIYICI", "AYDINLATMA", "BAGAJ", "SEPET", "BİSİKLET TRAINER", "ÇAMURLUK", "ÇANTA", "ELCİK", "GİDON BANDI", "KİLİT", "MATARA", "MATARA KAFESİ", "POMPA", "YOL BİLGİSAYARI", "ZİL"],
+            // Component categories (like screenshots)
+            "jant-seti": {
+                name: "JANT SETİ",
+                categories: ["JANT SETİ", "JANT", "TEKERLEK"],
                 taxRate: 40
             },
-            
-            // YEDEK PARÇA kategorileri  
+            "kask": {
+                name: "KASK",
+                categories: ["KASK"],
+                taxRate: 33
+            },
+            "pompa": {
+                name: "POMPA",
+                categories: ["POMPA"],
+                taxRate: 40
+            },
+            "sele-sele-borusu": {
+                name: "SELE-SELE BORUSU",
+                categories: ["SELE", "SELE BORUSU"],
+                taxRate: 40
+            },
+            "forma": {
+                name: "FORMA",
+                categories: ["FORMA"],
+                taxRate: 33
+            },
+            "dis-lastik": {
+                name: "DIŞ LASTİK",
+                categories: ["LASTİK", "DIŞ LASTİK"],
+                taxRate: 40
+            },
+            "iclik": {
+                name: "İÇLİK",
+                categories: ["İÇLİK"],
+                taxRate: 33
+            },
+            "elcik-gidon-bandi": {
+                name: "ELCİK-GİDON BANDI",
+                categories: ["ELCİK", "GİDON BANDI"],
+                taxRate: 40
+            },
+            "gidon-bogazi": {
+                name: "GİDON BOĞAZI",
+                categories: ["GİDON BOĞAZI", "GİDON"],
+                taxRate: 40
+            },
+            "blendr-aydinlatma-montaj": {
+                name: "BLENDR AYDINLATMA MONTAJ",
+                categories: ["BLENDR", "AYDINLATMA MONTAJ"],
+                taxRate: 40
+            },
+            "km-saati": {
+                name: "KM SAATİ",
+                categories: ["KM SAATİ", "BRYTON"],
+                taxRate: 65
+            },
             "yedek-parca": {
                 name: "YEDEK PARÇA",
-                categories: ["AEROBAR", "GİDON", "ANAHTAR TAKIMI", "BATARYA", "BLENDR AYDINLATMA MONTAJ", "GİDON BOĞAZI", "İÇ LASTİK", "LASTİK", "İNDİRİMLİ PARÇA", "JANT SETİ", "KADRO KULAĞI", "PARK AYAĞI", "PEDAL", "SELE", "SELE BORUSU"],
+                categories: ["YEDEK PARÇA", "PARÇA"],
                 taxRate: 40
             },
             
-            // GİYİM kategorileri
+            // General categories for non-matching items
+            "aksesuar": {
+                name: "AKSESUAR",
+                categories: ["AKSESUAR", "ÇANTA", "KİLİT", "ÇAMURLUK", "ZİL", "MATARA"],
+                taxRate: 40
+            },
             "giyim": {
                 name: "GİYİM",
-                categories: ["AYAKKABI", "KILIF", "ÇORAP", "ELDİVEN", "FORMA", "İÇLİK", "İNDİRİMLİ GİYİM", "KASK", "KOL", "DİZ ISITICI", "RÜZGARLIK", "YAĞMURLUK", "TAYT", "ŞORT"],
+                categories: ["GİYİM", "AYAKKABI", "ÇORAP", "ELDİVEN", "TAYT", "ŞORT"],
                 taxRate: 33
             },
             
@@ -473,11 +581,14 @@
             }
         };
 
-        // Map BizimHesap categories to our schema based on category tree
+        // Use API category directly with minimal processing
         function mapToCategory(product) {
             const title = (product.title || '').toUpperCase();
-            const category = (product.category || '').toUpperCase();
+            const apiCategory = product.category || 'GENEL';
             const brand = (product.brand || '').toUpperCase();
+            
+            // Clean up category name for display
+            let categoryName = apiCategory;
             
             // First check for DSW products (highest priority - 70% tax)
             if (title.startsWith('DSW ')) {
@@ -490,7 +601,6 @@
                 if (title.includes('MARLIN')) {
                     return { key: "dsw-marlin", name: "DSW MARLIN", taxRate: 70 };
                 }
-                // Default DSW to aksesuar
                 return { key: "aksesuar", name: "AKSESUAR", taxRate: 60 };
             }
             
@@ -506,80 +616,182 @@
                 return { key: "gozluk", name: "GÖZLÜK 👓", taxRate: 68 };
             }
             
-            // Bryton check
-            if (brand.includes('BRYTON') || title.includes('BRYTON') || 
-                category.includes('KM SAATİ') || category.includes('KM SAATI')) {
-                return { key: "bryton", name: "Bryton KM SAATİ", taxRate: 65 };
-            }
-            
             // Saris check
             if (brand.includes('SARIS') || title.includes('SARIS')) {
                 return { key: "saris", name: "Saris", taxRate: 65 };
             }
             
-            // Elektrikli bisiklet check (emoji or + signs)
-            if (title.includes('🔋') || category.includes('🔋') || 
-                title.includes('FUEL EXE') || title.includes('POWERFLY') ||
-                title.includes('DOMANE+') || title.includes('DOMANE +') ||
-                title.includes('DS+') || title.includes('DS +') ||
-                title.includes('FX+') || title.includes('VERVE+') || title.includes('VERVE +') ||
-                title.includes('TOWNIE GO') || title.includes('MARLİN+') || title.includes('MARLIN+') ||
-                category.includes('ELEKTRİKLİ') || category.includes('ELEKTRIKLI')) {
-                return { key: "elektrikli-bisiklet", name: "ELEKTRİKLİ BİSİKLET 🔋", taxRate: 35 };
+            // Enhanced bicycle vs parts/accessories detection
+            const partKeywords = [
+                // Direct part names
+                'KAPAK', 'COVER', 'SPACER', 'HEADSET', 'BARSTEM', 'BLENDR', 'BASE', 'PLUG', 
+                'COMPRESSION', 'BOLT', 'SCREW', 'NUT', 'WASHER', 'BEARING', 'SEAL',
+                'ADAPTER', 'MOUNT', 'BRACKET', 'CLAMP', 'HOLDER', 'STRAP', 'TAPE', 'GRIP', 
+                'PAD', 'GUARD', 'PROTECTOR', 'SHIELD', 'TOOL', 'KIT', 'SET',
+                // Turkish terms
+                'YEDEK', 'PARÇA', 'PARCA', 'AKSESUAR', 'TAKIMI', 'SETİ',
+                // Bike component terms
+                'CHAIN', 'ZİNCİR', 'CASSETTE', 'CHAINRING', 'DERAILLEUR', 'SHIFTER',
+                'BRAKE', 'FREN', 'ROTOR', 'DISC', 'CABLE', 'HOUSING', 'LEVER'
+            ];
+            
+            // Accessory keywords (separate from parts)
+            const accessoryKeywords = [
+                'PUMP', 'POMPA', 'LOCK', 'KİLİT', 'LIGHT', 'IŞIK', 'BELL', 'ZİL',
+                'MIRROR', 'AYNA', 'BASKET', 'SEPET', 'CARRIER', 'TAŞIYICI',
+                'RACK', 'BAGAJ', 'FENDER', 'ÇAMURLUK', 'STAND', 'KICKSTAND'
+            ];
+            
+            const isPart = partKeywords.some(keyword => title.includes(keyword));
+            const isAccessory = accessoryKeywords.some(keyword => title.includes(keyword));
+            
+            // A product is a bicycle if:
+            // 1. It's in bicycle category AND
+            // 2. It's not a part or accessory AND
+            // 3. It has size information OR model year
+            const hasSize = /\b(XXS|XS|S|M|L|XL|XXL|44|47|50|52|54|56|58|60|62)\b/.test(title);
+            const hasYear = /(202[0-9]|201[8-9])/.test(title);
+            const hasBicycleCategory = category.includes('BİSİKLET') || category.includes('BISIKLET');
+            
+            const isBicycle = hasBicycleCategory && !isPart && !isAccessory && (hasSize || hasYear);
+            
+            // Bike model detection - only for complete bicycles  
+            if (isBicycle) {
+                if (title.includes('MADONE')) {
+                    return { key: "madone", name: "MADONE", taxRate: 35, isBike: true };
+                }
+                if (title.includes('EMONDA') || title.includes('ÉMONDA')) {
+                    return { key: "emonda", name: "EMONDA", taxRate: 35, isBike: true };
+                }
+                if (title.includes('DOMANE')) {
+                    return { key: "domane", name: "DOMANE", taxRate: 35, isBike: true };
+                }
+                if (title.includes('MARLIN') && !title.includes('DSW')) {
+                    return { key: "marlin", name: "MARLIN", taxRate: 35, isBike: true };
+                }
+                if (title.includes('CHECKPOINT')) {
+                    return { key: "checkpoint", name: "CHECKPOINT", taxRate: 35, isBike: true };
+                }
+                if (title.includes('PROCALIBER') || title.includes('PROCALİBER')) {
+                    return { key: "procaliber", name: "PROCALİBER", taxRate: 35, isBike: true };
+                }
+                if (title.includes('POWERFLY')) {
+                    return { key: "powerfly", name: "POWERFLY", taxRate: 35, isBike: true };
+                }
+                if (title.includes('RAIL')) {
+                    return { key: "rail", name: "RAIL", taxRate: 35, isBike: true };
+                }
+                if (title.includes('FUEL EXE')) {
+                    return { key: "fuel-exe", name: "FUEL EXE", taxRate: 35, isBike: true };
+                }
+                if (title.includes('FUEL EX')) {
+                    return { key: "fuel-ex", name: "FUEL EX", taxRate: 35, isBike: true };
+                }
+                if (title.includes('FUEL')) {
+                    return { key: "fuel", name: "FUEL", taxRate: 35, isBike: true };
+                }
+                if (title.includes('SPEED CONCEPT')) {
+                    return { key: "speed-concept", name: "SPEED CONCEPT", taxRate: 35, isBike: true };
+                }
+                if (title.includes('TOP FUEL')) {
+                    return { key: "top-fuel", name: "TOP FUEL", taxRate: 35, isBike: true };
+                }
+                if (title.includes('SUPERCALIBER') || title.includes('SUPERCALİBER')) {
+                    return { key: "supercaliber", name: "SUPERCALIBER", taxRate: 35, isBike: true };
+                }
+                if (title.includes('VERVE')) {
+                    return { key: "verve", name: "VERVE", taxRate: 35, isBike: true };
+                }
+                if (title.includes('ELECTRA')) {
+                    return { key: "electra", name: "ELECTRA", taxRate: 35, isBike: true };
+                }
+                if (title.includes('FX') && !title.includes('DSW')) {
+                    return { key: "fx", name: "FX", taxRate: 35, isBike: true };
+                }
+                if (title.includes('SLASH')) {
+                    return { key: "slash", name: "SLASH", taxRate: 35, isBike: true };
+                }
+                if (title.includes('ROSCOE')) {
+                    return { key: "roscoe", name: "ROSCOE", taxRate: 35, isBike: true };
+                }
+                if (title.includes('X-CALIBER') || title.includes('XCALIBER') || title.includes('X CALİBER')) {
+                    return { key: "x-caliber", name: "X-CALIBER", taxRate: 35, isBike: true };
+                }
+                if (title.includes('KICKSTER')) {
+                    return { key: "kickster", name: "KICKSTER", taxRate: 35, isBike: true };
+                }
+                if (title.includes('PRECALIBER')) {
+                    return { key: "precaliber", name: "PRECALIBER", taxRate: 35, isBike: true };
+                }
+                
+                // Generic bicycle category for unmatched bikes
+                return { key: "bisiklet", name: "BİSİKLET", taxRate: 35, isBike: true };
             }
             
-            // Yol bisikleti check
-            if (title.includes('MADONE') || title.includes('EMONDA') || 
-                title.includes('DOMANE') || title.includes('SPEED CONCEPT') ||
-                category.includes('YOL BİSİKLET')) {
-                return { key: "yol-bisikleti", name: "YOL BİSİKLETİ", taxRate: 35 };
-            }
-            
-            // Gravel check
-            if (title.includes('CHECKMATE') || title.includes('CHECKPOINT') ||
-                category.includes('GRAVEL')) {
-                return { key: "gravel", name: "GRAVEL", taxRate: 35 };
-            }
-            
-            // Dağ bisikleti check
-            if (title.includes('MARLIN') || title.includes('PROCALIBER') || 
-                title.includes('SUPERCALIBER') || title.includes('FUEL EX') || 
-                title.includes('TOP FUEL') || title.includes('RAIL') ||
-                category.includes('DAĞ BİSİKLET') || category.includes('DAG BISIKLET')) {
-                return { key: "dag-bisikleti", name: "DAĞ BİSİKLETİ", taxRate: 35 };
-            }
-            
-            // Şehir bisikleti check
-            if (title.includes('FX') || title.includes('DS') || 
-                title.includes('VERVE') || title.includes('ELECTRA') ||
-                category.includes('ŞEHİR BİSİKLET') || category.includes('SEHIR BISIKLET')) {
-                return { key: "sehir-bisikleti", name: "ŞEHİR BİSİKLETİ", taxRate: 35 };
-            }
-            
-            // Giyim check
-            if (category.includes('GİYİM') || category.includes('GIYIM') ||
-                category.includes('FORMA') || category.includes('TAYT') || category.includes('ŞORT') ||
-                category.includes('ELDİVEN') || category.includes('ÇORAP') || category.includes('KASK') ||
-                category.includes('AYAKKABI') || title.includes('FORMA') || title.includes('TAYT')) {
-                return { key: "giyim", name: "GİYİM", taxRate: 33 };
-            }
-            
-            // Yedek parça check
-            if (category.includes('YEDEK PARÇA') || category.includes('YEDEK PARCA') ||
-                category.includes('LASTİK') || category.includes('LASTIK') ||
-                category.includes('JANT') || category.includes('PEDAL') || 
-                category.includes('SELE') || category.includes('GİDON') ||
-                category.includes('BATARYA') || title.includes('LASTİK') || title.includes('LASTIK')) {
+            // Parts categorization - even if they contain bike model names
+            if (isPart) {
                 return { key: "yedek-parca", name: "YEDEK PARÇA", taxRate: 40 };
             }
             
-            // General bisiklet check
-            if (category.includes('BİSİKLET') || category.includes('BISIKLET') ||
-                title.includes('BIKE') || title.includes('BICYCLE')) {
-                return { key: "yol-bisikleti", name: "YOL BİSİKLETİ", taxRate: 35 };
+            // Accessory and component categorization
+            if (!isBicycle) {
+                // Wheels and tires
+                if (category.includes('JANT') || title.includes('JANT') || title.includes('WHEEL')) {
+                    return { key: "jant-seti", name: "JANT SETİ", taxRate: 40 };
+                }
+                if (category.includes('LASTİK') || title.includes('LASTİK') || title.includes('TIRE')) {
+                    return { key: "dis-lastik", name: "DIŞ LASTİK", taxRate: 40 };
+                }
+                if (category.includes('İÇ LASTİK') || title.includes('İÇ LASTİK') || title.includes('TUBE')) {
+                    return { key: "ic-lastik", name: "İÇ LASTİK", taxRate: 40 };
+                }
+                
+                // Safety gear
+                if (category.includes('KASK') || title.includes('KASK') || title.includes('HELMET')) {
+                    return { key: "kask", name: "KASK", taxRate: 33 };
+                }
+                
+                // Tools and accessories
+                if (category.includes('POMPA') || title.includes('POMPA') || title.includes('PUMP')) {
+                    return { key: "pompa", name: "POMPA", taxRate: 40 };
+                }
+                
+                // Bike components
+                if ((category.includes('SELE') || title.includes('SELE')) && !title.includes('SELECT')) {
+                    return { key: "sele", name: "SELE", taxRate: 40 };
+                }
+                if (category.includes('GİDON') || title.includes('GİDON') || title.includes('HANDLEBAR')) {
+                    return { key: "gidon", name: "GİDON", taxRate: 40 };
+                }
+                
+                // Clothing
+                if (category.includes('FORMA') || title.includes('FORMA') || title.includes('JERSEY')) {
+                    return { key: "forma", name: "FORMA", taxRate: 33 };
+                }
+                if (category.includes('ŞORT') || title.includes('ŞORT') || title.includes('SHORT')) {
+                    return { key: "sort", name: "ŞORT", taxRate: 33 };
+                }
+                if (category.includes('ELDİVEN') || title.includes('ELDİVEN') || title.includes('GLOVE')) {
+                    return { key: "eldiven", name: "ELDİVEN", taxRate: 33 };
+                }
+                
+                // Electronics
+                if (category.includes('KM SAATİ') || brand.includes('BRYTON') || title.includes('BRYTON')) {
+                    return { key: "km-saati", name: "KM SAATİ", taxRate: 65 };
+                }
             }
             
-            // Default to aksesuar
+            
+            // General categories
+            if (category.includes('YEDEK PARÇA') || category.includes('YEDEK PARCA')) {
+                return { key: "yedek-parca", name: "YEDEK PARÇA", taxRate: 40 };
+            }
+            if (category.includes('GİYİM') || category.includes('GIYIM') ||
+                category.includes('TAYT') || category.includes('ÇORAP')) {
+                return { key: "giyim", name: "GİYİM", taxRate: 33 };
+            }
+            
+            // Default to aksesuar for unmatched items
             return { key: "aksesuar", name: "AKSESUAR", taxRate: 40 };
         }
         
@@ -706,9 +918,9 @@
             document.getElementById('avg-margin').textContent = avgMargin.toFixed(1) + '%';
         }
         
-        // Update profit analysis - FIXED VERSION
+        // Update profit analysis - Group by specific categories
         function updateProfitAnalysis() {
-            // Group by product title to avoid duplicate counting - FIXED VERSION
+            // Group by product title first
             const productTitleGroups = {};
             filteredProducts.forEach(product => {
                 const title = product.title;
@@ -720,7 +932,8 @@
                         categoryName: categoryInfo.name,
                         taxRate: categoryInfo.taxRate,
                         originalCategory: product.category || 'Diğer',
-                        totalStock: product.totalStock, // Use already calculated total (sum of all variants)
+                        brand: product.brand || '',
+                        totalStock: product.totalStock,
                         variants: [],
                         avgBuyingPrice: 0,
                         avgSellingPrice: 0,
@@ -733,7 +946,6 @@
                 const buyingPrice = parseFloat(product.buyingPrice) || 0;
                 const sellingPrice = parseFloat(product.price) || 0;
                 
-                // Don't add stock again - it's already calculated correctly
                 productTitleGroups[title].variants.push(product);
                 
                 if (buyingPrice > 0 && sellingPrice > 0) {
@@ -765,7 +977,7 @@
                 const buyingPrice = productGroup.avgBuyingPrice || 0;
                 const sellingPrice = productGroup.avgSellingPrice || 0;
                 const stock = productGroup.totalStock || 0;
-                const category = productGroup.category || 'nci-aksesuar';
+                const category = productGroup.category || 'aksesuar';
                 const categoryName = productGroup.categoryName || categorySchema[category]?.name || category;
                 
                 // Create a representative product for calculations
@@ -828,18 +1040,21 @@
                     categoryGroups[category].marginSum += margin;
                     categoryGroups[category].importTaxSum += getImportTax(representativeProduct);
                     
-                    // Store product for expandable view
-                    productsByCategory[category].push({
-                        title: productGroup.title,
-                        brand: representativeProduct.brand,
-                        stock: stock,
-                        buyingPrice: buyingPrice,
-                        sellingPrice: sellingPrice,
-                        landedCost: landedCost,
-                        margin: margin,
-                        profitPotential: productProfitPotential,
-                        importTax: getImportTax(representativeProduct)
-                    });
+                    // Store product for expandable view - only if it has stock
+                    if (stock > 0) {
+                        productsByCategory[category].push({
+                            title: productGroup.title,
+                            brand: representativeProduct.brand,
+                            stock: stock,
+                            buyingPrice: buyingPrice,
+                            sellingPrice: sellingPrice,
+                            landedCost: landedCost,
+                            margin: margin,
+                            profitPotential: productProfitPotential,
+                            importTax: getImportTax(representativeProduct),
+                            variantCount: productGroup.variants.length
+                        });
+                    }
                 }
             });
             
@@ -865,17 +1080,34 @@
             // Show categories sorted by stock first, then by profit potential
             const allCategories = Object.values(categoryGroups);
             
-            // Top categories by stock count
-            const topStockCategories = allCategories
-                .filter(cat => cat.totalStock > 0)
-                .sort((a, b) => b.totalStock - a.totalStock)
-                .slice(0, 8);
+            // All possible bike categories  
+            const bikeModels = ['madone', 'emonda', 'domane', 'marlin', 'fx', 'checkpoint', 
+                               'procaliber', 'powerfly', 'rail', 'fuel-ex', 'fuel-exe', 'fuel',
+                               'speed-concept', 'top-fuel', 'supercaliber', 'verve', 'electra',
+                               'slash', 'roscoe', 'x-caliber', 'kickster', 'precaliber', 'bisiklet'];
             
-            // Top categories by profit potential  
-            const topProfitCategories = allCategories
-                .filter(cat => cat.totalProfitPotential > 0)
-                .sort((a, b) => b.totalProfitPotential - a.totalProfitPotential)
-                .slice(0, 8);
+            // Show all categories with stock, ensuring bike models are visible
+            const filteredCategories = allCategories.filter(cat => {
+                // Always show bike models (even with 0 stock) and categories with stock
+                return cat.totalStock > 0 || bikeModels.includes(cat.category);
+            });
+            
+            const sortedCategories = filteredCategories.sort((a, b) => {
+                // Prioritize bike models
+                const aIsBike = bikeModels.includes(a.category);
+                const bIsBike = bikeModels.includes(b.category);
+                
+                if (aIsBike && !bIsBike) return -1;
+                if (!aIsBike && bIsBike) return 1;
+                
+                // Then sort by profit potential
+                return b.totalProfitPotential - a.totalProfitPotential;
+            });
+            
+            // Get top categories - show bike models first, then accessories
+            const topProfitCategories = sortedCategories
+                .filter(cat => cat.totalProfitPotential > 0 || cat.totalStock > 0 || bikeModels.includes(cat.category))
+                .slice(0, 16);
             
             const topCategoriesContainer = document.getElementById('top-margin-categories');
             
@@ -891,7 +1123,7 @@
                         </button>
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
             `;
             
             categoriesHTML += topProfitCategories.slice(0, 16).map((category, index) => {
@@ -901,41 +1133,36 @@
                 const margin = category.avgMargin.toFixed(1);
                 
                 return `
-                    <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 15px; padding: 20px; border: 1px solid rgba(255,255,255,0.2); position: relative; transition: transform 0.3s ease; cursor: pointer;" 
-                         onmouseover="this.style.transform='translateY(-5px)'" 
-                         onmouseout="this.style.transform='translateY(0px)'">
+                    <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 15px; padding: 20px; border: 1px solid rgba(255,255,255,0.2); position: relative; min-height: 160px;">
                         
                         <div style="position: absolute; top: -15px; right: 15px; background: #FFD700; color: #000; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1em;">
                             ${index + 1}
                         </div>
                         
-                        <div style="color: #FFD700; font-size: 1.3em; font-weight: bold; margin-bottom: 10px;">
+                        <div style="color: #FFD700; font-size: 1.2em; font-weight: bold; margin-bottom: 8px; margin-top: 5px;">
                             ${category.categoryName || category.category}
                         </div>
                         
-                        <div style="color: #4CAF50; font-size: 1.8em; font-weight: bold; margin-bottom: 15px;">
+                        <div style="color: #4CAF50; font-size: 1.4em; font-weight: bold; margin-bottom: 12px;">
                             ${profitAmount}
                         </div>
                         
-                        <div style="color: rgba(255,255,255,0.9); line-height: 1.6;">
-                            <div style="display: flex; align-items: center; margin: 8px 0;">
-                                <span style="margin-right: 8px;">💰</span>
-                                <span style="opacity: 0.8;">Yatırım:</span>
-                                <span style="margin-left: auto; font-weight: bold;">${investment}</span>
+                        <div style="color: rgba(255,255,255,0.9); font-size: 0.85em; line-height: 1.4;">
+                            <div style="display: flex; align-items: center; margin: 4px 0;">
+                                <span style="margin-right: 6px;">💰</span>
+                                <span>Yatırım: ${investment}</span>
                             </div>
-                            <div style="display: flex; align-items: center; margin: 8px 0;">
-                                <span style="margin-right: 8px;">📈</span>
-                                <span style="opacity: 0.8;">Gelir:</span>
-                                <span style="margin-left: auto; font-weight: bold;">${revenue}</span>
+                            <div style="display: flex; align-items: center; margin: 4px 0;">
+                                <span style="margin-right: 6px;">📈</span>
+                                <span>Gelir: ${revenue}</span>
                             </div>
-                            <div style="display: flex; align-items: center; margin: 8px 0;">
-                                <span style="margin-right: 8px;">📦</span>
-                                <span style="opacity: 0.8;">${category.productCount} ürün • ${category.totalStock} stok</span>
+                            <div style="display: flex; align-items: center; margin: 4px 0;">
+                                <span style="margin-right: 6px;">📦</span>
+                                <span>${category.productCount} ürün • ${category.totalStock} stok</span>
                             </div>
-                            <div style="display: flex; align-items: center; margin: 8px 0;">
-                                <span style="margin-right: 8px;">📊</span>
-                                <span style="opacity: 0.8;">Ortalama Marj:</span>
-                                <span style="margin-left: auto; font-weight: bold;">${margin}%</span>
+                            <div style="display: flex; align-items: center; margin: 4px 0;">
+                                <span style="margin-right: 6px;">📊</span>
+                                <span>Ortalama Marj: ${margin}%</span>
                             </div>
                         </div>
                     </div>
@@ -951,13 +1178,32 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
             `;
             
-            // Add category details section like second screenshot
-            categoriesHTML += Object.values(categoryGroups)
-                .sort((a, b) => b.totalStock - a.totalStock)
+            // Add category details section like second screenshot with variant stocks
+            categoriesHTML += sortedCategories
                 .slice(0, 12)
-                .map(category => {
+                .map((category, index) => {
                     const avgSellingPrice = category.totalSalesPotential > 0 ? (category.totalSalesPotential / category.totalStock).toFixed(0) : 0;
                     const avgLandedCost = category.totalStockValue > 0 ? (category.totalStockValue / category.totalStock).toFixed(0) : 0;
+                    const detailsId = `category-details-${index}`;
+                    
+                    // Create product HTML with import tax details
+                    const variantDetailsHTML = (category.products || [])
+                        .filter(product => product.stock > 0) // Only show products with stock
+                        .map((product, idx) => {
+                            return `<div style="background: rgba(255,255,255,0.1); padding: 10px; margin: 6px 0; border-radius: 6px; border: 1px solid rgba(255,215,0,0.15);">
+                                <div style="display: flex; justify-content: space-between; align-items: start;">
+                                    <div style="font-weight: bold; color: #FFD700; font-size: 0.95em;">${product.title}</div>
+                                    <div style="color: #4CAF50; font-weight: bold; font-size: 0.9em;">€${(product.profitPotential || 0).toFixed(0)}</div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; font-size: 0.85em;">
+                                    <div>Stok: <span style="color: #4CAF50; font-weight: bold;">${product.stock}</span></div>
+                                    <div>Satış: <span style="font-weight: bold;">€${product.sellingPrice.toFixed(0)}</span></div>
+                                    <div>L.Cost: <span style="font-weight: bold;">€${product.landedCost.toFixed(0)}</span></div>
+                                    <div>iTax: <span style="color: #87CEEB; font-weight: bold;">${product.importTax}%</span></div>
+                                    <div>Marj: <span style="color: ${product.margin > 30 ? '#4CAF50' : product.margin > 10 ? '#FFC107' : '#FF5722'}; font-weight: bold;">${product.margin.toFixed(1)}%</span></div>
+                                </div>
+                            </div>`;
+                        }).join('');
                     
                     return `
                         <div style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 15px;">
@@ -984,12 +1230,24 @@
                                     <span style="color: rgba(255,255,255,0.7);">Gerçek Marj:</span>
                                     <span style="color: white; font-weight: bold;">${category.avgMargin.toFixed(1)}%</span>
                                 </div>
+                                <div style="display: flex; justify-content: space-between; margin: 4px 0;">
+                                    <span style="color: rgba(255,255,255,0.7);">Ort. Import Tax:</span>
+                                    <span style="color: #87CEEB; font-weight: bold;">${category.avgImportTax ? category.avgImportTax.toFixed(0) : 0}%</span>
+                                </div>
                             </div>
                             
-                            <button onclick="showCategoryDetails('${category.category}')" 
+                            <button onclick="toggleCategoryDetails('${detailsId}')" 
                                    style="width: 100%; background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer;">
-                                Varyant Stokları
+                                Ürünleri Göster (${(category.products || []).filter(p => p.stock > 0).length} ürün)
                             </button>
+                            
+                            <div id="${detailsId}" style="display: none; margin-top: 12px; max-height: 400px; overflow-y: auto; border: 1px solid rgba(255,215,0,0.2); border-radius: 8px; padding: 8px;">
+                                <div style="color: #FFD700; font-weight: bold; margin-bottom: 8px; font-size: 1em;">📦 ${category.categoryName} Ürünleri:</div>
+                                <div style="font-size: 0.85em; color: rgba(255,255,255,0.7); margin-bottom: 8px;">
+                                    ${(category.products || []).filter(p => p.stock > 0).length} ürün, ${category.totalStock} adet toplam stok
+                                </div>
+                                ${variantDetailsHTML}
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -1001,12 +1259,15 @@
             
             topCategoriesContainer.innerHTML = categoriesHTML;
             
-            // Add category details function
-            window.showCategoryDetails = function(categoryKey) {
-                alert(`${categoryKey} kategorisinin varyant detayları yakında eklenecek!`);
+            // Add toggle function for category details
+            window.toggleCategoryDetails = function(detailsId) {
+                const element = document.getElementById(detailsId);
+                if (element) {
+                    element.style.display = element.style.display === 'none' ? 'block' : 'none';
+                }
             };
             
-            // Add toggle function for category products
+            // Add toggle function for category products (legacy)
             window.toggleCategoryProducts = function(categoryId) {
                 const element = document.getElementById(categoryId);
                 if (element) {

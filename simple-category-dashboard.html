@@ -94,11 +94,16 @@
         }
         
         .category-profit {
-            color: #4CAF50;
             font-size: 1.4em;
             font-weight: bold;
             margin-bottom: 12px;
         }
+        
+        .profit-excellent { color: #00C853; }    /* Mükemmel: >40% */
+        .profit-good { color: #2196F3; }         /* İyi: 25-40% */
+        .profit-average { color: #FF9800; }      /* Ortalama: 15-25% */
+        .profit-low { color: #FF5722; }          /* Düşük: 5-15% */
+        .profit-poor { color: #9E9E9E; }         /* Çok Düşük: <5% */
         
         .category-details {
             color: rgba(255,255,255,0.9);
@@ -217,7 +222,7 @@
                         <button onclick="openAdminPanel()" style="background: #FF9800; color: white; border: none; padding: 12px 24px; border-radius: 25px; font-weight: bold; cursor: pointer;">
                             🔧 Tax Admin
                         </button>
-                        <button onclick="refreshData()" style="background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 25px; font-weight: bold; cursor: pointer;">
+                        <button onclick="refreshData()" style="background: #2196F3; color: white; border: none; padding: 12px 24px; border-radius: 25px; font-weight: bold; cursor: pointer;">
                             🔄 Yenile
                         </button>
                     </div>
@@ -274,6 +279,8 @@
                     rates[key] = parseFloat(stored);
                 }
             });
+            
+            
             return rates;
         }
         
@@ -284,6 +291,45 @@
             const brand = (product.brand || '').toUpperCase();
             const taxRates = getTaxRates();
             
+            // ÖNCELİKLE SPESİFİK MODELLERİ KONTROL ET (API kategorisi ne olursa olsun)
+            
+            // Yedek parça ve aksesuar kontrolü - bunlar bisiklet kategorisine girmesin
+            const partKeywords = ['KAPAK', 'SPACER', 'HEADSET', 'BARSTEM', 'BLENDR', 'BASE', 'PLUG', 
+                                 'COMPRESSION', 'BOLT', 'SCREW', 'NUT', 'WASHER', 'BEARING', 'SEAL',
+                                 'VİTES KULAĞI', 'FURÇ SET', 'STEM', 'HANDLEBAR', 'GRIP', 'BRAKE',
+                                 'KADRO KULAĞI', 'SELE BORUSU', 'SELE TAKOZU', 'SEATPOST', 'CLAMP',
+                                 'BOTTLE CAGE', 'CAGE', 'MOUNT', 'ADAPTER', 'BRACKET', 'REFLECTOR',
+                                 'LIGHT', 'BELL', 'MUDGUARD', 'FENDER', 'LOCK', 'CHAIN', 'CABLE', 'GIDON'];
+            
+            const isPart = partKeywords.some(keyword => title.includes(keyword));
+            
+            // Eğer parça/aksesuar ise, spesifik model kontrolü yapma, genel kategoriye git
+            if (!isPart) {
+                // Spesifik bisiklet modelleri - sadece gerçek bisikletler için
+                if (title.includes('MADONE')) {
+                    return { key: "madone", name: "MADONE", taxRate: taxRates.madone };
+                }
+                if (title.includes('EMONDA')) {
+                    return { key: "emonda", name: "EMONDA", taxRate: taxRates.emonda };
+                }
+                
+                // FX+ modelleri önce (en spesifik) - sadece gerçek bisikletler
+                if (title.includes('FX+') || title.includes('FX +')) {
+                    return { key: "fx-plus", name: "FX+ SERİSİ", taxRate: taxRates['fx-plus'] };
+                }
+                // DOMANE+ modelleri önce (en spesifik) - sadece gerçek bisikletler
+                if (title.includes('DOMANE+') || title.includes('DOMANE +')) {
+                    return { key: "domane-plus", name: "DOMANE+ SERİSİ", taxRate: taxRates['domane-plus'] };
+                }
+                
+                // Normal FX ve DOMANE - sadece gerçek bisikletler
+                if (title.includes('FX') && !title.includes('FX+') && !title.includes('FX +')) {
+                    return { key: "fx", name: "FX SERİSİ", taxRate: taxRates.fx };
+                }
+                if (title.includes('DOMANE') && !title.includes('DOMANE+') && !title.includes('DOMANE +')) {
+                    return { key: "domane", name: "DOMANE SERİSİ", taxRate: taxRates.domane };
+                }
+            }
             
             // Special brand cases first - Handle DSW products
             if (title.startsWith('DSW ')) {
@@ -314,34 +360,8 @@
                 return { key: "bryton", name: "BRYTON GPS", taxRate: taxRates.bryton };
             }
             
-            // Bisiklet kategorisi kontrolü
+            // Bisiklet kategorisi kontrolü (sadece diğer modeller için)
             if (apiCategory.includes('BİSİKLET') || apiCategory.includes('BISIKLET')) {
-                
-                // ÖNCELİKLE + OLANLAR (en spesifik)
-                if (title.includes('FX+') || title.includes('FX +')) {
-                    return { key: "fx-plus", name: "FX+ SERİSİ", taxRate: taxRates['fx-plus'] };
-                }
-                
-                if (title.includes('DOMANE+') || title.includes('DOMANE +')) {
-                    return { key: "domane-plus", name: "DOMANE+ SERİSİ", taxRate: taxRates['domane-plus'] };
-                }
-                
-                // SONRA NORMAL OLANLAR (+ içermeyenler)
-                if (title.includes('FX') && !title.includes('FX+') && !title.includes('FX +')) {
-                    return { key: "fx", name: "FX SERİSİ", taxRate: taxRates.fx };
-                }
-                
-                if (title.includes('DOMANE') && !title.includes('DOMANE+') && !title.includes('DOMANE +')) {
-                    return { key: "domane", name: "DOMANE SERİSİ", taxRate: taxRates.domane };
-                }
-                
-                // Other specific models
-                if (title.includes('MADONE')) {
-                    return { key: "madone", name: "MADONE", taxRate: taxRates.madone };
-                }
-                if (title.includes('EMONDA')) {
-                    return { key: "emonda", name: "EMONDA", taxRate: taxRates.emonda };
-                }
                 if (title.includes('MARLIN')) {
                     return { key: "marlin", name: "MARLIN", taxRate: taxRates.bike };
                 }
@@ -411,6 +431,24 @@
             } else {
                 return amount.toFixed(0) + '€';
             }
+        }
+        
+        // Get margin color class based on profit percentage
+        function getMarginColorClass(marginPercent) {
+            if (marginPercent >= 40) return 'profit-excellent';
+            if (marginPercent >= 25) return 'profit-good';
+            if (marginPercent >= 15) return 'profit-average';
+            if (marginPercent >= 5) return 'profit-low';
+            return 'profit-poor';
+        }
+        
+        // Get margin status text
+        function getMarginStatus(marginPercent) {
+            if (marginPercent >= 40) return 'MÜKEMMELs';
+            if (marginPercent >= 25) return 'İYİ';
+            if (marginPercent >= 15) return 'ORTALAMA';
+            if (marginPercent >= 5) return 'DÜŞÜK';
+            return 'ZAYIF';
         }
         
         async function loadData() {
@@ -541,7 +579,7 @@
                             <span>📦 ${category.productCount} ürün • ${category.totalStock} stok</span>
                         </div>
                         <div class="category-detail-row">
-                            <span>📊 Ortalama Marj: ${category.avgMargin.toFixed(1)}%</span>
+                            <span>📊 Ortalama Marj: <span class="${getMarginColorClass(category.avgMargin)}">${category.avgMargin.toFixed(1)}%</span></span>
                         </div>
                         
                         <button class="show-products-btn" onclick="showCategoryProducts('${category.category}', '${category.categoryName}')">
@@ -564,10 +602,10 @@
                     <div style="background: rgba(255,255,255,0.1); padding: 10px; margin: 6px 0; border-radius: 6px;">
                         <div style="font-weight: bold; color: #FFD700; margin-bottom: 4px;">${product.title}</div>
                         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 0.85em;">
-                            <div>Stok: <span style="color: #4CAF50; font-weight: bold;">${product.stock}</span></div>
+                            <div>Stok: <span style="color: #2196F3; font-weight: bold;">${product.stock}</span></div>
                             <div>Satış: <span style="font-weight: bold;">€${product.sellingPrice.toFixed(0)}</span></div>
                             <div>L.Cost: <span style="font-weight: bold;">€${product.landedCost.toFixed(0)}</span></div>
-                            <div>Marj: <span style="color: ${product.margin > 30 ? '#4CAF50' : product.margin > 10 ? '#FFC107' : '#FF5722'}; font-weight: bold;">${product.margin.toFixed(1)}%</span></div>
+                            <div>Marj: <span class="${getMarginColorClass(product.margin)}" style="font-weight: bold;">${product.margin.toFixed(1)}%</span></div>
                         </div>
                     </div>
                 `).join('');
@@ -637,7 +675,7 @@
                 </div>
                 <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(15px); border-radius: 15px; padding: 20px; text-align: center;">
                     <h3 style="color: #FFD700; margin: 0 0 10px 0;">Gelir Tahmini</h3>
-                    <div style="font-size: 1.8em; font-weight: bold; color: #4CAF50;">${formatCurrency(totalSalesPotential)}</div>
+                    <div style="font-size: 1.8em; font-weight: bold; color: #2196F3;">${formatCurrency(totalSalesPotential)}</div>
                 </div>
                 <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(15px); border-radius: 15px; padding: 20px; text-align: center;">
                     <h3 style="color: #FFD700; margin: 0 0 10px 0;">Kar Potansiyeli</h3>
@@ -712,7 +750,14 @@
                     if (validVariants.length > 0) {
                         const avgBuyingPrice = validVariants.reduce((sum, v) => sum + (parseFloat(v.buyingPrice) || 0), 0) / validVariants.length;
                         const avgSellingPrice = validVariants.reduce((sum, v) => sum + (parseFloat(v.price) || 0), 0) / validVariants.length;
-                        const landedCost = avgBuyingPrice * (1 + group.importTax / 100);
+                        
+                        // Her ürün için ayrı tax rate hesapla
+                        const representativeProduct = group.variants[0];
+                        const productCategoryInfo = mapToCategory(representativeProduct);
+                        const actualTaxRate = productCategoryInfo.taxRate;
+                        
+                        
+                        const landedCost = avgBuyingPrice * (1 + actualTaxRate / 100);
                         const margin = avgSellingPrice > 0 && landedCost > 0 ? ((avgSellingPrice - landedCost) / avgSellingPrice) * 100 : 0;
                         
                         categoryProducts.push({
@@ -726,7 +771,7 @@
                             landedCost: landedCost,
                             margin: margin,
                             profitPotential: (avgSellingPrice - landedCost) * group.totalStock,
-                            importTax: group.importTax
+                            importTax: actualTaxRate
                         });
                     }
                 }
@@ -737,25 +782,22 @@
             
             // Render main product cards
             modalProducts.innerHTML = categoryProducts.map(product => {
-                const marginColor = product.margin > 30 ? '#4CAF50' : 
-                                   product.margin > 10 ? '#FFC107' : '#FF5722';
-                
                 return `
                     <div class="product-item">
                         <div class="product-title">${product.title}</div>
                         <div class="product-details">
                             <div><strong>Kod:</strong> ${product.code || '-'}</div>
                             <div><strong>Marka:</strong> ${product.brand || '-'}</div>
-                            <div><strong>Toplam Stok:</strong> <span style="color: #4CAF50; font-weight: bold;">${product.stock}</span></div>
+                            <div><strong>Toplam Stok:</strong> <span style="color: #2196F3; font-weight: bold;">${product.stock}</span></div>
                             <div><strong>Varyant Sayısı:</strong> <span style="color: #87CEEB;">${product.variantCount}</span></div>
                             <div><strong>Ort. Alış:</strong> $${product.buyingPrice.toFixed(2)}</div>
                             <div><strong>Ort. Satış:</strong> €${product.sellingPrice.toFixed(2)}</div>
                             <div><strong>Ort. L.Cost:</strong> €${product.landedCost.toFixed(2)}</div>
                             <div><strong>Import Tax:</strong> <span style="color: #87CEEB;">${product.importTax}%</span></div>
-                            <div><strong>Ort. Marj:</strong> <span style="color: ${marginColor}; font-weight: bold;">${product.margin.toFixed(1)}%</span></div>
+                            <div><strong>Ort. Marj:</strong> <span class="${getMarginColorClass(product.margin)}" style="font-weight: bold;">${product.margin.toFixed(1)}%</span></div>
                         </div>
                         <div style="text-align: center; margin-top: 10px; padding: 8px; background: rgba(76,175,80,0.2); border-radius: 6px;">
-                            <strong>Toplam Kar Potansiyeli: <span style="color: #4CAF50;">€${product.profitPotential.toFixed(0)}</span></strong>
+                            <strong>Toplam Kar Potansiyeli: <span style="color: #FFD700;">€${product.profitPotential.toFixed(0)}</span></strong>
                         </div>
                     </div>
                 `;
