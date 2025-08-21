@@ -708,13 +708,23 @@
                     });
                 }
 
-                // Skip invalid rows
-                if (!musteri || !toplam || toplam <= 0) {
-                    if (i < 10) console.log(`❌ Skipping invalid row ${i}:`, { musteri, toplam });
+                // Skip invalid rows - Only check TOPLAM for now, ignore empty customer names
+                if (!toplam || toplam <= 0) {
+                    if (i < 10) console.log(`❌ Skipping invalid row ${i}:`, { toplam });
                     continue;
                 }
 
-                if (i < 5) console.log(`✅ Processing valid row ${i}`);
+                // Use fallback customer name if empty
+                if (!musteri || musteri.trim() === '') {
+                    musteri = 'Unknown Customer';
+                }
+
+                // Use fallback store name if empty  
+                if (!depo || depo.trim() === '') {
+                    depo = 'Unknown Store';
+                }
+
+                if (i < 5) console.log(`✅ Processing valid row ${i}:`, { musteri, depo, toplam, miktar });
 
                 // Convert to TL if needed
                 let amountInTL = toplam;
