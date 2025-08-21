@@ -508,6 +508,22 @@
                     <h3>👥 Toplam Müşteri</h3>
                     <div class="stat-value" id="customerCount">-</div>
                 </div>
+                <!-- CEO Analytics Section -->
+                <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h3>💰 Ortalama Bisiklet Fiyatı</h3>
+                    <div class="stat-value" id="avgBicyclePrice" style="color: white;">-</div>
+                    <div class="stat-detail" style="color: rgba(255,255,255,0.8);">CEO KPI</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                    <h3>📊 Ortalama Sipariş Değeri</h3>
+                    <div class="stat-value" id="avgOrderValue" style="color: white;">-</div>
+                    <div class="stat-detail" style="color: rgba(255,255,255,0.8);">AOV - CEO KPI</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                    <h3>⚡ E-bike Penetrasyonu</h3>
+                    <div class="stat-value" id="ebikePenetration" style="color: white;">-</div>
+                    <div class="stat-detail" style="color: rgba(255,255,255,0.8);">E-bike / Toplam Bisiklet</div>
+                </div>
             </div>
 
             <div class="stores-section">
@@ -2626,6 +2642,9 @@
                 accessoryQuantityEl.textContent = currentData.accessoryQuantity.toLocaleString('tr-TR') + ' adet';
             }
 
+            // Calculate CEO KPIs
+            calculateCEOMetrics(currentData, symbol, rate);
+
             // Debug: Check individual category quantities
             if (currentData.categories) {
                 console.log('\n📊 === CATEGORY QUANTITIES DEBUG ===');
@@ -3084,6 +3103,37 @@
                 'BIKE FIT': '🛠️ Hizmet/Bike Fit'
             };
             return iconMap[categoryName] || '📦 Diğer';
+        }
+
+        function calculateCEOMetrics(data, symbol, rate) {
+            console.log('\n💼 === CEO METRICS CALCULATION ===');
+            
+            // 1. Average Bicycle Price (Bicycle Sales ÷ Bicycle Quantity)
+            const avgBicyclePriceEl = document.getElementById('avgBicyclePrice');
+            if (avgBicyclePriceEl && data.bicycleSales && data.bicycleQuantity > 0) {
+                const avgPrice = (data.bicycleSales / rate) / data.bicycleQuantity;
+                avgBicyclePriceEl.textContent = symbol + avgPrice.toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+                console.log(`💰 Average Bicycle Price: ${symbol}${avgPrice.toLocaleString()}`);
+            }
+
+            // 2. Average Order Value (Total Sales ÷ Order Count) 
+            const avgOrderValueEl = document.getElementById('avgOrderValue');
+            if (avgOrderValueEl && data.totalAmount && data.orderCount > 0) {
+                const aov = (data.totalAmount / rate) / data.orderCount;
+                avgOrderValueEl.textContent = symbol + aov.toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+                console.log(`📊 Average Order Value: ${symbol}${aov.toLocaleString()}`);
+            }
+
+            // 3. E-bike Penetration (E-bike Sales ÷ Total Bicycle Sales)
+            const ebikePenetrationEl = document.getElementById('ebikePenetration');
+            if (ebikePenetrationEl && data.categories && data.bicycleSales > 0) {
+                const ebikesSales = data.categories['E-BİKELER']?.totalTL || 0;
+                const penetration = (ebikesSales / data.bicycleSales) * 100;
+                ebikePenetrationEl.textContent = penetration.toFixed(1) + '%';
+                console.log(`⚡ E-bike Penetration: ${penetration.toFixed(1)}% (₺${ebikesSales.toLocaleString()} / ₺${data.bicycleSales.toLocaleString()})`);
+            }
+
+            console.log('=================================\n');
         }
         
         function exportCategoryData() {
