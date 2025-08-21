@@ -829,11 +829,19 @@
             
             // REGULAR BICYCLE CATEGORIES (non-electric bikes → BİSİKLETLER)
             if (cat.includes('BİSİKLET') || cat.includes('BISIKLET') || cat.includes('BIKE') ||
+                // Road bikes
                 cat.includes('MADONE') || cat.includes('EMONDA') || cat.includes('DOMANE') ||
+                cat.includes('SPEED CONCEPT') ||
+                // Gravel bikes
                 cat.includes('GRAVEL') || cat.includes('CHECKPOINT') || cat.includes('CHECKMATE') ||
+                // Mountain bikes  
                 cat.includes('MARLIN') || cat.includes('PROCALIBER') || cat.includes('SUPERCALIBER') ||
-                cat.includes('VERVE') || cat.includes('ELECTRA') || cat.includes('TOWNIE') ||
-                cat.includes('SPEED CONCEPT') || cat.includes('TOP FUEL') || cat.includes('FUEL EX')) {
+                cat.includes('TOP FUEL') || cat.includes('FUEL EX') ||
+                // City bikes
+                cat.includes('FX') || cat.includes('DS') || cat.includes('VERVE') || 
+                cat.includes('ELECTRA') || cat.includes('TOWNIE') ||
+                // Hybrid bikes
+                cat.includes('DUAL SPORT') || cat.includes('HYBRID')) {
                 return 'BİSİKLETLER';
             }
             
@@ -908,8 +916,8 @@
                 
                 // City bikes
                 'ŞEHİR BİSİKLETİ', 'ŞEHİR BİSİKLET', 'CITY',
-                'FX BİSİKLET', 'FX BİSİKLETİ', 'DS BİSİKLET', 'DS BİSİKLETİ', 
-                'VERVE', 'ELECTRA', 'TOWNIE'
+                'FX BİSİKLET', 'FX BİSİKLETİ', 'FX', 'DS BİSİKLET', 'DS BİSİKLETİ', 'DS',
+                'VERVE', 'ELECTRA', 'TOWNIE', 'DUAL SPORT', 'HYBRID'
             ];
             
             // Check if category matches any bicycle category
