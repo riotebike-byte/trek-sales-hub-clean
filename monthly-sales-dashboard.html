@@ -934,6 +934,33 @@
             'EUR': 41.823  // 1 EUR = 41.823 TL (1.1096 EUR/USD * 37.684 USD/TL)
         };
         
+        // Store distribution system for blank stores
+        const storeDistributor = {
+            targetStores: ['Alsancak', 'Bahçeköy', 'Ortaköy', 'Caddebostan'],
+            distributionIndex: 0,
+            
+            distributeBlankStore: function(amount, quantity = 1) {
+                // Get target store for this blank entry (round-robin)
+                const targetStore = this.targetStores[this.distributionIndex];
+                this.distributionIndex = (this.distributionIndex + 1) % this.targetStores.length;
+                
+                console.log(`📍 Distributing blank store: ${amount} TL → ${targetStore} (index: ${this.distributionIndex - 1})`);
+                return targetStore;
+            },
+            
+            resetDistribution: function() {
+                this.distributionIndex = 0;
+                console.log('🔄 Store distribution index reset');
+            },
+            
+            getDistributionStats: function() {
+                return {
+                    stores: this.targetStores,
+                    currentIndex: this.distributionIndex
+                };
+            }
+        };
+
         // Currency conversion system
         const currencyConverter = {
             // Convert any amount to USD (base currency for totals)
@@ -972,6 +999,111 @@
                     USD: this.convert(tlAmount, 'TL', 'USD'),
                     EUR: this.convert(tlAmount, 'TL', 'EUR')
                 };
+            }
+        };
+        
+        // Dynamic exchange rate fetching
+        const exchangeRateFetcher = {
+            cache: new Map(), // Cache rates by date to avoid repeated API calls
+            
+            async fetchUSDRate(dateString) {
+                try {
+                    // Try to parse date from various formats
+                    let targetDate = this.parseDate(dateString);
+                    if (!targetDate) {
+                        console.warn(`⚠️ Could not parse date: ${dateString}, using current rates`);
+                        return null;
+                    }
+                    
+                    const cacheKey = targetDate.toISOString().split('T')[0];
+                    if (this.cache.has(cacheKey)) {
+                        console.log(`💾 Using cached USD rate for ${cacheKey}`);
+                        return this.cache.get(cacheKey);
+                    }
+                    
+                    // Use exchangerate-api.com (free tier: 1500 requests/month)
+                    const response = await fetch(`https://api.exchangerate-api.com/v4/latest/USD?date=${cacheKey}`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    const usdToTry = data.rates?.TRY;
+                    
+                    if (usdToTry) {
+                        this.cache.set(cacheKey, usdToTry);
+                        console.log(`💱 Fetched USD rate for ${cacheKey}: 1 USD = ${usdToTry} TL`);
+                        return usdToTry;
+                    }
+                    
+                } catch (error) {
+                    console.error('💥 Exchange rate fetch error:', error);
+                }
+                
+                return null;
+            },
+            
+            parseDate(dateString) {
+                if (!dateString) return null;
+                
+                // Try various date formats
+                const patterns = [
+                    /(\d{2})\.(\d{2})\.(\d{4})/,  // 01.07.2025
+                    /(\d{4})-(\d{2})-(\d{2})/,   // 2025-07-01
+                    /(\d{2})\/(\d{2})\/(\d{4})/   // 01/07/2025
+                ];
+                
+                for (const pattern of patterns) {
+                    const match = dateString.match(pattern);
+                    if (match) {
+                        if (pattern === patterns[0] || pattern === patterns[2]) {
+                            // DD.MM.YYYY or DD/MM/YYYY
+                            return new Date(parseInt(match[3]), parseInt(match[2]) - 1, parseInt(match[1]));
+                        } else {
+                            // YYYY-MM-DD
+                            return new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
+                        }
+                    }
+                }
+                
+                return null;
+            },
+            
+            async updateRatesForPeriod(reportPeriod) {
+                if (!reportPeriod || typeof reportPeriod !== 'string') return;
+                
+                console.log(`🔄 Fetching exchange rates for period: ${reportPeriod}`);
+                
+                // Extract date from report period (e.g., "01.07.2025 - 31.07.2025")
+                const dateMatch = reportPeriod.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+                if (dateMatch) {
+                    const midPeriodDate = `${dateMatch[1]}.${dateMatch[2]}.${dateMatch[3]}`;
+                    const usdRate = await this.fetchUSDRate(midPeriodDate);
+                    
+                    if (usdRate && usdRate !== exchangeRates.USD) {
+                        // Update exchange rates for this session
+                        exchangeRates.USD = usdRate;
+                        exchangeRates.EUR = usdRate / 1.1096; // Adjust EUR rate proportionally
+                        
+                        // Update the display
+                        const exchangeRateInfo = document.getElementById('exchangeRatesInfo');
+                        if (exchangeRateInfo) {
+                            exchangeRateInfo.innerHTML = `
+                                <strong>💱 Döviz Kurları (${reportPeriod} Dönemi):</strong><br>
+                                1 USD = ₺${exchangeRates.USD.toFixed(3)} | 1 EUR = ₺${exchangeRates.EUR.toFixed(3)} | EUR/USD = ${(1.1096).toFixed(4)}
+                                <div style="margin-top: 5px; font-size: 11px;">
+                                    <em>Kaynak: Anlık API verisi (exchangerate-api.com)</em>
+                                </div>
+                            `;
+                        }
+                        
+                        console.log(`✅ Updated USD rate: ${usdRate} TL (from API)`);
+                        return usdRate;
+                    }
+                }
+                
+                return null;
             }
         };
 
@@ -1129,6 +1261,11 @@
                     
                     // Process data
                     currentData = processData(jsonData);
+                    
+                    // Try to fetch real-time exchange rates for this period
+                    if (currentData.reportPeriod) {
+                        await exchangeRateFetcher.updateRatesForPeriod(currentData.reportPeriod);
+                    }
                     
                     // Add to memory
                     excelMemory.addFile(file.name, currentData, file.size);
@@ -1292,6 +1429,9 @@
             console.log('🔍 Second data row details:', dataRows[1]);
             console.log('🔍 Third data row details:', dataRows[2]);
             
+            // Reset store distribution for this Excel file
+            storeDistributor.resetDistribution();
+            
             let lastValidCustomer = ''; // Track last valid customer for merged cells
             let lastValidStore = ''; // Track last valid store for merged cells
             let lastValidProduct = ''; // Track last valid product for merged cells
@@ -1421,9 +1561,9 @@
                     musteri = 'Unknown Customer';
                 }
 
-                // Use fallback store name if empty  
-                if (!depo || depo.trim() === '') {
-                    depo = 'Unknown Store';
+                // Handle blank stores - distribute equally to target stores
+                if (!depo || depo.trim() === '' || depo === 'Unknown Store') {
+                    depo = storeDistributor.distributeBlankStore(amountInTL, miktar);
                 }
 
                 if (i < 5) console.log(`✅ Processing valid row ${i}:`, { musteri, depo, toplam, miktar });
@@ -1786,6 +1926,10 @@
                 
                 console.log('✅ Total Sales Updated:', totalSalesEl.textContent);
                 console.log('💱 Currency Breakdown:', allTotals);
+                
+                // Show store distribution stats
+                const distStats = storeDistributor.getDistributionStats();
+                console.log('📍 Store Distribution Stats:', distStats);
             }
 
             const totalQuantityEl = document.getElementById('totalQuantity');
