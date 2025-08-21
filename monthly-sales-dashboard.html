@@ -532,9 +532,61 @@
                 </div>
                 
                 <div id="categoriesChart" class="chart-container" style="display: none;">
-                    <h3 style="margin-bottom: 15px;">📊 Kategori Bazlı Satış Analizi</h3>
-                    <div style="height: 400px; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0;">📊 Kategori Bazlı Satış Analizi</h3>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select id="categoryViewMode" style="padding: 5px 10px; border-radius: 5px; border: 1px solid #ddd;">
+                                <option value="all">Tüm Kategoriler</option>
+                                <option value="bicycles">Sadece Bisikletler</option>
+                                <option value="accessories">Sadece Aksesuarlar</option>
+                            </select>
+                            <button onclick="exportCategoryData()" style="padding: 5px 10px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                📊 Veriyi Dışa Aktar
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Summary cards -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                        <div style="background: linear-gradient(135deg, #FF6B6B, #FF8E8E); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+                            <div style="font-size: 12px; opacity: 0.9;">En Çok Satan</div>
+                            <div id="topCategoryName" style="font-weight: bold; font-size: 14px;">-</div>
+                            <div id="topCategoryAmount" style="font-size: 16px; font-weight: bold;">-</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #4ECDC4, #6FD8D2); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+                            <div style="font-size: 12px; opacity: 0.9;">Toplam Kategori</div>
+                            <div id="totalCategoriesCount" style="font-weight: bold; font-size: 18px;">-</div>
+                            <div style="font-size: 12px; opacity: 0.9;">kategoride satış</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #45B7D1, #6CBDE0); color: white; padding: 15px; border-radius: 10px; text-align: center;">
+                            <div style="font-size: 12px; opacity: 0.9;">Bisiklet/Aksesuar</div>
+                            <div id="bikeAccessoryRatio" style="font-weight: bold; font-size: 14px;">-</div>
+                            <div style="font-size: 12px; opacity: 0.9;">oranı</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chart area -->
+                    <div style="height: 450px; position: relative; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 15px; padding: 20px;">
                         <canvas id="categoryChart"></canvas>
+                    </div>
+                    
+                    <!-- Category details table -->
+                    <div id="categoryDetailsTable" style="margin-top: 20px; display: none;">
+                        <h4 style="margin-bottom: 10px;">📋 Detaylı Kategori Analizi</h4>
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                                <thead style="background: #34495e; color: white;">
+                                    <tr>
+                                        <th style="padding: 12px; text-align: left;">Kategori</th>
+                                        <th style="padding: 12px; text-align: right;">Satış Miktarı</th>
+                                        <th style="padding: 12px; text-align: right;">Yüzde</th>
+                                        <th style="padding: 12px; text-align: right;">Ürün Sayısı</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="categoryTableBody">
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
                 
@@ -2792,6 +2844,129 @@
                     }
                 }
             });
+            
+            // Update summary cards
+            updateCategorySummaryCards(sortedCategories);
+            
+            // Update category details table
+            updateCategoryDetailsTable(Object.values(currentData.categories));
+        }
+        
+        function updateCategorySummaryCards(sortedCategories) {
+            const rate = exchangeRates[currentCurrency];
+            const symbol = currentCurrency === 'TL' ? '₺' : currentCurrency === 'USD' ? '$' : '€';
+            
+            // Top category
+            if (sortedCategories.length > 0) {
+                const topCategory = sortedCategories[0];
+                document.getElementById('topCategoryName').textContent = topCategory.name;
+                const convertedAmount = (topCategory.totalTL / rate);
+                document.getElementById('topCategoryAmount').textContent = 
+                    `${symbol}${convertedAmount.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}`;
+            }
+            
+            // Total categories count
+            document.getElementById('totalCategoriesCount').textContent = Object.keys(currentData.categories).length;
+            
+            // Bike vs Accessory ratio
+            const bikeCategories = ['BİSİKLETLER', 'E-BİKELER'];
+            let bikeTotal = 0, accessoryTotal = 0;
+            
+            Object.values(currentData.categories).forEach(cat => {
+                if (bikeCategories.includes(cat.name)) {
+                    bikeTotal += cat.totalTL;
+                } else {
+                    accessoryTotal += cat.totalTL;
+                }
+            });
+            
+            const total = bikeTotal + accessoryTotal;
+            if (total > 0) {
+                const bikePercentage = ((bikeTotal / total) * 100).toFixed(1);
+                const accessoryPercentage = ((accessoryTotal / total) * 100).toFixed(1);
+                document.getElementById('bikeAccessoryRatio').textContent = `${bikePercentage}% / ${accessoryPercentage}%`;
+            }
+        }
+        
+        function updateCategoryDetailsTable(categories) {
+            const rate = exchangeRates[currentCurrency];
+            const symbol = currentCurrency === 'TL' ? '₺' : currentCurrency === 'USD' ? '$' : '€';
+            const totalSales = categories.reduce((sum, cat) => sum + cat.totalTL, 0);
+            
+            const tableBody = document.getElementById('categoryTableBody');
+            tableBody.innerHTML = '';
+            
+            // Sort categories by sales amount
+            const sortedCategories = categories.sort((a, b) => b.totalTL - a.totalTL);
+            
+            sortedCategories.forEach((category, index) => {
+                const convertedAmount = (category.totalTL / rate);
+                const percentage = ((category.totalTL / totalSales) * 100).toFixed(1);
+                const productCount = category.subcategories ? category.subcategories.length : 1;
+                
+                const row = document.createElement('tr');
+                row.style.backgroundColor = index % 2 === 0 ? '#f8f9fa' : 'white';
+                row.innerHTML = `
+                    <td style="padding: 12px; font-weight: 500;">${getCategoryEmoji(category.name)} ${category.name}</td>
+                    <td style="padding: 12px; text-align: right; font-weight: bold;">${symbol}${convertedAmount.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}</td>
+                    <td style="padding: 12px; text-align: right; color: #7f8c8d;">${percentage}%</td>
+                    <td style="padding: 12px; text-align: right; color: #95a5a6;">${productCount}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            // Show table
+            document.getElementById('categoryDetailsTable').style.display = 'block';
+        }
+        
+        function getCategoryEmoji(categoryName) {
+            const emojiMap = {
+                'BİSİKLETLER': '🚲',
+                'E-BİKELER': '⚡',
+                'POMPA': '🌬️',
+                'KASK': '🪖',
+                'AYDINLATMA': '💡',
+                'BAGAJ - SEPET': '🧳',
+                'LASTİK': '🛞',
+                'PEDAL': '🦶',
+                'GÖZLÜK 👓': '🕶️',
+                'FORMA': '👕',
+                'ELDİVEN': '🧤',
+                'MATARA': '🍶',
+                'KİLİT': '🔒',
+                'ÇAMURLUK': '🛡️'
+            };
+            return emojiMap[categoryName] || '📦';
+        }
+        
+        function exportCategoryData() {
+            if (!currentData || !currentData.categories) {
+                alert('Henüz analiz edilmiş veri yok!');
+                return;
+            }
+            
+            const rate = exchangeRates[currentCurrency];
+            const symbol = currentCurrency === 'TL' ? '₺' : currentCurrency === 'USD' ? '$' : '€';
+            
+            let csvContent = 'Kategori,Satış Miktarı,Yüzde,Alt Kategoriler\n';
+            const totalSales = Object.values(currentData.categories).reduce((sum, cat) => sum + cat.totalTL, 0);
+            
+            Object.values(currentData.categories)
+                .sort((a, b) => b.totalTL - a.totalTL)
+                .forEach(category => {
+                    const convertedAmount = (category.totalTL / rate);
+                    const percentage = ((category.totalTL / totalSales) * 100).toFixed(1);
+                    const subcategories = category.subcategories ? Array.from(category.subcategories).join('; ') : '';
+                    
+                    csvContent += `"${category.name}","${symbol}${convertedAmount.toLocaleString('tr-TR')}","${percentage}%","${subcategories}"\n`;
+                });
+            
+            // Download CSV
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `kategori-analizi-${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
         }
 
         function updatePerformanceChart() {
