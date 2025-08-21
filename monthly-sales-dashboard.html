@@ -533,7 +533,9 @@
                 
                 <div id="categoriesChart" class="chart-container" style="display: none;">
                     <h3 style="margin-bottom: 15px;">📊 Kategori Bazlı Satış Analizi</h3>
-                    <canvas id="categoryChart" width="400" height="200"></canvas>
+                    <div style="height: 400px; position: relative;">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
                 </div>
                 
                 <div id="performanceChart" class="chart-container" style="display: none;">
@@ -2607,51 +2609,166 @@
             
             const ctx = document.getElementById('categoryChart').getContext('2d');
             
-            // Sort categories by sales amount
+            // Sort categories by sales amount and get top 8
             const sortedCategories = Object.values(currentData.categories)
                 .sort((a, b) => b.totalTL - a.totalTL)
-                .slice(0, 10); // Top 10 categories
+                .slice(0, 8);
             
-            const categoryNames = sortedCategories.map(cat => cat.name);
+            const categoryNames = sortedCategories.map(cat => {
+                // Add emoji and short name for better visualization
+                if (cat.name === 'BİSİKLETLER') return '🚲 Bisikletler';
+                if (cat.name === 'POMPA') return '🌬️ Pompa';
+                if (cat.name === 'KASK') return '🪖 Kask';
+                if (cat.name === 'AYDINLATMA') return '💡 Aydınlatma';
+                if (cat.name === 'BAGAJ - SEPET') return '🧳 Bagaj/Sepet';
+                if (cat.name === 'LASTİK') return '🛞 Lastik';
+                if (cat.name === 'PEDAL') return '🦶 Pedal';
+                if (cat.name === 'GÖZLÜK 👓') return '🕶️ Gözlük';
+                if (cat.name === 'FORMA') return '👕 Forma';
+                if (cat.name === 'ELDİVEN') return '🧤 Eldiven';
+                return cat.name;
+            });
+            
             const categoryAmounts = sortedCategories.map(cat => cat.totalTL);
-            const categoryColors = sortedCategories.map(cat => 
-                cat.type === 'bicycle' ? '#e74c3c' : '#3498db'
-            );
+            
+            // Modern color palette with gradients
+            const categoryColors = [
+                '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
+                '#FFEAA7', '#DDA0DD', '#FFB347', '#87CEEB'
+            ];
+            
+            const borderColors = [
+                '#FF5252', '#26A69A', '#2196F3', '#66BB6A',
+                '#FFD54F', '#BA68C8', '#FF9800', '#64B5F6'
+            ];
             
             // Destroy existing chart if it exists
             if (categoryChartInstance) {
                 categoryChartInstance.destroy();
             }
             
-            // Create new chart
+            // Create modern doughnut chart with enhanced styling
             categoryChartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: categoryNames,
                     datasets: [{
                         data: categoryAmounts,
-                        backgroundColor: categoryColors,
-                        borderColor: categoryColors,
-                        borderWidth: 2
+                        backgroundColor: categoryColors.slice(0, sortedCategories.length),
+                        borderColor: borderColors.slice(0, sortedCategories.length),
+                        borderWidth: 3,
+                        hoverBorderWidth: 5,
+                        cutout: '60%'
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         legend: {
                             display: true,
-                            position: 'right'
+                            position: 'right',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 12,
+                                    weight: '500'
+                                },
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                    
+                                    return data.labels.map((label, i) => {
+                                        const value = data.datasets[0].data[i];
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        
+                                        return {
+                                            text: `${label} (${percentage}%)`,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            strokeStyle: data.datasets[0].borderColor[i],
+                                            lineWidth: 2,
+                                            pointStyle: 'circle',
+                                            index: i
+                                        };
+                                    });
+                                }
+                            }
                         },
                         tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#fff',
+                            borderWidth: 1,
+                            cornerRadius: 8,
                             callbacks: {
                                 label: function(context) {
                                     const value = context.parsed;
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percentage = ((value / total) * 100).toFixed(1);
-                                    return `${context.label}: ₺${value.toLocaleString('tr-TR')} (${percentage}%)`;
+                                    const rate = exchangeRates[currentCurrency];
+                                    const symbol = currentCurrency === 'TL' ? '₺' : currentCurrency === 'USD' ? '$' : '€';
+                                    const convertedValue = (value / rate);
+                                    
+                                    return [
+                                        `${context.label}`,
+                                        `${symbol}${convertedValue.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}`,
+                                        `${percentage}% of total sales`
+                                    ];
                                 }
                             }
                         }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 1000,
+                        easing: 'easeOutCubic'
+                    },
+                    onHover: (event, activeElements) => {
+                        event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+                    },
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            const categoryName = sortedCategories[index].name;
+                            showCategoryDetail(categoryName);
+                        }
+                    }
+                }
+            });
+            
+            // Add center text with total sales
+            const rate = exchangeRates[currentCurrency];
+            const symbol = currentCurrency === 'TL' ? '₺' : currentCurrency === 'USD' ? '$' : '€';
+            const totalSales = categoryAmounts.reduce((a, b) => a + b, 0);
+            const convertedTotal = (totalSales / rate);
+            
+            // Custom plugin for center text
+            Chart.register({
+                id: 'centerText',
+                beforeDraw: function(chart) {
+                    if (chart.config.type === 'doughnut') {
+                        const ctx = chart.ctx;
+                        const centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
+                        const centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
+                        
+                        ctx.save();
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        
+                        // Total sales text
+                        ctx.font = 'bold 16px Arial';
+                        ctx.fillStyle = '#2c3e50';
+                        ctx.fillText('Toplam Satış', centerX, centerY - 15);
+                        
+                        // Amount text
+                        ctx.font = 'bold 20px Arial';
+                        ctx.fillStyle = '#e74c3c';
+                        ctx.fillText(`${symbol}${convertedTotal.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}`, centerX, centerY + 10);
+                        
+                        ctx.restore();
                     }
                 }
             });
