@@ -810,48 +810,107 @@
             }
         }
 
-        // Main category mapping for BizimHesap categories
+        // Main category mapping based on TriEye category schema
         function getMainCategory(category) {
             if (!category) return 'UNCATEGORIZED';
             
             const cat = category.toUpperCase();
             
-            // Bicycle main categories
-            if (cat.includes('BISIKLET') || cat.includes('BIKE')) return 'BİSİKLETLER';
+            // BICYCLE MAIN CATEGORIES (all bike types → BİSİKLETLER)
+            if (cat.includes('BİSİKLET') || cat.includes('BISIKLET') || cat.includes('BIKE') ||
+                cat.includes('MADONE') || cat.includes('EMONDA') || cat.includes('DOMANE') ||
+                cat.includes('GRAVEL') || cat.includes('CHECKPOINT') || cat.includes('CHECKMATE') ||
+                cat.includes('FUEL') || cat.includes('RAIL') || cat.includes('POWERFLY') ||
+                cat.includes('MARLIN') || cat.includes('PROCALIBER') || cat.includes('SUPERCALIBER') ||
+                cat.includes('VERVE') || cat.includes('ELECTRA') || cat.includes('TOWNIE') ||
+                cat.includes('SPEED CONCEPT') || cat.includes('TOP FUEL')) {
+                return 'BİSİKLETLER';
+            }
             
-            // Accessory main categories
-            if (cat.includes('POMPA')) return 'POMPALAR';
-            if (cat.includes('KASK') || cat.includes('HELMET')) return 'KASKLAR';
+            // ACCESSORY MAIN CATEGORIES (from TriEye schema)
+            if (cat.includes('TAŞIYICI') || cat.includes('CARRIER')) return 'ARAÇ ARKASI TAŞIYICI';
             if (cat.includes('AYDINLATMA') || cat.includes('IŞIK') || cat.includes('LIGHT')) return 'AYDINLATMA';
-            if (cat.includes('BAGAJ') || cat.includes('SEPET') || cat.includes('ÇANTA')) return 'BAGAJ & SEPET';
-            if (cat.includes('LASTIK') || cat.includes('TIRE')) return 'LASTİKLER';
-            if (cat.includes('ZINCIR') || cat.includes('CHAIN')) return 'ZİNCİR & AKTARMA';
-            if (cat.includes('FREN') || cat.includes('BRAKE')) return 'FREN SİSTEMLERİ';
-            if (cat.includes('PEDAL')) return 'PEDALLAR';
-            if (cat.includes('SELE') || cat.includes('SADDLE')) return 'SELELER';
-            if (cat.includes('GİDON') || cat.includes('HANDLEBAR')) return 'GİDONLAR';
-            if (cat.includes('MATARA') || cat.includes('BOTTLE')) return 'MATARALAR';
-            if (cat.includes('KILIT') || cat.includes('LOCK')) return 'KİLİTLER';
+            if (cat.includes('BAGAJ') || cat.includes('SEPET') || cat.includes('ÇANTA')) return 'BAGAJ - SEPET';
+            if (cat.includes('TRAINER')) return 'BİSİKLET TRAINER';
+            if (cat.includes('ÇAMURLUK')) return 'ÇAMURLUK';
+            if (cat.includes('ELCİK') || cat.includes('GİDON BANDI')) return 'ELCİK - GİDON BANDI';
+            if (cat.includes('KILIT') || cat.includes('LOCK')) return 'KİLİT';
+            if (cat.includes('MATARA') || cat.includes('BOTTLE')) return 'MATARA';
+            if (cat.includes('MATARA KAFESİ')) return 'MATARA KAFESİ';
+            if (cat.includes('POMPA')) return 'POMPA';
+            if (cat.includes('BİLGİSAYAR')) return 'YOL BİLGİSAYARI';
+            if (cat.includes('ZİL')) return 'ZİL';
+            
+            // SPARE PARTS CATEGORIES
+            if (cat.includes('GİDON') || cat.includes('HANDLEBAR') || cat.includes('AEROBAR')) return 'AEROBAR - GİDON';
             if (cat.includes('ANAHTAR')) return 'ANAHTAR TAKIMI';
-            if (cat.includes('TAŞIYICI') || cat.includes('CARRIER')) return 'TAŞIYICILAR';
+            if (cat.includes('BATARYA') || cat.includes('BATTERY')) return 'BATARYA 🔋';
+            if (cat.includes('BLENDR')) return 'BLENDR AYDINLATMA MONTAJ';
+            if (cat.includes('İÇ LASTİK') || cat.includes('INNER TUBE')) return 'İÇ LASTİK';
+            if (cat.includes('JANT') || cat.includes('WHEEL')) return 'JANT SETİ';
+            if (cat.includes('LASTİK') || cat.includes('TIRE')) return 'LASTİK';
+            if (cat.includes('PEDAL')) return 'PEDAL';
+            if (cat.includes('SELE') || cat.includes('SADDLE')) return 'SELE-SELE BORUSU';
+            
+            // CLOTHING CATEGORIES
+            if (cat.includes('AYAKKABI') || cat.includes('KILIF')) return 'AYAKKABI - KILIF';
+            if (cat.includes('ÇORAP')) return 'ÇORAP';
+            if (cat.includes('ELDİVEN') || cat.includes('GLOVE')) return 'ELDİVEN';
+            if (cat.includes('FORMA') || cat.includes('JERSEY')) return 'FORMA';
+            if (cat.includes('GOBİK')) return 'GOBİK';
+            if (cat.includes('İÇLİK')) return 'İÇLİK';
+            if (cat.includes('KASK') || cat.includes('HELMET')) return 'KASK';
+            if (cat.includes('RÜZGARLIK') || cat.includes('YAĞMURLUK')) return 'RÜZGARLIK - YAĞMURLUK';
+            if (cat.includes('TAYT') || cat.includes('ŞORT')) return 'TAYT - ŞORT';
+            
+            // EYEWEAR
+            if (cat.includes('GÖZLÜK') || cat.includes('GLASSES')) return 'GÖZLÜK 👓';
             
             // Return original category if no main category found
             return category;
         }
         
-        // Determine if product is bicycle or accessory
+        // Determine if product is bicycle or accessory based on TriEye category schema
         function getBicycleOrAccessory(category) {
             if (!category) return 'accessory';
             
             const cat = category.toUpperCase();
             
-            // Bicycle indicators
-            if (cat.includes('BISIKLET') || cat.includes('BIKE') || cat.includes('CYCLE')) {
-                console.log(`🚲 BICYCLE DETECTED: "${category}" → bicycle`);
-                return 'bicycle';
+            // BICYCLE CATEGORIES (from TriEye schema)
+            const bicycleCategories = [
+                // Main bicycle category
+                'BİSİKLET', 'BISIKLET', 'BIKE', 'CYCLE',
+                
+                // Road bikes
+                'YOL BİSİKLETİ', 'YOL BİSİKLET', 'MADONE', 'EMONDA', 'DOMANE', 'SPEED CONCEPT',
+                
+                // Gravel bikes  
+                'GRAVEL', 'CHECKMATE', 'CHECKPOINT',
+                
+                // Electric bikes
+                'ELEKTRİKLİ BİSİKLET', 'ELEKTRİKLİ BİSİKLETİ', 'ELECTRIC',
+                'FUEL EXE', 'RAIL', 'POWERFLY FS', 'POWERFLY', 'DS +', 'DS+', 
+                'FX+', 'VERVE +', 'VERVE+', 'TOWNIE GO', 'MARLIN +', 'MARLIN+',
+                
+                // Mountain bikes
+                'DAĞ BİSİKLETİ', 'DAĞ BİSİKLET', 'MOUNTAIN',
+                'MARLIN', 'PROCALIBER', 'SUPERCALIBER', 'FUEL EX', 'TOP FUEL',
+                
+                // City bikes
+                'ŞEHİR BİSİKLETİ', 'ŞEHİR BİSİKLET', 'CITY',
+                'FX BİSİKLET', 'FX BİSİKLETİ', 'DS BİSİKLET', 'DS BİSİKLETİ', 
+                'VERVE', 'ELECTRA', 'TOWNIE'
+            ];
+            
+            // Check if category matches any bicycle category
+            for (const bikeCategory of bicycleCategories) {
+                if (cat.includes(bikeCategory)) {
+                    console.log(`🚲 BICYCLE DETECTED: "${category}" → bicycle (matched: ${bikeCategory})`);
+                    return 'bicycle';
+                }
             }
             
-            // Everything else is accessory
+            // ACCESSORY CATEGORIES (everything else)
             console.log(`🔧 ACCESSORY DETECTED: "${category}" → accessory`);
             return 'accessory';
         }
