@@ -546,22 +546,25 @@
             console.log('📍 Raw header row:', jsonData[headerRowIndex]);
 
             const headers = jsonData[headerRowIndex];
-            const dataRows = jsonData.slice(headerRowIndex + 1);
+            // Based on Excel analysis: Row 0=date, Row 1=headers, Row 2+=data
+            // But headers are merged, so start data from row 2 (0-based indexing)
+            const dataRows = jsonData.slice(2); // Skip row 0 (date) and row 1 (headers)
 
-            // Map column indices - handle both exact matches and flexible matching
+            // Map column indices - Based on Excel analysis, use fixed mapping since headers are merged
+            // From Excel analysis: ["Belge No", "Tarih", "Depo", "Müşteri", "Şube", "Ürün", "Kod", "Miktar", "Birim", "Net", "TOPLAM", currency]
             const columnMap = {
-                belgeNo: 0,    // First column is document number
-                tarih: 1,      // Second column is date
-                depo: 2,       // Third column is store/warehouse
-                musteri: 3,    // Fourth column is customer
-                sube: 4,       // Fifth column is branch
-                urun: 5,       // Sixth column is product
-                kod: 6,        // Seventh column is code
-                miktar: 7,     // Eighth column is quantity
-                birim: 8,      // Ninth column is unit
-                net: 9,        // Tenth column is net amount
-                toplam: 10,    // Eleventh column is total
-                paraBirimi: 11 // Twelfth column is currency
+                belgeNo: 0,    // "SATIŞ RAPORU" -> "Belge No" (when data starts)
+                tarih: 1,      // "Unnamed: 1" -> "Tarih" 
+                depo: 2,       // "Unnamed: 2" -> "Depo"
+                musteri: 3,    // "Unnamed: 3" -> "Müşteri"  
+                sube: 4,       // "Unnamed: 4" -> "Şube"
+                urun: 5,       // "Unnamed: 5" -> "Ürün"
+                kod: 6,        // "Unnamed: 6" -> "Kod"
+                miktar: 7,     // "Unnamed: 7" -> "Miktar"
+                birim: 8,      // "Unnamed: 8" -> "Birim"
+                net: 9,        // "Unnamed: 9" -> "Net"
+                toplam: 10,    // "Unnamed: 10" -> "TOPLAM"
+                paraBirimi: 11 // "Unnamed: 11" -> Currency (TL/EUR)
             };
 
             // Try to find actual column indices if headers are available
