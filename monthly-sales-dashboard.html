@@ -864,9 +864,9 @@
             }
         }
 
-        // Main category mapping based on TriEye category schema
+        // Main category mapping - 6 general categories
         function getMainCategory(category) {
-            if (!category) return 'UNCATEGORIZED';
+            if (!category) return 'AKSESUAR';
             
             const cat = category.toUpperCase();
             
@@ -875,7 +875,7 @@
                 cat.includes('FUEL EXE') || cat.includes('RAIL') || cat.includes('POWERFLY') ||
                 cat.includes('DS+') || cat.includes('DS +') || cat.includes('FX+') || cat.includes('FX +') ||
                 cat.includes('VERVE+') || cat.includes('VERVE +') || cat.includes('TOWNIE GO') ||
-                cat.includes('MARLIN+') || cat.includes('MARLIN +')) {
+                cat.includes('MARLIN+') || cat.includes('MARLIN +') || cat.includes('DOMANE+')) {
                 console.log(`⚡ E-BIKE DETECTED: "${category}" → E-BİKELER`);
                 return 'E-BİKELER';
             }
@@ -898,52 +898,38 @@
                 return 'BİSİKLETLER';
             }
             
-            // ACCESSORY MAIN CATEGORIES (from TriEye schema)
-            if (cat.includes('TAŞIYICI') || cat.includes('CARRIER')) return 'ARAÇ ARKASI TAŞIYICI';
-            if (cat.includes('AYDINLATMA') || cat.includes('IŞIK') || cat.includes('LIGHT')) return 'AYDINLATMA';
-            if (cat.includes('BAGAJ') || cat.includes('SEPET') || cat.includes('ÇANTA')) return 'BAGAJ - SEPET';
-            if (cat.includes('TRAINER')) return 'BİSİKLET TRAINER';
-            if (cat.includes('ÇAMURLUK')) return 'ÇAMURLUK';
-            if (cat.includes('ELCİK') || cat.includes('GİDON BANDI')) return 'ELCİK - GİDON BANDI';
-            if (cat.includes('KILIT') || cat.includes('LOCK')) return 'KİLİT';
-            if (cat.includes('MATARA') || cat.includes('BOTTLE')) return 'MATARA';
-            if (cat.includes('MATARA KAFESİ')) return 'MATARA KAFESİ';
-            if (cat.includes('POMPA')) return 'POMPA';
-            if (cat.includes('BİLGİSAYAR') || cat.includes('KM SAATİ') || cat.includes('COMPUTER') || cat.includes('CYCLE COMPUTER')) return 'YOL BİLGİSAYARI';
-            if (cat.includes('ZİL')) return 'ZİL';
+            // TEXTILE CATEGORIES (clothing and accessories → TEKSTİL)
+            if (cat.includes('AYAKKABI') || cat.includes('KILIF') || cat.includes('ÇORAP') ||
+                cat.includes('ELDİVEN') || cat.includes('GLOVE') || cat.includes('FORMA') || 
+                cat.includes('JERSEY') || cat.includes('GOBİK') || cat.includes('İÇLİK') ||
+                cat.includes('KASK') || cat.includes('HELMET') || cat.includes('RÜZGARLIK') || 
+                cat.includes('YAĞMURLUK') || cat.includes('TAYT') || cat.includes('ŞORT') ||
+                cat.includes('GÖZLÜK') || cat.includes('GLASSES') || cat.includes('GİYİM')) {
+                console.log(`👕 TEXTILE DETECTED: "${category}" → TEKSTİL`);
+                return 'TEKSTİL';
+            }
             
-            // SPARE PARTS CATEGORIES
-            if (cat.includes('GİDON') || cat.includes('HANDLEBAR') || cat.includes('AEROBAR')) return 'AEROBAR - GİDON';
-            if (cat.includes('ANAHTAR')) return 'ANAHTAR TAKIMI';
-            if (cat.includes('BATARYA') || cat.includes('BATTERY')) return 'BATARYA 🔋';
-            if (cat.includes('BLENDR')) return 'BLENDR AYDINLATMA MONTAJ';
-            if (cat.includes('İÇ LASTİK') || cat.includes('INNER TUBE')) return 'İÇ LASTİK';
-            if (cat.includes('JANT') || cat.includes('WHEEL')) return 'JANT SETİ';
-            if (cat.includes('LASTİK') || cat.includes('TIRE')) return 'LASTİK';
-            if (cat.includes('PEDAL')) return 'PEDAL';
-            if (cat.includes('SELE') || cat.includes('SADDLE')) return 'SELE-SELE BORUSU';
-            if (cat.includes('KADRO') || cat.includes('FRAME')) return 'KADRO';
+            // SPARE PARTS CATEGORIES (components and parts → YEDEK PARÇA)
+            if (cat.includes('GİDON') || cat.includes('HANDLEBAR') || cat.includes('AEROBAR') ||
+                cat.includes('ANAHTAR') || cat.includes('BATARYA') || cat.includes('BATTERY') ||
+                cat.includes('BLENDR') || cat.includes('İÇ LASTİK') || cat.includes('INNER TUBE') ||
+                cat.includes('JANT') || cat.includes('WHEEL') || cat.includes('LASTİK') || 
+                cat.includes('TIRE') || cat.includes('PEDAL') || cat.includes('SELE') || 
+                cat.includes('SADDLE') || cat.includes('KADRO') || cat.includes('FRAME') ||
+                cat.includes('PARÇA') || cat.includes('COMPONENT')) {
+                console.log(`🔧 SPARE PART DETECTED: "${category}" → YEDEK PARÇA`);
+                return 'YEDEK PARÇA';
+            }
             
-            // CLOTHING CATEGORIES
-            if (cat.includes('AYAKKABI') || cat.includes('KILIF')) return 'AYAKKABI - KILIF';
-            if (cat.includes('ÇORAP')) return 'ÇORAP';
-            if (cat.includes('ELDİVEN') || cat.includes('GLOVE')) return 'ELDİVEN';
-            if (cat.includes('FORMA') || cat.includes('JERSEY')) return 'FORMA';
-            if (cat.includes('GOBİK')) return 'GOBİK';
-            if (cat.includes('İÇLİK')) return 'İÇLİK';
-            if (cat.includes('KASK') || cat.includes('HELMET')) return 'KASK';
-            if (cat.includes('RÜZGARLIK') || cat.includes('YAĞMURLUK')) return 'RÜZGARLIK - YAĞMURLUK';
-            if (cat.includes('TAYT') || cat.includes('ŞORT')) return 'TAYT - ŞORT';
+            // BIKE FIT & SERVICE CATEGORIES (services → BIKE FIT)
+            if (cat.includes('SERVİS') || cat.includes('SERVICE') || cat.includes('BAKIM') || 
+                cat.includes('TAMIR') || cat.includes('FIT') || cat.includes('HIZMET')) {
+                console.log(`🔧 SERVICE DETECTED: "${category}" → BIKE FIT`);
+                return 'BIKE FIT';
+            }
             
-            // EYEWEAR
-            if (cat.includes('GÖZLÜK') || cat.includes('GLASSES')) return 'GÖZLÜK 👓';
-            
-            // Default fallback for unmatched categories
-            if (cat.includes('SERVİS') || cat.includes('SERVICE') || cat.includes('BAKIM') || cat.includes('TAMIR')) return 'SERVİS';
-            if (cat.includes('ÖRNEK') || cat.includes('EXAMPLE') || cat.includes('TEST')) return 'AKSESUAR';
-            
-            // Return AKSESUAR for unrecognized categories instead of original category
-            console.log(`⚠️ UNRECOGNIZED CATEGORY: "${category}" → defaulting to AKSESUAR`);
+            // ACCESSORIES (everything else → AKSESUAR)
+            console.log(`📦 ACCESSORY DETECTED: "${category}" → AKSESUAR`);
             return 'AKSESUAR';
         }
         
@@ -3007,18 +2993,10 @@
             const emojiMap = {
                 'BİSİKLETLER': '🚲',
                 'E-BİKELER': '⚡',
-                'POMPA': '🌬️',
-                'KASK': '🪖',
-                'AYDINLATMA': '💡',
-                'BAGAJ - SEPET': '🧳',
-                'LASTİK': '🛞',
-                'PEDAL': '🦶',
-                'GÖZLÜK 👓': '🕶️',
-                'FORMA': '👕',
-                'ELDİVEN': '🧤',
-                'MATARA': '🍶',
-                'KİLİT': '🔒',
-                'ÇAMURLUK': '🛡️'
+                'AKSESUAR': '📦',
+                'YEDEK PARÇA': '🔧',
+                'TEKSTİL': '👕',
+                'BIKE FIT': '🛠️'
             };
             return emojiMap[categoryName] || '📦';
         }
