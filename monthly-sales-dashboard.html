@@ -485,7 +485,7 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         let currentData = null;
@@ -841,62 +841,50 @@
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
-                    const data = new Uint8Array(e.target.result);
-                    // Use standard parsing but with proper options for merged cells
-                    const workbook = XLSX.read(data, { 
-                        type: 'array',
-                        cellDates: false,
-                        cellNF: false,
-                        cellText: false,
-                        raw: false
-                    });
+                    const buffer = e.target.result;
+                    const workbook = new ExcelJS.Workbook();
+                    await workbook.xlsx.load(buffer);
                     
-                    // Get first sheet
-                    const sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
+                    const worksheet = workbook.getWorksheet(1);
+                    console.log('📊 Worksheet dimensions:', worksheet.dimensions);
+                    console.log('🔗 Merged cells:', worksheet.model.merges);
                     
-                    // Check for merged cells
-                    const mergedCells = worksheet['!merges'] || [];
-                    console.log('🔗 Merged cells found:', mergedCells);
+                    // Convert ExcelJS data to array format for compatibility (0-based indexing)
+                    const jsonData = [];
+                    const maxRow = worksheet.rowCount;
+                    const maxCol = 12; // A-L columns
                     
-                    // Convert to JSON with proper handling
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-                        header: 1,
-                        defval: null,
-                        blankrows: false,
-                        raw: false
-                    });
-                    
-                    // Post-process to handle merged cells
-                    for (let i = 0; i < jsonData.length; i++) {
-                        for (let j = 0; j < jsonData[i].length; j++) {
-                            if (jsonData[i][j] === null || jsonData[i][j] === undefined || jsonData[i][j] === '') {
-                                // Look for merged cell value
-                                for (const merge of mergedCells) {
-                                    if (i >= merge.s.r && i <= merge.e.r && j >= merge.s.c && j <= merge.e.c) {
-                                        // Find the actual value in the merged range
-                                        for (let mr = merge.s.r; mr <= merge.e.r; mr++) {
-                                            for (let mc = merge.s.c; mc <= merge.e.c; mc++) {
-                                                if (jsonData[mr] && jsonData[mr][mc] && 
-                                                    jsonData[mr][mc] !== null && 
-                                                    jsonData[mr][mc] !== '') {
-                                                    jsonData[i][j] = jsonData[mr][mc];
-                                                    break;
-                                                }
-                                            }
-                                            if (jsonData[i][j] && jsonData[i][j] !== '') break;
-                                        }
-                                        break;
-                                    }
+                    for (let i = 1; i <= maxRow; i++) {
+                        const row = worksheet.getRow(i);
+                        const rowData = [];
+                        
+                        for (let j = 1; j <= maxCol; j++) {
+                            const cell = row.getCell(j);
+                            let value = cell.value;
+                            
+                            // Handle merged cells - get master value
+                            if (cell.isMerged && cell.master) {
+                                value = cell.master.value;
+                            }
+                            
+                            // Convert value to string/number as needed
+                            if (value !== null && value !== undefined) {
+                                if (typeof value === 'object' && value.result) {
+                                    value = value.result; // Handle formulas
+                                } else if (typeof value === 'object' && value.text) {
+                                    value = value.text; // Handle rich text
                                 }
                             }
+                            
+                            // Convert to 0-based array index (j-1)
+                            rowData[j-1] = value || '';
                         }
+                        
+                        // Convert to 0-based array index (i-1)
+                        jsonData[i-1] = rowData;
                     }
                     
-                    console.log('📊 Processed jsonData with merged cells - First 10 rows:', jsonData.slice(0, 10));
-                    
-                    console.log('📊 Raw worksheet range:', worksheet['!ref']);
-                    console.log('📊 Raw jsonData first 5 rows:', jsonData.slice(0, 5));
+                    console.log('📊 ExcelJS processed jsonData - First 10 rows:', jsonData.slice(0, 10));
                     
                     // Process data
                     currentData = processData(jsonData);
@@ -922,11 +910,11 @@
 
             // Find header row - Based on Excel analysis:
             // Row 0: "SATIŞ RAPORU"
-            // Row 1: Date range "01.07.2025 - 31.07.2025" 
+            // Row 1: Date range "01.07.2025 - 31.07.2025"
             // Row 2: Headers "Belge No", "Tarih", "Depo", etc.
             // Row 3+: Data
             
-            let headerRowIndex = 2; // Default to row 2 based on Excel structure
+            let headerRowIndex = 2; // Headers are in row 2 based on Excel analysis
             let dateRowIndex = 1;   // Row 1 contains the date range
             
             // Verify by checking if row 2 contains typical headers
@@ -1056,6 +1044,7 @@
             
             let lastValidCustomer = ''; // Track last valid customer for merged cells
             let lastValidStore = ''; // Track last valid store for merged cells
+            let lastValidProduct = ''; // Track last valid product for merged cells
             
             for (let i = 0; i < dataRows.length; i++) {
                 const row = dataRows[i];
@@ -1068,7 +1057,7 @@
                 let musteri = String(row[columnMap.musteri] || '').trim();
                 const toplam = parseFloat(String(row[columnMap.toplam] || '').replace(',', '.')) || 0;
                 const miktar = parseInt(String(row[columnMap.miktar] || '').replace(',', '.')) || 0;
-                const urun = String(row[columnMap.urun] || '').trim();
+                let urun = String(row[columnMap.urun] || '').trim();
                 let paraBirimi = String(row[columnMap.paraBirimi] || 'TL').trim().toUpperCase();
                 const tarih = row[columnMap.tarih];
                 
@@ -1082,17 +1071,75 @@
                 else if (paraBirimi.includes('USD') || paraBirimi.includes('DOLAR')) paraBirimi = 'USD';
                 else paraBirimi = 'TL';
 
-                // Handle merged cells - use last valid customer/store if current is empty
-                if (musteri && musteri.length > 0 && musteri !== 'NaN') {
+                // Enhanced merged cell handling - look backward for valid values
+                if (!musteri || musteri.trim() === '' || musteri === 'NaN') {
+                    // Look backward in recent rows to find the actual customer
+                    if (lastValidCustomer) {
+                        musteri = lastValidCustomer;
+                    } else {
+                        // Search backwards up to 10 rows for customer name
+                        for (let backSearch = Math.max(0, i - 10); backSearch < i; backSearch++) {
+                            const searchRow = dataRows[backSearch];
+                            if (searchRow && searchRow[columnMap.musteri]) {
+                                const searchCustomer = String(searchRow[columnMap.musteri]).trim();
+                                if (searchCustomer && searchCustomer !== 'NaN' && searchCustomer.length > 2) {
+                                    musteri = searchCustomer;
+                                    lastValidCustomer = searchCustomer;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Update last valid customer
                     lastValidCustomer = musteri;
-                } else if (lastValidCustomer && toplam > 0) {
-                    musteri = lastValidCustomer;
                 }
 
-                if (depo && depo.length > 0 && depo !== 'NaN') {
+                if (!depo || depo.trim() === '' || depo === 'NaN') {
+                    // Look backward in recent rows to find the actual store
+                    if (lastValidStore) {
+                        depo = lastValidStore;
+                    } else {
+                        // Search backwards up to 10 rows for store name
+                        for (let backSearch = Math.max(0, i - 10); backSearch < i; backSearch++) {
+                            const searchRow = dataRows[backSearch];
+                            if (searchRow && searchRow[columnMap.depo]) {
+                                const searchStore = String(searchRow[columnMap.depo]).trim();
+                                if (searchStore && searchStore !== 'NaN' && searchStore.length > 2) {
+                                    depo = searchStore;
+                                    lastValidStore = searchStore;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Update last valid store
                     lastValidStore = depo;
-                } else if (lastValidStore && toplam > 0) {
-                    depo = lastValidStore;
+                }
+
+                // Enhanced product name handling
+                if (!urun || urun.trim() === '' || urun === 'NaN') {
+                    // Look backward in recent rows to find the actual product name
+                    if (lastValidProduct) {
+                        urun = lastValidProduct;
+                    } else {
+                        // Search backwards up to 10 rows for product name
+                        for (let backSearch = Math.max(0, i - 10); backSearch < i; backSearch++) {
+                            const searchRow = dataRows[backSearch];
+                            if (searchRow && searchRow[columnMap.urun]) {
+                                const searchProduct = String(searchRow[columnMap.urun]).trim();
+                                if (searchProduct && searchProduct !== 'NaN' && searchProduct.length > 2) {
+                                    urun = searchProduct;
+                                    lastValidProduct = searchProduct;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Update last valid product
+                    lastValidProduct = urun;
                 }
 
                 if (i < 10) {
@@ -1104,7 +1151,12 @@
                         raw_urun: row[columnMap.urun],
                         raw_full_row: row,
                         columnMap: columnMap,
-                        processed: { depo, musteri, toplam, miktar, urun, paraBirimi, tarih }
+                        processed: { depo, musteri, toplam, miktar, urun, paraBirimi, tarih },
+                        merged_cell_tracking: {
+                            lastValidCustomer,
+                            lastValidStore,
+                            lastValidProduct
+                        }
                     });
                 }
 

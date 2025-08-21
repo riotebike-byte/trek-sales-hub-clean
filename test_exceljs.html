@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ExcelJS Merged Cell Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+</head>
+<body>
+    <h2>ExcelJS Excel Merged Cell Test</h2>
+    <input type="file" id="fileInput" accept=".xlsx,.xls">
+    <div id="output" style="margin-top: 20px; font-family: monospace; font-size: 12px;"></div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const buffer = e.target.result;
+                    const workbook = new ExcelJS.Workbook();
+                    await workbook.xlsx.load(buffer);
+                    
+                    const worksheet = workbook.getWorksheet(1);
+                    
+                    console.log('📊 Worksheet dimensions:', worksheet.dimensions);
+                    console.log('🔗 Merged cells:', worksheet.model.merges);
+                    
+                    let output = '<h3>ExcelJS Raw Data (First 20 rows):</h3>';
+                    
+                    // Read first 20 rows
+                    for (let i = 1; i <= 20; i++) {
+                        const row = worksheet.getRow(i);
+                        const values = [];
+                        
+                        for (let j = 1; j <= 12; j++) { // A-L columns
+                            const cell = row.getCell(j);
+                            const value = cell.value;
+                            const isMerged = cell.isMerged;
+                            const master = isMerged ? cell.master : null;
+                            
+                            // If cell is merged, get master value
+                            const displayValue = isMerged && master ? master.value : value;
+                            values.push({
+                                col: j,
+                                value: displayValue,
+                                raw: value,
+                                merged: isMerged,
+                                type: cell.type
+                            });
+                        }
+                        
+                        output += `<div><strong>Row ${i}:</strong><br>`;
+                        values.forEach((v, idx) => {
+                            if (v.value !== null && v.value !== undefined && v.value !== '') {
+                                const letter = String.fromCharCode(64 + v.col);
+                                output += `  ${letter}${i}: "${v.value}"${v.merged ? ' (MERGED)' : ''}<br>`;
+                            }
+                        });
+                        output += '</div><br>';
+                    }
+                    
+                    // Focus on customer column (D column = index 4)
+                    output += '<h3>Customer Column (D) Analysis:</h3>';
+                    for (let i = 1; i <= 20; i++) {
+                        const row = worksheet.getRow(i);
+                        const customerCell = row.getCell(4); // D column
+                        const value = customerCell.value;
+                        const isMerged = customerCell.isMerged;
+                        const master = isMerged ? customerCell.master : null;
+                        const displayValue = isMerged && master ? master.value : value;
+                        
+                        if (displayValue !== null && displayValue !== undefined && displayValue !== '') {
+                            output += `<div>Row ${i} Customer: "${displayValue}"${isMerged ? ' (from merged cell)' : ''}</div>`;
+                        }
+                    }
+                    
+                    document.getElementById('output').innerHTML = output;
+                    
+                } catch (error) {
+                    console.error('ExcelJS Error:', error);
+                    document.getElementById('output').innerHTML = '<div style="color: red;">Error: ' + error.message + '</div>';
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        });
+    </script>
+</body>
+</html>

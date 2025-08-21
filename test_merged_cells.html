@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Merged Cell Test</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <h2>Excel Merged Cell Test</h2>
+    <input type="file" id="fileInput" accept=".xlsx,.xls">
+    <div id="output" style="margin-top: 20px; font-family: monospace;"></div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                
+                console.log('🔗 Merged cells:', worksheet['!merges']);
+                console.log('📊 Sheet range:', worksheet['!ref']);
+                
+                // Try different parsing options
+                const jsonData1 = XLSX.utils.sheet_to_json(worksheet, { 
+                    header: 1,
+                    defval: null,
+                    raw: false
+                });
+                
+                const jsonData2 = XLSX.utils.sheet_to_json(worksheet, { 
+                    header: 1,
+                    defval: '',
+                    raw: true
+                });
+                
+                const jsonData3 = XLSX.utils.sheet_to_json(worksheet, { 
+                    header: 1,
+                    defval: '',
+                    raw: false,
+                    blankrows: true
+                });
+
+                let output = '<h3>Parse Option 1 (defval: null, raw: false):</h3>';
+                for (let i = 0; i < Math.min(15, jsonData1.length); i++) {
+                    output += `<div><strong>Row ${i}:</strong> ${JSON.stringify(jsonData1[i])}</div>`;
+                }
+                
+                output += '<h3>Parse Option 2 (defval: "", raw: true):</h3>';
+                for (let i = 0; i < Math.min(15, jsonData2.length); i++) {
+                    output += `<div><strong>Row ${i}:</strong> ${JSON.stringify(jsonData2[i])}</div>`;
+                }
+                
+                output += '<h3>Parse Option 3 (defval: "", raw: false, blankrows: true):</h3>';
+                for (let i = 0; i < Math.min(15, jsonData3.length); i++) {
+                    output += `<div><strong>Row ${i}:</strong> ${JSON.stringify(jsonData3[i])}</div>`;
+                }
+                
+                // Try direct cell access
+                output += '<h3>Direct Cell Access:</h3>';
+                for (let i = 0; i < 15; i++) {
+                    const cellA = worksheet[`A${i+1}`];
+                    const cellB = worksheet[`B${i+1}`];
+                    const cellC = worksheet[`C${i+1}`];
+                    const cellD = worksheet[`D${i+1}`]; // Customer column
+                    const cellE = worksheet[`E${i+1}`];
+                    
+                    output += `<div>Row ${i}: A="${cellA?.v || 'empty'}" B="${cellB?.v || 'empty'}" C="${cellC?.v || 'empty'}" D="${cellD?.v || 'empty'}" E="${cellE?.v || 'empty'}"</div>`;
+                }
+                
+                document.getElementById('output').innerHTML = output;
+            };
+            
+            reader.readAsArrayBuffer(file);
+        });
+    </script>
+</body>
+</html>
