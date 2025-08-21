@@ -402,6 +402,86 @@
         let currentData = null;
         let currentCurrency = 'TL';
         
+        // BizimHesap products data cache
+        let bizimhesapProducts = null;
+        
+        // Load BizimHesap product data for category analysis
+        async function loadBizimHesapProducts() {
+            if (bizimhesapProducts) return bizimhesapProducts;
+            
+            try {
+                console.log('🔄 Loading BizimHesap products...');
+                const response = await fetch('/api.php');
+                const data = await response.json();
+                
+                if (data.data && data.data.products) {
+                    bizimhesapProducts = data.data.products;
+                    console.log(`✅ Loaded ${bizimhesapProducts.length} BizimHesap products`);
+                    return bizimhesapProducts;
+                }
+            } catch (error) {
+                console.error('❌ Failed to load BizimHesap products:', error);
+            }
+            return [];
+        }
+
+        // Enhanced product categorization using BizimHesap API
+        function categorizeProduct(productCode, productName) {
+            // First try BizimHesap product lookup by code
+            if (bizimhesapProducts && productCode) {
+                const apiProduct = bizimhesapProducts.find(p => 
+                    p.sku === productCode || p.title?.includes(productCode)
+                );
+                
+                if (apiProduct && apiProduct.category) {
+                    const category = apiProduct.category.toUpperCase();
+                    
+                    // BizimHesap category mapping
+                    if (category.includes('BISIKLET') || category.includes('BIKE')) {
+                        return { type: 'bicycle', category: apiProduct.category };
+                    } else {
+                        return { type: 'accessory', category: apiProduct.category };
+                    }
+                }
+            }
+            
+            // Fallback to name-based detection
+            return categorizeByName(productName);
+        }
+
+        // Function to determine if product is bicycle or accessory by name
+        function categorizeByName(productName) {
+            if (!productName) return { type: 'accessory', category: 'UNCATEGORIZED' };
+            
+            const name = productName.toLowerCase();
+            
+            // Bicycle indicators
+            const bicycleKeywords = [
+                'bisiklet', 'bike', 'trek', 'fx', 'madone', 'domane', 'émonda', 'checkpoint',
+                'verve', 'dual sport', 'marlin', 'x-caliber', 'fuel', 'remedy', 'slash',
+                'session', 'supercaliber', 'top fuel', 'procaliber', 'roscoe'
+            ];
+            
+            // Accessory/spare part indicators  
+            const accessoryKeywords = [
+                'aksesuar', 'parça', 'pompa', 'kask', 'eldiven', 'çanta', 'ışık', 'kilit',
+                'matara', 'saddle', 'sele', 'gidon', 'fren', 'vites', 'zincir', 'lastik',
+                'jant', 'pedal', 'bagaj', 'mudguard', 'çamurluk', 'bontrager', 'servis'
+            ];
+            
+            // Check for accessory first (more specific)
+            if (accessoryKeywords.some(keyword => name.includes(keyword))) {
+                return { type: 'accessory', category: 'AKSESUAR' };
+            }
+            
+            // Then check for bicycle
+            if (bicycleKeywords.some(keyword => name.includes(keyword))) {
+                return { type: 'bicycle', category: 'BISIKLET' };
+            }
+            
+            return { type: 'accessory', category: 'UNCATEGORIZED' };
+        }
+        
         // Exchange rates (approximate)
         const exchangeRates = {
             'TL': 1,
@@ -637,85 +717,6 @@
                 'mert bikestop eur': { dealer: 'Mert Bikestop', type: 'EUR', currency: 'EUR' }
             };
 
-            // BizimHesap products data cache
-            let bizimhesapProducts = null;
-            
-            // Load BizimHesap product data for category analysis
-            async function loadBizimHesapProducts() {
-                if (bizimhesapProducts) return bizimhesapProducts;
-                
-                try {
-                    console.log('🔄 Loading BizimHesap products...');
-                    const response = await fetch('/api.php');
-                    const data = await response.json();
-                    
-                    if (data.data && data.data.products) {
-                        bizimhesapProducts = data.data.products;
-                        console.log(`✅ Loaded ${bizimhesapProducts.length} BizimHesap products`);
-                        return bizimhesapProducts;
-                    }
-                } catch (error) {
-                    console.error('❌ Failed to load BizimHesap products:', error);
-                }
-                return [];
-            }
-
-            // Enhanced product categorization using BizimHesap API
-            function categorizeProduct(productCode, productName) {
-                // First try BizimHesap product lookup by code
-                if (bizimhesapProducts && productCode) {
-                    const apiProduct = bizimhesapProducts.find(p => 
-                        p.sku === productCode || p.title?.includes(productCode)
-                    );
-                    
-                    if (apiProduct && apiProduct.category) {
-                        const category = apiProduct.category.toUpperCase();
-                        
-                        // BizimHesap category mapping
-                        if (category.includes('BISIKLET') || category.includes('BIKE')) {
-                            return { type: 'bicycle', category: apiProduct.category };
-                        } else {
-                            return { type: 'accessory', category: apiProduct.category };
-                        }
-                    }
-                }
-                
-                // Fallback to name-based detection
-                return categorizeByName(productName);
-            }
-
-            // Function to determine if product is bicycle or accessory by name
-            function categorizeByName(productName) {
-                if (!productName) return { type: 'accessory', category: 'UNCATEGORIZED' };
-                
-                const name = productName.toLowerCase();
-                
-                // Bicycle indicators
-                const bicycleKeywords = [
-                    'bisiklet', 'bike', 'trek', 'fx', 'madone', 'domane', 'émonda', 'checkpoint',
-                    'verve', 'dual sport', 'marlin', 'x-caliber', 'fuel', 'remedy', 'slash',
-                    'session', 'supercaliber', 'top fuel', 'procaliber', 'roscoe'
-                ];
-                
-                // Accessory/spare part indicators  
-                const accessoryKeywords = [
-                    'aksesuar', 'parça', 'pompa', 'kask', 'eldiven', 'çanta', 'ışık', 'kilit',
-                    'matara', 'saddle', 'sele', 'gidon', 'fren', 'vites', 'zincir', 'lastik',
-                    'jant', 'pedal', 'bagaj', 'mudguard', 'çamurluk', 'bontrager', 'servis'
-                ];
-                
-                // Check for accessory first (more specific)
-                if (accessoryKeywords.some(keyword => name.includes(keyword))) {
-                    return { type: 'accessory', category: 'AKSESUAR' };
-                }
-                
-                // Then check for bicycle
-                if (bicycleKeywords.some(keyword => name.includes(keyword))) {
-                    return { type: 'bicycle', category: 'BISIKLET' };
-                }
-                
-                return { type: 'accessory', category: 'UNCATEGORIZED' };
-            }
 
             // Process each row
             console.log('🔄 Processing rows:', dataRows.length);
