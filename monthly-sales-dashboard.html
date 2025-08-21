@@ -227,6 +227,65 @@
             color: #2c3e50;
         }
 
+        .section-btn {
+            padding: 10px 20px;
+            border: 2px solid #3498db;
+            background: white;
+            color: #3498db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .section-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .section-btn:hover:not(.active) {
+            background: #e8f4f8;
+        }
+
+        .tab-content {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .dealer-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.3s;
+            background: linear-gradient(90deg, #fff 0%, #f8f9fa 100%);
+        }
+
+        .dealer-item:hover {
+            background: linear-gradient(90deg, #e8f4f8 0%, #f0f8ff 100%);
+        }
+
+        .dealer-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+
+        .dealer-type {
+            font-size: 12px;
+            color: #666;
+            background: #3498db;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -294,13 +353,31 @@
             </div>
 
             <div class="stores-section">
-                <h3 style="margin-bottom: 20px;">🏪 Mağaza Bazında Satışlar</h3>
-                <div id="storesList"></div>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button class="section-btn active" onclick="showSection('stores')">🏪 Mağaza Satışları</button>
+                    <button class="section-btn" onclick="showSection('dealers')">🤝 Bayi Satışları</button>
+                </div>
+                
+                <div id="storesTab" class="tab-content">
+                    <h3 style="margin-bottom: 20px;">🏪 Mağaza Bazında Satışlar</h3>
+                    <div id="storesList"></div>
+                </div>
+                
+                <div id="dealersTab" class="tab-content" style="display: none;">
+                    <h3 style="margin-bottom: 20px;">🤝 Bayi Bazında Satışlar</h3>
+                    <div id="dealersList"></div>
+                </div>
+            </div>
+            
+            <div class="chart-section" style="margin-top: 30px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
+                <h3 style="margin-bottom: 20px;">📊 Aylık Satış Grafikleri</h3>
+                <canvas id="salesChart" width="400" height="200"></canvas>
             </div>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         let currentData = null;
         let currentCurrency = 'TL';
@@ -484,8 +561,19 @@
 
             const sales = [];
             const stores = {};
+            const dealers = {};
             const customers = new Set();
             let totalAmount = 0;
+            
+            // Define dealer accounts
+            const dealerAccounts = {
+                'ercem akcan usd': { dealer: 'Ercem Akcan', type: 'USD', currency: 'USD' },
+                'ercem akcan eur': { dealer: 'Ercem Akcan', type: 'EUR', currency: 'EUR' },
+                'ercem akcan sc bisiklet': { dealer: 'Ercem Akcan', type: 'SC Bisiklet', currency: 'TL' },
+                'mert bikestop tl': { dealer: 'Mert Bikestop', type: 'TL', currency: 'TL' },
+                'mert bikestop usd': { dealer: 'Mert Bikestop', type: 'USD', currency: 'USD' },
+                'mert bikestop eur': { dealer: 'Mert Bikestop', type: 'EUR', currency: 'EUR' }
+            };
 
             // Process each row
             for (const row of dataRows) {
@@ -521,20 +609,49 @@
                     amountInTL: amountInTL
                 });
 
-                // Aggregate by store
-                const storeName = depo || 'Bilinmeyen';
-                if (!stores[storeName]) {
-                    stores[storeName] = {
-                        name: storeName,
-                        totalTL: 0,
-                        orderCount: 0,
-                        customers: new Set()
-                    };
+                // Check if this is a dealer transaction
+                const customerLower = musteri.toLowerCase();
+                let isDealer = false;
+                
+                for (const [account, info] of Object.entries(dealerAccounts)) {
+                    if (customerLower.includes(account) || customerLower.includes(info.dealer.toLowerCase())) {
+                        isDealer = true;
+                        
+                        const dealerKey = `${info.dealer} ${info.type}`;
+                        if (!dealers[dealerKey]) {
+                            dealers[dealerKey] = {
+                                name: info.dealer,
+                                type: info.type,
+                                currency: info.currency,
+                                totalTL: 0,
+                                orderCount: 0,
+                                customers: new Set()
+                            };
+                        }
+                        
+                        dealers[dealerKey].totalTL += amountInTL;
+                        dealers[dealerKey].orderCount += 1;
+                        dealers[dealerKey].customers.add(musteri);
+                        break;
+                    }
                 }
+                
+                // Only aggregate by store if not a dealer
+                if (!isDealer) {
+                    const storeName = depo || 'Bilinmeyen';
+                    if (!stores[storeName]) {
+                        stores[storeName] = {
+                            name: storeName,
+                            totalTL: 0,
+                            orderCount: 0,
+                            customers: new Set()
+                        };
+                    }
 
-                stores[storeName].totalTL += amountInTL;
-                stores[storeName].orderCount += 1;
-                stores[storeName].customers.add(musteri);
+                    stores[storeName].totalTL += amountInTL;
+                    stores[storeName].orderCount += 1;
+                    stores[storeName].customers.add(musteri);
+                }
 
                 customers.add(musteri);
                 totalAmount += amountInTL;
@@ -543,6 +660,7 @@
             return {
                 sales: sales,
                 stores: stores,
+                dealers: dealers,
                 totalAmount: totalAmount,
                 customerCount: customers.size,
                 orderCount: sales.length
@@ -573,6 +691,21 @@
             document.getElementById('customerCount').textContent = currentData.customerCount.toLocaleString('tr-TR');
 
             // Update stores list
+            updateStoresList();
+            
+            // Update dealers list
+            updateDealersList();
+            
+            // Update chart
+            updateChart();
+        }
+
+        function updateStoresList() {
+            if (!currentData) return;
+            
+            const rate = exchangeRates[currentCurrency];
+            const symbol = currentCurrency === 'TL' ? '₺' : currentCurrency === 'USD' ? '$' : '€';
+            
             const storesList = document.getElementById('storesList');
             storesList.innerHTML = '';
 
@@ -599,6 +732,99 @@
             });
         }
 
+        function updateDealersList() {
+            if (!currentData) return;
+            
+            const rate = exchangeRates[currentCurrency];
+            const symbol = currentCurrency === 'TL' ? '₺' : currentCurrency === 'USD' ? '$' : '€';
+            
+            const dealersList = document.getElementById('dealersList');
+            dealersList.innerHTML = '';
+
+            // Sort dealers by sales amount
+            const sortedDealers = Object.values(currentData.dealers)
+                .sort((a, b) => b.totalTL - a.totalTL);
+
+            sortedDealers.forEach(dealer => {
+                const dealerDiv = document.createElement('div');
+                dealerDiv.className = 'dealer-item';
+                
+                const amount = dealer.totalTL / rate;
+                
+                dealerDiv.innerHTML = `
+                    <div>
+                        <span class="dealer-name">${dealer.name}</span>
+                        <span class="dealer-type">${dealer.type}</span>
+                    </div>
+                    <div class="store-stats">
+                        <div class="store-amount">${symbol}${amount.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}</div>
+                        <div class="store-count">${dealer.orderCount} sipariş</div>
+                        <div class="store-count">${dealer.customers.size} müşteri</div>
+                    </div>
+                `;
+                
+                dealersList.appendChild(dealerDiv);
+            });
+        }
+
+        function updateChart() {
+            if (!currentData) return;
+            
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            
+            // Prepare data for chart
+            const storeNames = Object.values(currentData.stores).map(store => store.name);
+            const storeAmounts = Object.values(currentData.stores).map(store => store.totalTL);
+            
+            const dealerNames = Object.values(currentData.dealers).map(dealer => `${dealer.name} (${dealer.type})`);
+            const dealerAmounts = Object.values(currentData.dealers).map(dealer => dealer.totalTL);
+            
+            // Destroy existing chart if it exists
+            if (window.salesChartInstance) {
+                window.salesChartInstance.destroy();
+            }
+            
+            // Create new chart
+            window.salesChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [...storeNames, ...dealerNames],
+                    datasets: [{
+                        label: 'Satış Tutarı (TL)',
+                        data: [...storeAmounts, ...dealerAmounts],
+                        backgroundColor: [
+                            ...storeNames.map(() => '#3498db'),
+                            ...dealerNames.map(() => '#27ae60')
+                        ],
+                        borderColor: [
+                            ...storeNames.map(() => '#2980b9'),
+                            ...dealerNames.map(() => '#229954')
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₺' + value.toLocaleString('tr-TR');
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+
         function toggleCurrency(currency) {
             currentCurrency = currency;
             
@@ -610,6 +836,18 @@
             
             // Update display
             updateCurrencyDisplay();
+        }
+
+        function showSection(section) {
+            // Update button states
+            document.querySelectorAll('.section-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Show/hide tabs
+            document.getElementById('storesTab').style.display = section === 'stores' ? 'block' : 'none';
+            document.getElementById('dealersTab').style.display = section === 'dealers' ? 'block' : 'none';
         }
 
         function showError(message) {
