@@ -985,10 +985,16 @@
                             title: apiProduct.title
                         });
                         
+                        const productCategory = apiProduct.category || 'UNCATEGORIZED';
+                        const productType = getBicycleOrAccessory(productCategory);
+                        const mainCat = getMainCategory(productCategory);
+                        
+                        console.log(`🎯 CATEGORIZED: "${productCategory}" → Main: "${mainCat}", Type: "${productType}"`);
+                        
                         return {
-                            type: apiProduct.type || getBicycleOrAccessory(apiProduct.category),
-                            category: apiProduct.sub_category || apiProduct.category || 'UNCATEGORIZED',
-                            mainCategory: apiProduct.main_category || getMainCategory(apiProduct.category),
+                            type: productType,
+                            category: productCategory,
+                            mainCategory: mainCat,
                             source: 'API_EXACT'
                         };
                     } else {
