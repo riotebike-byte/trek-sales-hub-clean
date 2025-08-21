@@ -2352,6 +2352,7 @@
             // Reset totals
             let newTotalAmount = 0;
             let newCategorySales = {};
+            let newCategoryQuantities = {};
             let newStoreSales = {};
             let newDealerSales = {};
             let newBicycleSales = 0;
@@ -2361,10 +2362,11 @@
             for (const sale of data.sales) {
                 newTotalAmount += sale.amountInTL;
                 
-                // Recalculate category sales
+                // Recalculate category sales and quantities
                 const categoryInfo = categorizeProduct(sale.kod || '', sale.urun || '');
                 const mainCategoryName = categoryInfo.mainCategory || categoryInfo.category || 'UNCATEGORIZED';
                 newCategorySales[mainCategoryName] = (newCategorySales[mainCategoryName] || 0) + sale.amountInTL;
+                newCategoryQuantities[mainCategoryName] = (newCategoryQuantities[mainCategoryName] || 0) + (sale.miktar || 0);
                 
                 // Recalculate store sales
                 newStoreSales[sale.depo] = (newStoreSales[sale.depo] || 0) + sale.amountInTL;
@@ -2397,6 +2399,16 @@
             data.dealerSales = newDealerSales;
             data.bicycleSales = newBicycleSales;
             data.accessorySales = newAccessorySales;
+            
+            // Update category quantities in the categories object
+            if (data.categories) {
+                for (const [categoryName, quantity] of Object.entries(newCategoryQuantities)) {
+                    if (data.categories[categoryName]) {
+                        data.categories[categoryName].quantity = quantity;
+                        console.log(`📊 Updated ${categoryName} quantity: ${quantity} items`);
+                    }
+                }
+            }
             
             console.log(`✅ Recalculated totals: ₺${newTotalAmount.toLocaleString()}`);
             return data;
