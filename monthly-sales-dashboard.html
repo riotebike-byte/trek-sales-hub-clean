@@ -856,6 +856,10 @@
 
         // Enhanced product categorization using local database + API fallback
         function categorizeProduct(productCode, productName) {
+            // Ensure parameters are defined
+            productCode = productCode || '';
+            productName = productName || '';
+            
             console.log(`\n🔍 === CATEGORIZING PRODUCT ===`);
             console.log(`📋 Name: "${productName}"`);
             console.log(`🏷️  Code: "${productCode}" (type: ${typeof productCode})`);
@@ -1101,7 +1105,7 @@
                 return { type: 'bicycle', category: 'BISIKLET' };
             }
             
-            console.log(`⚠️ UNCATEGORIZED: "${productName}" (Code: ${productCode}) - No matching keywords found`);
+            console.log(`⚠️ UNCATEGORIZED: "${productName}" (Code: ${typeof productCode !== 'undefined' ? productCode : 'undefined'}) - No matching keywords found`);
             console.log(`🔍 Checked sources: Local DB, Pattern matching, API matching, Name-based matching - ALL FAILED`);
             return { type: 'accessory', category: 'UNCATEGORIZED' };
         }
