@@ -2110,14 +2110,38 @@
                         quantity: 0,
                         products: new Set(),
                         source: categoryInfo.source || 'unknown',
-                        subcategories: new Set()
+                        subcategories: new Set(),
+                        transactions: [] // Track individual transactions for duplicate check
                     };
+                    console.log(`📦 NEW CATEGORY CREATED: "${mainCategoryName}"`);
                 }
+                
+                // Check for potential duplicates
+                const transactionKey = `${productKod}-${urun}-${amountInTL}-${miktar}-${musteri}`;
+                const existingTransaction = categories[mainCategoryName].transactions.find(t => t.key === transactionKey);
+                
+                if (existingTransaction) {
+                    console.log(`⚠️ POTENTIAL DUPLICATE: ${transactionKey} in ${mainCategoryName}`);
+                    console.log(`   Previous: Row ${existingTransaction.row}, Current: Row ${i+3}`);
+                } else {
+                    categories[mainCategoryName].transactions.push({
+                        key: transactionKey,
+                        row: i+3,
+                        amount: amountInTL,
+                        quantity: miktar
+                    });
+                }
+                
                 categories[mainCategoryName].totalTL += amountInTL;
                 categories[mainCategoryName].quantity += miktar;
                 categories[mainCategoryName].products.add(urun);
                 if (categoryInfo.category) {
                     categories[mainCategoryName].subcategories.add(categoryInfo.category);
+                }
+                
+                // Log category accumulation every 50 items for major categories
+                if ((i + 1) % 50 === 0 && (mainCategoryName === 'BİSİKLETLER' || mainCategoryName === 'E-BİKELER')) {
+                    console.log(`📊 ${mainCategoryName} Progress (Row ${i+3}): ₺${categories[mainCategoryName].totalTL.toLocaleString()} | ${categories[mainCategoryName].quantity} items | ${categories[mainCategoryName].products.size} unique products`);
                 }
                 
                 if (categoryInfo.type === 'bicycle') {
@@ -2226,9 +2250,23 @@
             Object.values(categories)
                 .sort((a, b) => b.totalTL - a.totalTL)
                 .forEach(cat => {
-                    const subCatList = cat.subcategories.length > 0 ? ` (Alt: ${cat.subcategories.join(', ')})` : '';
-                    console.log(`  ${cat.name} [${cat.source}]: ₺${cat.totalTL.toLocaleString('tr-TR')} | ${cat.quantity} adet | ${cat.products.length} çeşit${subCatList}`);
+                    const subCatList = cat.subcategories.length > 0 ? ` (Alt: ${Array.from(cat.subcategories).join(', ')})` : '';
+                    const duplicateCount = cat.transactions ? cat.transactions.length - new Set(cat.transactions.map(t => t.key)).size : 0;
+                    const duplicateInfo = duplicateCount > 0 ? ` ⚠️ ${duplicateCount} duplicates` : '';
+                    console.log(`  ${cat.name} [${cat.source}]: ₺${cat.totalTL.toLocaleString('tr-TR')} | ${cat.quantity} adet | ${cat.products.size} çeşit${subCatList}${duplicateInfo}`);
                 });
+            
+            // Summary of potential duplicates
+            const totalDuplicates = Object.values(categories).reduce((sum, cat) => {
+                const duplicateCount = cat.transactions ? cat.transactions.length - new Set(cat.transactions.map(t => t.key)).size : 0;
+                return sum + duplicateCount;
+            }, 0);
+            
+            if (totalDuplicates > 0) {
+                console.log(`\n⚠️ DUPLICATE DETECTION SUMMARY: Found ${totalDuplicates} potential duplicate transactions across all categories`);
+            } else {
+                console.log(`\n✅ DUPLICATE CHECK: No duplicate transactions detected`);
+            }
 
             // Log detailed uncategorized items
             if (uncategorizedItems.length > 0) {
