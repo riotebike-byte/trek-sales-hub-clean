@@ -333,18 +333,38 @@
                 <button class="currency-btn" onclick="toggleCurrency('EUR')">EUR</button>
             </div>
 
+            <div class="period-info" id="periodInfo" style="margin-bottom: 20px; text-align: center; font-size: 16px; color: #2c3e50; background: #ecf0f1; padding: 10px; border-radius: 8px;">
+                📅 Rapor Dönemi: -
+            </div>
+
             <div class="stats-grid">
                 <div class="stat-card">
-                    <h3>📈 Toplam Satış</h3>
+                    <h3>💰 Toplam Satış</h3>
                     <div class="stat-value" id="totalSales">-</div>
                 </div>
                 <div class="stat-card">
-                    <h3>🏪 Mağaza + Bayi Sayısı</h3>
-                    <div class="stat-value" id="storeCount">-</div>
+                    <h3>📦 Toplam Adet</h3>
+                    <div class="stat-value" id="totalQuantity">-</div>
                 </div>
                 <div class="stat-card">
-                    <h3>📦 Toplam Sipariş</h3>
-                    <div class="stat-value" id="orderCount">-</div>
+                    <h3>🚲 Bisiklet Satışı</h3>
+                    <div class="stat-value" id="bicycleSales">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>🔧 Aksesuar/Parça</h3>
+                    <div class="stat-value" id="accessorySales">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>🚲 Bisiklet Adedi</h3>
+                    <div class="stat-value" id="bicycleQuantity">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>🔧 Aksesuar Adedi</h3>
+                    <div class="stat-value" id="accessoryQuantity">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>🏪 Mağaza/Bayi</h3>
+                    <div class="stat-value" id="storeCount">-</div>
                 </div>
                 <div class="stat-card">
                     <h3>👥 Toplam Müşteri</h3>
@@ -564,6 +584,20 @@
             const dealers = {};
             const customers = new Set();
             let totalAmount = 0;
+            let totalQuantity = 0;
+            let bicycleSales = 0;
+            let accessorySales = 0;
+            let bicycleQuantity = 0;
+            let accessoryQuantity = 0;
+            let reportPeriod = '';
+            
+            // Find report period from first row
+            if (jsonData.length > 0 && jsonData[0][0]) {
+                const firstCell = String(jsonData[0][0]);
+                if (firstCell.includes('-')) {
+                    reportPeriod = firstCell;
+                }
+            }
             
             // Define dealer accounts
             const dealerAccounts = {
@@ -575,6 +609,34 @@
                 'mert bikestop eur': { dealer: 'Mert Bikestop', type: 'EUR', currency: 'EUR' }
             };
 
+            // Function to determine if product is bicycle or accessory
+            function isBicycle(productName) {
+                if (!productName) return false;
+                const name = productName.toLowerCase();
+                
+                // Bicycle indicators
+                const bicycleKeywords = [
+                    'bisiklet', 'bike', 'trek', 'fx', 'madone', 'domane', 'émonda', 'checkpoint',
+                    'verve', 'dual sport', 'marlin', 'x-caliber', 'fuel', 'remedy', 'slash',
+                    'session', 'supercaliber', 'top fuel', 'procaliber', 'roscoe'
+                ];
+                
+                // Accessory/spare part indicators  
+                const accessoryKeywords = [
+                    'aksesuar', 'parça', 'pompa', 'kask', 'eldiven', 'çanta', 'ışık', 'kilit',
+                    'matara', 'saddle', 'sele', 'gidon', 'fren', 'vites', 'zincir', 'lastik',
+                    'jant', 'pedal', 'bagaj', 'mudguard', 'çamurluk', 'bontrager', 'servis'
+                ];
+                
+                // Check for accessory first (more specific)
+                if (accessoryKeywords.some(keyword => name.includes(keyword))) {
+                    return false;
+                }
+                
+                // Then check for bicycle
+                return bicycleKeywords.some(keyword => name.includes(keyword));
+            }
+
             // Process each row
             for (const row of dataRows) {
                 if (!row || row.length < 10) continue;
@@ -582,6 +644,8 @@
                 const depo = row[columnMap.depo];
                 const musteri = row[columnMap.musteri];
                 const toplam = parseFloat(row[columnMap.toplam]) || 0;
+                const miktar = parseInt(row[columnMap.miktar]) || 0;
+                const urun = row[columnMap.urun] || '';
                 const paraBirimi = row[columnMap.paraBirimi] || 'TL';
                 const tarih = row[columnMap.tarih];
 
@@ -594,6 +658,19 @@
                     amountInTL = toplam * exchangeRates.EUR;
                 } else if (paraBirimi === 'USD') {
                     amountInTL = toplam * exchangeRates.USD;
+                }
+
+                // Add to totals
+                totalAmount += amountInTL;
+                totalQuantity += miktar;
+
+                // Categorize as bicycle or accessory
+                if (isBicycle(urun)) {
+                    bicycleSales += amountInTL;
+                    bicycleQuantity += miktar;
+                } else {
+                    accessorySales += amountInTL;
+                    accessoryQuantity += miktar;
                 }
 
                 sales.push({
@@ -654,7 +731,6 @@
                 }
 
                 customers.add(musteri);
-                totalAmount += amountInTL;
             }
 
             return {
@@ -662,8 +738,14 @@
                 stores: stores,
                 dealers: dealers,
                 totalAmount: totalAmount,
+                totalQuantity: totalQuantity,
+                bicycleSales: bicycleSales,
+                accessorySales: accessorySales,
+                bicycleQuantity: bicycleQuantity,
+                accessoryQuantity: accessoryQuantity,
                 customerCount: customers.size,
-                orderCount: sales.length
+                orderCount: sales.length,
+                reportPeriod: reportPeriod
             };
         }
 
@@ -683,17 +765,26 @@
             const rate = exchangeRates[currentCurrency];
             const symbol = currentCurrency === 'TL' ? '₺' : currentCurrency === 'USD' ? '$' : '€';
 
-            // Calculate total including both stores and dealers
-            const storesTotalTL = Object.values(currentData.stores).reduce((sum, store) => sum + store.totalTL, 0);
-            const dealersTotalTL = Object.values(currentData.dealers).reduce((sum, dealer) => sum + dealer.totalTL, 0);
-            const grandTotalTL = storesTotalTL + dealersTotalTL;
+            // Update report period
+            document.getElementById('periodInfo').textContent = `📅 Rapor Dönemi: ${currentData.reportPeriod || 'Belirtilmemiş'}`;
 
-            // Update totals
+            // Update all statistics with currency conversion
             document.getElementById('totalSales').textContent = 
-                symbol + (grandTotalTL / rate).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
-            document.getElementById('storeCount').textContent = Object.keys(currentData.stores).length + Object.keys(currentData.dealers).length;
-            document.getElementById('orderCount').textContent = currentData.orderCount.toLocaleString('tr-TR');
-            document.getElementById('customerCount').textContent = currentData.customerCount.toLocaleString('tr-TR');
+                symbol + (currentData.totalAmount / rate).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+            document.getElementById('totalQuantity').textContent = 
+                currentData.totalQuantity.toLocaleString('tr-TR') + ' adet';
+            document.getElementById('bicycleSales').textContent = 
+                symbol + (currentData.bicycleSales / rate).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+            document.getElementById('accessorySales').textContent = 
+                symbol + (currentData.accessorySales / rate).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+            document.getElementById('bicycleQuantity').textContent = 
+                currentData.bicycleQuantity.toLocaleString('tr-TR') + ' adet';
+            document.getElementById('accessoryQuantity').textContent = 
+                currentData.accessoryQuantity.toLocaleString('tr-TR') + ' adet';
+            document.getElementById('storeCount').textContent = 
+                (Object.keys(currentData.stores).length + Object.keys(currentData.dealers).length).toLocaleString('tr-TR');
+            document.getElementById('customerCount').textContent = 
+                currentData.customerCount.toLocaleString('tr-TR');
 
             // Update stores list
             updateStoresList();
