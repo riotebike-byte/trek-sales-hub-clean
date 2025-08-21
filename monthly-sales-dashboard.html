@@ -3231,7 +3231,7 @@
             let dealerSalesTotal = 0;
             let dealerQuantityTotal = 0;
             let dealerCount = 0;
-            const dealerMatches = new Set();
+            const dealerBreakdown = {}; // Track each dealer separately
             
             // Process each sale to identify dealers
             for (const sale of data.sales) {
@@ -3239,17 +3239,35 @@
                 const dealerMatch = isDealer(customerName);
                 
                 if (dealerMatch) {
-                    dealerSalesTotal += sale.amountInTL || 0;
-                    dealerQuantityTotal += sale.miktar || 0;
-                    dealerMatches.add(dealerMatch);
+                    const saleAmount = sale.amountInTL || 0;
+                    const saleQuantity = sale.miktar || 0;
                     
-                    if (dealerMatches.size <= 5) { // Log first 5 matches
-                        console.log(`🎯 DEALER MATCH: "${customerName}" → "${dealerMatch}" | ₺${(sale.amountInTL || 0).toLocaleString()} | ${sale.miktar || 0} adet`);
+                    dealerSalesTotal += saleAmount;
+                    dealerQuantityTotal += saleQuantity;
+                    
+                    // Track individual dealer performance
+                    if (!dealerBreakdown[dealerMatch]) {
+                        dealerBreakdown[dealerMatch] = {
+                            name: dealerMatch,
+                            totalTL: 0,
+                            quantity: 0,
+                            orders: 0,
+                            customers: new Set()
+                        };
+                    }
+                    
+                    dealerBreakdown[dealerMatch].totalTL += saleAmount;
+                    dealerBreakdown[dealerMatch].quantity += saleQuantity;
+                    dealerBreakdown[dealerMatch].orders += 1;
+                    dealerBreakdown[dealerMatch].customers.add(customerName);
+                    
+                    if (Object.keys(dealerBreakdown).length <= 5) { // Log first 5 matches
+                        console.log(`🎯 DEALER MATCH: "${customerName}" → "${dealerMatch}" | ₺${saleAmount.toLocaleString()} | ${saleQuantity} adet`);
                     }
                 }
             }
             
-            dealerCount = dealerMatches.size;
+            dealerCount = Object.keys(dealerBreakdown).length;
             
             // Update dealer sales card
             const dealerSalesEl = document.getElementById('dealerSales');
@@ -3270,12 +3288,96 @@
                 dealerPenetrationEl.textContent = penetration.toFixed(1) + '%';
             }
             
+            // Update dealer breakdown list
+            updateDealersList(dealerBreakdown, symbol, rate);
+            
             console.log(`🏢 Total Dealers Found: ${dealerCount}`);
             console.log(`💰 Dealer Sales: ${symbol}${(dealerSalesTotal / rate).toLocaleString()}`);
             console.log(`📦 Dealer Quantity: ${dealerQuantityTotal.toLocaleString()} items`);
             console.log(`🎯 Dealer Penetration: ${((dealerSalesTotal / data.totalAmount) * 100).toFixed(1)}%`);
-            console.log(`🏢 Matched Dealers: ${Array.from(dealerMatches).slice(0, 5).join(', ')}${dealerMatches.size > 5 ? '...' : ''}`);
+            
+            // Log top 5 dealers
+            const sortedDealers = Object.values(dealerBreakdown).sort((a, b) => b.totalTL - a.totalTL);
+            console.log(`🏆 Top 5 Dealers:`);
+            sortedDealers.slice(0, 5).forEach((dealer, index) => {
+                console.log(`  ${index + 1}. ${dealer.name}: ${symbol}${(dealer.totalTL / rate).toLocaleString()} | ${dealer.quantity} adet | ${dealer.orders} sipariş`);
+            });
             console.log('=================================\n');
+        }
+
+        function updateDealersList(dealerBreakdown, symbol, rate) {
+            const dealersList = document.getElementById('dealersList');
+            if (!dealersList) return;
+            
+            // Sort dealers by total sales (descending)
+            const sortedDealers = Object.values(dealerBreakdown).sort((a, b) => b.totalTL - a.totalTL);
+            
+            if (sortedDealers.length === 0) {
+                dealersList.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <h4>🏢 Bayi Eşleştirmesi Bulunamadı</h4>
+                        <p>Excel'deki müşteri isimleri ile bayi listesi eşleştirilemedi.</p>
+                        <p>Manuel kontrol gerekli olabilir.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let totalDealerSales = sortedDealers.reduce((sum, dealer) => sum + dealer.totalTL, 0);
+            let totalDealerQuantity = sortedDealers.reduce((sum, dealer) => sum + dealer.quantity, 0);
+            
+            dealersList.innerHTML = `
+                <div style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 10px;">
+                    <h4 style="margin: 0 0 10px 0;">📊 Bayi Satış Özeti</h4>
+                    <div style="display: flex; gap: 30px; font-size: 14px;">
+                        <div><strong>Toplam Bayi:</strong> ${sortedDealers.length}</div>
+                        <div><strong>Toplam Tutar:</strong> ${symbol}${(totalDealerSales / rate).toLocaleString('tr-TR', { maximumFractionDigits: 0 })}</div>
+                        <div><strong>Toplam Adet:</strong> ${totalDealerQuantity.toLocaleString('tr-TR')} adet</div>
+                    </div>
+                </div>
+                
+                <div class="dealers-grid">
+                    ${sortedDealers.map((dealer, index) => {
+                        const dealerAmount = dealer.totalTL / rate;
+                        const customerCount = dealer.customers.size;
+                        
+                        return `
+                            <div class="dealer-card" style="background: white; border: 1px solid #e1e5e9; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                                    <div style="flex: 1;">
+                                        <h4 style="margin: 0 0 5px 0; color: #2c3e50; font-size: 16px;">
+                                            ${index + 1}. ${dealer.name}
+                                        </h4>
+                                        <div style="font-size: 12px; color: #7f8c8d;">
+                                            ${customerCount} farklı müşteri adı ile eşleşti
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-size: 18px; font-weight: bold; color: #27ae60;">
+                                            ${symbol}${dealerAmount.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+                                        </div>
+                                        <div style="font-size: 12px; color: #7f8c8d;">
+                                            ${((dealer.totalTL / totalDealerSales) * 100).toFixed(1)}% of dealer sales
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div style="display: flex; gap: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 13px;">
+                                    <div><strong>📦 Adet:</strong> ${dealer.quantity.toLocaleString('tr-TR')}</div>
+                                    <div><strong>📋 Sipariş:</strong> ${dealer.orders.toLocaleString('tr-TR')}</div>
+                                    <div><strong>💰 Ortalama:</strong> ${symbol}${(dealerAmount / dealer.orders).toLocaleString('tr-TR', { maximumFractionDigits: 0 })}</div>
+                                </div>
+                                
+                                ${customerCount > 1 ? `
+                                    <div style="margin-top: 8px; font-size: 11px; color: #666;">
+                                        <strong>Eşleşen müşteri adları:</strong> ${Array.from(dealer.customers).slice(0, 3).join(', ')}${customerCount > 3 ? ` (+${customerCount - 3} daha)` : ''}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
         }
         
         function exportCategoryData() {
