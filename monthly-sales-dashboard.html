@@ -490,14 +490,28 @@
             reader.onload = function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
+                    // Use different parsing options to handle merged cells better
+                    const workbook = XLSX.read(data, { 
+                        type: 'array',
+                        cellDates: true,
+                        cellNF: false,
+                        cellText: false
+                    });
                     
                     // Get first sheet
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
                     
-                    // Convert to JSON
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    // Try different conversion approach - include empty cells and use defval
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+                        header: 1,
+                        defval: '', // Fill empty cells with empty string instead of undefined
+                        blankrows: false,
+                        raw: false // Convert values to strings
+                    });
+                    
+                    console.log('📊 Raw worksheet range:', worksheet['!ref']);
+                    console.log('📊 Raw jsonData first 5 rows:', jsonData.slice(0, 5));
                     
                     // Process data
                     currentData = processData(jsonData);
@@ -657,6 +671,9 @@
             console.log('🔍 Second data row details:', dataRows[1]);
             console.log('🔍 Third data row details:', dataRows[2]);
             
+            let lastValidCustomer = ''; // Track last valid customer for merged cells
+            let lastValidStore = ''; // Track last valid store for merged cells
+            
             for (let i = 0; i < dataRows.length; i++) {
                 const row = dataRows[i];
                 if (!row || row.length < 10) {
@@ -664,13 +681,26 @@
                     continue;
                 }
                 
-                const depo = row[columnMap.depo];
-                const musteri = row[columnMap.musteri];
+                let depo = row[columnMap.depo] || '';
+                let musteri = row[columnMap.musteri] || '';
                 const toplam = parseFloat(row[columnMap.toplam]) || 0;
                 const miktar = parseInt(row[columnMap.miktar]) || 0;
                 const urun = row[columnMap.urun] || '';
                 const paraBirimi = row[columnMap.paraBirimi] || 'TL';
                 const tarih = row[columnMap.tarih];
+
+                // Handle merged cells - use last valid customer/store if current is empty
+                if (musteri && musteri.trim()) {
+                    lastValidCustomer = musteri.trim();
+                } else if (lastValidCustomer && toplam > 0) {
+                    musteri = lastValidCustomer;
+                }
+
+                if (depo && depo.trim()) {
+                    lastValidStore = depo.trim();
+                } else if (lastValidStore && toplam > 0) {
+                    depo = lastValidStore;
+                }
 
                 if (i < 5) {
                     console.log(`📊 Row ${i} data:`, {
