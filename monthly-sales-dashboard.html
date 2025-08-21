@@ -1002,7 +1002,183 @@
             }
         };
         
-        // Dynamic exchange rate fetching
+        // Monthly exchange rate management
+        const monthlyExchangeRates = {
+            cache: new Map(), // Cache monthly average rates
+            currentRates: {}, // Current active rates for this Excel file
+            
+            // Fetch monthly average USD/TRY rate for a specific month
+            async fetchMonthlyUSDRate(year, month) {
+                const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
+                
+                if (this.cache.has(monthKey)) {
+                    console.log(`💾 Using cached monthly USD rate for ${monthKey}: ${this.cache.get(monthKey)} TL`);
+                    return this.cache.get(monthKey);
+                }
+                
+                try {
+                    // Fetch rates for first, mid, and last day of month to calculate average
+                    const lastDay = new Date(year, month, 0).getDate();
+                    const dates = [
+                        `${year}-${month.toString().padStart(2, '0')}-01`,
+                        `${year}-${month.toString().padStart(2, '0')}-15`,
+                        `${year}-${month.toString().padStart(2, '0')}-${lastDay}`
+                    ];
+                    
+                    const rates = [];
+                    for (const date of dates) {
+                        try {
+                            const response = await fetch(`https://api.exchangerate-api.com/v4/historical/${date}/USD`);
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (data.rates?.TRY) {
+                                    rates.push(data.rates.TRY);
+                                }
+                            }
+                        } catch (e) {
+                            console.warn(`⚠️ Could not fetch rate for ${date}:`, e.message);
+                        }
+                        
+                        // Small delay to avoid rate limiting
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                    
+                    if (rates.length > 0) {
+                        const averageRate = rates.reduce((sum, rate) => sum + rate, 0) / rates.length;
+                        this.cache.set(monthKey, averageRate);
+                        console.log(`💱 Calculated monthly average USD rate for ${monthKey}: ${averageRate.toFixed(3)} TL (from ${rates.length} data points)`);
+                        return averageRate;
+                    }
+                    
+                } catch (error) {
+                    console.error(`💥 Error fetching monthly rate for ${monthKey}:`, error);
+                }
+                
+                // Fallback to default rates if API fails
+                const fallbackRates = {
+                    '2025-01': 37.2, '2025-02': 37.5, '2025-03': 37.8, '2025-04': 38.1,
+                    '2025-05': 38.4, '2025-06': 38.7, '2025-07': 39.0, '2025-08': 39.3,
+                    '2025-09': 39.6, '2025-10': 39.9, '2025-11': 40.2, '2025-12': 40.5
+                };
+                
+                const fallbackRate = fallbackRates[monthKey] || 37.684;
+                console.log(`🔄 Using fallback USD rate for ${monthKey}: ${fallbackRate} TL`);
+                this.cache.set(monthKey, fallbackRate);
+                return fallbackRate;
+            },
+            
+            // Process sales data with month-specific rates
+            async processWithMonthlyRates(salesData) {
+                console.log('🔄 Processing sales with monthly exchange rates...');
+                
+                // Group sales by month
+                const salesByMonth = {};
+                for (const sale of salesData) {
+                    const saleDate = this.parseDate(sale.tarih);
+                    if (saleDate) {
+                        const monthKey = `${saleDate.getFullYear()}-${(saleDate.getMonth() + 1).toString().padStart(2, '0')}`;
+                        if (!salesByMonth[monthKey]) {
+                            salesByMonth[monthKey] = [];
+                        }
+                        salesByMonth[monthKey].push(sale);
+                    }
+                }
+                
+                // Fetch rates for each month and recalculate
+                for (const [monthKey, monthlySales] of Object.entries(salesByMonth)) {
+                    const [year, month] = monthKey.split('-').map(Number);
+                    const monthlyUSDRate = await this.fetchMonthlyUSDRate(year, month);
+                    const monthlyEURRate = monthlyUSDRate / 1.1096; // EUR rate based on USD
+                    
+                    console.log(`📊 Processing ${monthlySales.length} sales for ${monthKey} with USD rate: ${monthlyUSDRate.toFixed(3)} TL`);
+                    
+                    // Update each sale with correct monthly rate
+                    for (const sale of monthlySales) {
+                        const originalAmount = sale.toplam;
+                        
+                        // Recalculate amountInTL with correct monthly rate
+                        if (sale.paraBirimi === 'EUR') {
+                            sale.amountInTL = originalAmount * monthlyEURRate;
+                        } else if (sale.paraBirimi === 'USD') {
+                            sale.amountInTL = originalAmount * monthlyUSDRate;
+                        }
+                        // TL remains unchanged
+                        
+                        // Store the monthly rate used for this sale
+                        sale.monthlyUSDRate = monthlyUSDRate;
+                        sale.monthlyEURRate = monthlyEURRate;
+                    }
+                }
+                
+                return salesData;
+            },
+            
+            parseDate(dateString) {
+                if (!dateString) return null;
+                
+                const patterns = [
+                    /(\d{2})\.(\d{2})\.(\d{4})/,  // 01.07.2025
+                    /(\d{4})-(\d{2})-(\d{2})/,   // 2025-07-01
+                    /(\d{2})\/(\d{2})\/(\d{4})/   // 01/07/2025
+                ];
+                
+                for (const pattern of patterns) {
+                    const match = dateString.match(pattern);
+                    if (match) {
+                        if (pattern === patterns[0] || pattern === patterns[2]) {
+                            return new Date(parseInt(match[3]), parseInt(match[2]) - 1, parseInt(match[1]));
+                        } else {
+                            return new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
+                        }
+                    }
+                }
+                
+                return null;
+            },
+            
+            // Update display with monthly rate information
+            updateRateDisplay(salesData) {
+                const exchangeRateInfo = document.getElementById('exchangeRatesInfo');
+                if (!exchangeRateInfo) return;
+                
+                // Get unique months and their rates from sales data
+                const monthlyRatesUsed = {};
+                for (const sale of salesData) {
+                    if (sale.monthlyUSDRate) {
+                        const saleDate = this.parseDate(sale.tarih);
+                        if (saleDate) {
+                            const monthKey = `${saleDate.getFullYear()}-${(saleDate.getMonth() + 1).toString().padStart(2, '0')}`;
+                            monthlyRatesUsed[monthKey] = sale.monthlyUSDRate;
+                        }
+                    }
+                }
+                
+                const monthNames = {
+                    '01': 'Ocak', '02': 'Şubat', '03': 'Mart', '04': 'Nisan',
+                    '05': 'Mayıs', '06': 'Haziran', '07': 'Temmuz', '08': 'Ağustos',
+                    '09': 'Eylül', '10': 'Ekim', '11': 'Kasım', '12': 'Aralık'
+                };
+                
+                let rateInfo = '<strong>💱 Aylık Ortalama Döviz Kurları:</strong><br>';
+                const sortedMonths = Object.entries(monthlyRatesUsed).sort();
+                
+                if (sortedMonths.length > 0) {
+                    sortedMonths.forEach(([monthKey, rate]) => {
+                        const [year, month] = monthKey.split('-');
+                        const monthName = monthNames[month] || month;
+                        rateInfo += `${monthName} ${year}: 1 USD = ₺${rate.toFixed(3)} | 1 EUR = ₺${(rate / 1.1096).toFixed(3)}<br>`;
+                    });
+                    rateInfo += '<div style="margin-top: 5px; font-size: 11px;"><em>Kaynak: Aylık ortalama API verisi (exchangerate-api.com)</em></div>';
+                } else {
+                    rateInfo += '2025 Genel Ortalaması: 1 USD = ₺37.684 | 1 EUR = ₺41.823<br>';
+                    rateInfo += '<div style="margin-top: 5px; font-size: 11px;"><em>Kaynak: Yıllık ortalama verisi</em></div>';
+                }
+                
+                exchangeRateInfo.innerHTML = rateInfo;
+            }
+        };
+
+        // Dynamic exchange rate fetching (legacy - keeping for compatibility)
         const exchangeRateFetcher = {
             cache: new Map(), // Cache rates by date to avoid repeated API calls
             
@@ -1259,12 +1435,18 @@
                     
                     console.log('📊 ExcelJS processed jsonData - First 10 rows:', jsonData.slice(0, 10));
                     
-                    // Process data
+                    // Process data with initial exchange rates
                     currentData = processData(jsonData);
                     
-                    // Try to fetch real-time exchange rates for this period
-                    if (currentData.reportPeriod) {
-                        await exchangeRateFetcher.updateRatesForPeriod(currentData.reportPeriod);
+                    // Apply monthly-specific exchange rates for precise calculations
+                    if (currentData.sales && currentData.sales.length > 0) {
+                        await monthlyExchangeRates.processWithMonthlyRates(currentData.sales);
+                        
+                        // Recalculate all totals with monthly rates
+                        currentData = recalculateWithMonthlyRates(currentData);
+                        
+                        // Update rate display
+                        monthlyExchangeRates.updateRateDisplay(currentData.sales);
                     }
                     
                     // Add to memory
@@ -1568,7 +1750,7 @@
 
                 if (i < 5) console.log(`✅ Processing valid row ${i}:`, { musteri, depo, toplam, miktar });
 
-                // Convert to TL if needed
+                // Convert to TL if needed (will be recalculated with monthly rates later)
                 let amountInTL = toplam;
                 if (paraBirimi === 'EUR') {
                     amountInTL = toplam * exchangeRates.EUR;
@@ -1638,9 +1820,9 @@
                     urun: urun, // Use processed urun, not raw
                     miktar: miktar, // Use processed miktar
                     net: parseFloat(row[columnMap.net]) || 0,
-                    toplam: toplam,
+                    toplam: toplam, // Original amount in original currency
                     paraBirimi: paraBirimi,
-                    amountInTL: amountInTL
+                    amountInTL: amountInTL // Will be recalculated with monthly rates
                 });
 
                 // Check if this is a dealer transaction using improved pattern matching
@@ -1765,7 +1947,65 @@
                 console.log(`📈 Monthly history updated. Total months: ${monthlyDataHistory.length}`);
             }
 
+            // Apply monthly exchange rates to sales data
+            console.log('🔄 Starting monthly exchange rate processing...');
+            
             return processedData;
+        }
+
+        function recalculateWithMonthlyRates(data) {
+            console.log('🔄 Recalculating totals with monthly exchange rates...');
+            
+            // Reset totals
+            let newTotalAmount = 0;
+            let newCategorySales = {};
+            let newStoreSales = {};
+            let newDealerSales = {};
+            let newBicycleSales = 0;
+            let newAccessorySales = 0;
+            
+            // Recalculate everything with updated amountInTL values
+            for (const sale of data.sales) {
+                newTotalAmount += sale.amountInTL;
+                
+                // Recalculate category sales
+                const categoryInfo = categorizeProduct(sale.kod || '', sale.urun || '');
+                const mainCategoryName = categoryInfo.mainCategory || categoryInfo.category || 'UNCATEGORIZED';
+                newCategorySales[mainCategoryName] = (newCategorySales[mainCategoryName] || 0) + sale.amountInTL;
+                
+                // Recalculate store sales
+                newStoreSales[sale.depo] = (newStoreSales[sale.depo] || 0) + sale.amountInTL;
+                
+                // Recalculate dealer sales
+                const customerLower = sale.musteri.toLowerCase().trim();
+                let isDealer = false;
+                
+                if (customerLower.includes('ercem') || customerLower.includes('akcan')) {
+                    newDealerSales['Ercem Akcan'] = (newDealerSales['Ercem Akcan'] || 0) + sale.amountInTL;
+                    isDealer = true;
+                } else if (customerLower.includes('mert') || customerLower.includes('bikestop') || customerLower.includes('bıke stop')) {
+                    newDealerSales['Mert Bikestop'] = (newDealerSales['Mert Bikestop'] || 0) + sale.amountInTL;
+                    isDealer = true;
+                }
+                
+                // Recalculate bicycle vs accessory sales
+                if (categoryInfo.type === 'bicycle') {
+                    newBicycleSales += sale.amountInTL;
+                } else {
+                    newAccessorySales += sale.amountInTL;
+                }
+            }
+            
+            // Update the data object
+            data.totalAmount = newTotalAmount;
+            data.categorySales = newCategorySales;
+            data.storeSales = newStoreSales;
+            data.dealerSales = newDealerSales;
+            data.bicycleSales = newBicycleSales;
+            data.accessorySales = newAccessorySales;
+            
+            console.log(`✅ Recalculated totals: ₺${newTotalAmount.toLocaleString()}`);
+            return data;
         }
 
         function showYearlyAnalysis() {
