@@ -818,14 +818,22 @@
             
             const cat = category.toUpperCase();
             
-            // BICYCLE MAIN CATEGORIES (all bike types → BİSİKLETLER)
+            // E-BIKE CATEGORIES (electric bikes → E-BİKELER)
+            if (cat.includes('ELEKTRİKLİ') || cat.includes('ELECTRIC') || cat.includes('🔋') ||
+                cat.includes('FUEL EXE') || cat.includes('RAIL') || cat.includes('POWERFLY') ||
+                cat.includes('DS+') || cat.includes('DS +') || cat.includes('FX+') || cat.includes('FX +') ||
+                cat.includes('VERVE+') || cat.includes('VERVE +') || cat.includes('TOWNIE GO') ||
+                cat.includes('MARLIN+') || cat.includes('MARLIN +')) {
+                return 'E-BİKELER';
+            }
+            
+            // REGULAR BICYCLE CATEGORIES (non-electric bikes → BİSİKLETLER)
             if (cat.includes('BİSİKLET') || cat.includes('BISIKLET') || cat.includes('BIKE') ||
                 cat.includes('MADONE') || cat.includes('EMONDA') || cat.includes('DOMANE') ||
                 cat.includes('GRAVEL') || cat.includes('CHECKPOINT') || cat.includes('CHECKMATE') ||
-                cat.includes('FUEL') || cat.includes('RAIL') || cat.includes('POWERFLY') ||
                 cat.includes('MARLIN') || cat.includes('PROCALIBER') || cat.includes('SUPERCALIBER') ||
                 cat.includes('VERVE') || cat.includes('ELECTRA') || cat.includes('TOWNIE') ||
-                cat.includes('SPEED CONCEPT') || cat.includes('TOP FUEL')) {
+                cat.includes('SPEED CONCEPT') || cat.includes('TOP FUEL') || cat.includes('FUEL EX')) {
                 return 'BİSİKLETLER';
             }
             
@@ -2617,6 +2625,7 @@
             const categoryNames = sortedCategories.map(cat => {
                 // Add emoji and short name for better visualization
                 if (cat.name === 'BİSİKLETLER') return '🚲 Bisikletler';
+                if (cat.name === 'E-BİKELER') return '⚡ E-Bisikletler';
                 if (cat.name === 'POMPA') return '🌬️ Pompa';
                 if (cat.name === 'KASK') return '🪖 Kask';
                 if (cat.name === 'AYDINLATMA') return '💡 Aydınlatma';
@@ -2626,6 +2635,9 @@
                 if (cat.name === 'GÖZLÜK 👓') return '🕶️ Gözlük';
                 if (cat.name === 'FORMA') return '👕 Forma';
                 if (cat.name === 'ELDİVEN') return '🧤 Eldiven';
+                if (cat.name === 'MATARA') return '🍶 Matara';
+                if (cat.name === 'KİLİT') return '🔒 Kilit';
+                if (cat.name === 'ÇAMURLUK') return '🛡️ Çamurluk';
                 return cat.name;
             });
             
