@@ -247,6 +247,67 @@
             background: #e8f4f8;
         }
 
+        .chart-btn {
+            padding: 10px 20px;
+            border: 2px solid #3498db;
+            background: white;
+            color: #3498db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .chart-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .chart-btn:hover:not(.active) {
+            background: #e8f4f8;
+        }
+
+        .chart-container {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .performance-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .performance-category {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .performance-stats {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .performance-amount {
+            font-size: 18px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        .performance-count {
+            font-size: 14px;
+            color: #666;
+            background: #ecf0f1;
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+
         .tab-content {
             animation: fadeIn 0.3s ease-in;
         }
@@ -390,8 +451,36 @@
             </div>
             
             <div class="chart-section" style="margin-top: 30px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
-                <h3 style="margin-bottom: 20px;">📊 Aylık Satış Grafikleri</h3>
-                <canvas id="salesChart" width="400" height="200"></canvas>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button class="chart-btn active" onclick="showChart('stores')">🏪 Mağaza/Bayi Satışları</button>
+                    <button class="chart-btn" onclick="showChart('categories')">📊 Kategori Analizi</button>
+                    <button class="chart-btn" onclick="showChart('performance')">🏆 En İyi Performans</button>
+                    <button class="chart-btn" onclick="showChart('monthly')">📈 Aylık Trend</button>
+                </div>
+                
+                <div id="storesChart" class="chart-container">
+                    <h3 style="margin-bottom: 15px;">🏪 Mağaza ve Bayi Satış Performansı</h3>
+                    <canvas id="salesChart" width="400" height="200"></canvas>
+                </div>
+                
+                <div id="categoriesChart" class="chart-container" style="display: none;">
+                    <h3 style="margin-bottom: 15px;">📊 Kategori Bazlı Satış Analizi</h3>
+                    <canvas id="categoryChart" width="400" height="200"></canvas>
+                </div>
+                
+                <div id="performanceChart" class="chart-container" style="display: none;">
+                    <h3 style="margin-bottom: 15px;">🏆 En İyi Performans Gösteren Kategoriler</h3>
+                    <div id="performanceAnalysis"></div>
+                    <canvas id="performanceChartCanvas" width="400" height="200"></canvas>
+                </div>
+                
+                <div id="monthlyChart" class="chart-container" style="display: none;">
+                    <h3 style="margin-bottom: 15px;">📈 Aylık Kategori Trendi</h3>
+                    <p style="color: #666; font-style: italic; margin-bottom: 15px;">
+                        💡 Bu grafik birden fazla aylık veri yüklendiğinde kategori trendlerini gösterecektir
+                    </p>
+                    <canvas id="monthlyTrendChart" width="400" height="200"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -401,9 +490,16 @@
     <script>
         let currentData = null;
         let currentCurrency = 'TL';
+        let monthlyDataHistory = []; // Store multiple months data for trend analysis
         
         // BizimHesap products data cache
         let bizimhesapProducts = null;
+        
+        // Chart instances
+        let salesChartInstance = null;
+        let categoryChartInstance = null;
+        let performanceChartInstance = null;
+        let monthlyTrendChartInstance = null;
         
         // Load BizimHesap product data for category analysis
         async function loadBizimHesapProducts() {
@@ -411,42 +507,172 @@
             
             try {
                 console.log('🔄 Loading BizimHesap products...');
-                const response = await fetch('/api.php');
+                
+                // Use proxy server to avoid CORS issues
+                const response = await fetch('http://localhost:3002/api/b2b/products', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data = await response.json();
+                console.log('🔍 BizimHesap API response structure:', data);
                 
                 if (data.data && data.data.products) {
                     bizimhesapProducts = data.data.products;
                     console.log(`✅ Loaded ${bizimhesapProducts.length} BizimHesap products`);
                     return bizimhesapProducts;
+                } else if (data.products) {
+                    bizimhesapProducts = data.products;
+                    console.log(`✅ Loaded ${bizimhesapProducts.length} BizimHesap products`);
+                    return bizimhesapProducts;
+                } else {
+                    console.log('⚠️ Unexpected API response structure:', Object.keys(data));
                 }
             } catch (error) {
                 console.error('❌ Failed to load BizimHesap products:', error);
+                console.log('🔄 Will continue with name-based categorization');
             }
             return [];
         }
 
+        // Main category mapping for BizimHesap categories
+        function getMainCategory(category) {
+            if (!category) return 'UNCATEGORIZED';
+            
+            const cat = category.toUpperCase();
+            
+            // Bicycle main categories
+            if (cat.includes('BISIKLET') || cat.includes('BIKE')) return 'BİSİKLETLER';
+            
+            // Accessory main categories
+            if (cat.includes('POMPA')) return 'POMPALAR';
+            if (cat.includes('KASK') || cat.includes('HELMET')) return 'KASKLAR';
+            if (cat.includes('AYDINLATMA') || cat.includes('IŞIK') || cat.includes('LIGHT')) return 'AYDINLATMA';
+            if (cat.includes('BAGAJ') || cat.includes('SEPET') || cat.includes('ÇANTA')) return 'BAGAJ & SEPET';
+            if (cat.includes('LASTIK') || cat.includes('TIRE')) return 'LASTİKLER';
+            if (cat.includes('ZINCIR') || cat.includes('CHAIN')) return 'ZİNCİR & AKTARMA';
+            if (cat.includes('FREN') || cat.includes('BRAKE')) return 'FREN SİSTEMLERİ';
+            if (cat.includes('PEDAL')) return 'PEDALLAR';
+            if (cat.includes('SELE') || cat.includes('SADDLE')) return 'SELELER';
+            if (cat.includes('GİDON') || cat.includes('HANDLEBAR')) return 'GİDONLAR';
+            if (cat.includes('MATARA') || cat.includes('BOTTLE')) return 'MATARALAR';
+            if (cat.includes('KILIT') || cat.includes('LOCK')) return 'KİLİTLER';
+            if (cat.includes('ANAHTAR')) return 'ANAHTAR TAKIMI';
+            if (cat.includes('TAŞIYICI') || cat.includes('CARRIER')) return 'TAŞIYICILAR';
+            
+            // Return original category if no main category found
+            return category;
+        }
+        
+        // Determine if product is bicycle or accessory
+        function getBicycleOrAccessory(category) {
+            if (!category) return 'accessory';
+            
+            const cat = category.toUpperCase();
+            
+            // Bicycle indicators
+            if (cat.includes('BISIKLET') || cat.includes('BIKE') || cat.includes('CYCLE')) {
+                return 'bicycle';
+            }
+            
+            // Everything else is accessory
+            return 'accessory';
+        }
+
         // Enhanced product categorization using BizimHesap API
         function categorizeProduct(productCode, productName) {
-            // First try BizimHesap product lookup by code
-            if (bizimhesapProducts && productCode) {
-                const apiProduct = bizimhesapProducts.find(p => 
-                    p.sku === productCode || p.title?.includes(productCode)
-                );
+            console.log(`🔍 Categorizing: "${productName}" (Code: ${productCode})`);
+            console.log(`📦 BizimHesap products loaded: ${bizimhesapProducts ? bizimhesapProducts.length : 'NOT LOADED'}`);
+            
+            // First try BizimHesap product lookup by code matching (most accurate)
+            if (bizimhesapProducts && bizimhesapProducts.length > 0) {
+                let apiProduct = null;
+                
+                // Priority 1: Exact code match with stock_code (most reliable)  
+                if (productCode) {
+                    // Convert both to string and clean whitespace for comparison
+                    const excelCode = String(productCode).trim();
+                    
+                    apiProduct = bizimhesapProducts.find(p => {
+                        const apiCode = String(p.code || '').trim();
+                        const apiBarcode = String(p.barcode || '').trim();
+                        const apiSku = String(p.sku || '').trim();
+                        
+                        return apiCode === excelCode || 
+                               apiBarcode === excelCode || 
+                               apiSku === excelCode;
+                    });
+                    
+                    if (apiProduct) {
+                        console.log(`🎯 EXACT CODE MATCH: Excel code "${excelCode}" → API product "${apiProduct.title}" (API code: ${apiProduct.code})`);
+                    }
+                }
+                
+                // Priority 2: Partial code match
+                if (!apiProduct && productCode) {
+                    apiProduct = bizimhesapProducts.find(p => 
+                        (p.code && p.code.includes(productCode)) ||
+                        (p.sku && p.sku.includes(productCode)) ||
+                        (productCode.includes(p.code) && p.code.length > 3)
+                    );
+                    
+                    if (apiProduct) {
+                        console.log(`🔍 PARTIAL CODE MATCH: Excel code "${productCode}" ~ API code "${apiProduct.code}"`);
+                    }
+                }
+                
+                // Priority 3: Title matching (less reliable but still useful)
+                if (!apiProduct && productName) {
+                    // Try exact title match
+                    apiProduct = bizimhesapProducts.find(p => 
+                        p.title && p.title.toLowerCase() === productName.toLowerCase()
+                    );
+                    
+                    // Try partial title match
+                    if (!apiProduct) {
+                        apiProduct = bizimhesapProducts.find(p => 
+                            p.title && (
+                                p.title.toLowerCase().includes(productName.toLowerCase()) ||
+                                productName.toLowerCase().includes(p.title.toLowerCase())
+                            )
+                        );
+                    }
+                    
+                    if (apiProduct) {
+                        console.log(`📝 TITLE MATCH: Excel "${productName}" ~ API "${apiProduct.title}"`);
+                    }
+                }
                 
                 if (apiProduct && apiProduct.category) {
                     const category = apiProduct.category.toUpperCase();
+                    console.log(`✅ API match found: ${apiProduct.title} → ${apiProduct.category}`);
                     
-                    // BizimHesap category mapping
-                    if (category.includes('BISIKLET') || category.includes('BIKE')) {
-                        return { type: 'bicycle', category: apiProduct.category };
-                    } else {
-                        return { type: 'accessory', category: apiProduct.category };
-                    }
+                    // Create main category mapping
+                    const mainCategory = getMainCategory(apiProduct.category);
+                    const productType = getBicycleOrAccessory(apiProduct.category);
+                    
+                    return { 
+                        type: productType, 
+                        category: apiProduct.category,
+                        mainCategory: mainCategory,
+                        source: 'api' 
+                    };
                 }
             }
             
+            console.log(`⚠️ No API match, using name-based categorization`);
             // Fallback to name-based detection
-            return categorizeByName(productName);
+            const result = categorizeByName(productName);
+            result.source = 'name';
+            result.mainCategory = getMainCategory(result.category);
+            return result;
         }
 
         // Function to determine if product is bicycle or accessory by name
@@ -454,31 +680,50 @@
             if (!productName) return { type: 'accessory', category: 'UNCATEGORIZED' };
             
             const name = productName.toLowerCase();
+            console.log(`🏷️ Name-based categorization for: "${name}"`);
             
-            // Bicycle indicators
+            // Bicycle indicators (more comprehensive)
             const bicycleKeywords = [
                 'bisiklet', 'bike', 'trek', 'fx', 'madone', 'domane', 'émonda', 'checkpoint',
                 'verve', 'dual sport', 'marlin', 'x-caliber', 'fuel', 'remedy', 'slash',
-                'session', 'supercaliber', 'top fuel', 'procaliber', 'roscoe'
+                'session', 'supercaliber', 'top fuel', 'procaliber', 'roscoe', 'townie',
+                'rail', 'powerfly', 'allant', 'distrito'
             ];
             
-            // Accessory/spare part indicators  
+            // Accessory/spare part indicators (expanded)
             const accessoryKeywords = [
                 'aksesuar', 'parça', 'pompa', 'kask', 'eldiven', 'çanta', 'ışık', 'kilit',
                 'matara', 'saddle', 'sele', 'gidon', 'fren', 'vites', 'zincir', 'lastik',
-                'jant', 'pedal', 'bagaj', 'mudguard', 'çamurluk', 'bontrager', 'servis'
+                'jant', 'pedal', 'bagaj', 'mudguard', 'çamurluk', 'bontrager', 'servis',
+                'helmet', 'glove', 'bottle', 'pump', 'tire', 'chain', 'brake', 'gear',
+                'cable', 'grip', 'light', 'lock', 'bag', 'wheel', 'tube', 'pad',
+                'hizmet', 'bakim', 'tamir', 'maintenance', 'service', 'repair'
             ];
+
+            // Service/maintenance category
+            const serviceKeywords = ['servis', 'hizmet', 'bakim', 'tamir', 'service', 'maintenance', 'repair', 'bike-fit'];
             
-            // Check for accessory first (more specific)
-            if (accessoryKeywords.some(keyword => name.includes(keyword))) {
+            // Check for service first
+            if (serviceKeywords.some(keyword => name.includes(keyword))) {
+                console.log(`✅ Categorized as SERVICE: ${productName}`);
+                return { type: 'accessory', category: 'SERVİS' };
+            }
+            
+            // Check for accessory (more specific)
+            const foundAccessory = accessoryKeywords.find(keyword => name.includes(keyword));
+            if (foundAccessory) {
+                console.log(`✅ Categorized as ACCESSORY (${foundAccessory}): ${productName}`);
                 return { type: 'accessory', category: 'AKSESUAR' };
             }
             
             // Then check for bicycle
-            if (bicycleKeywords.some(keyword => name.includes(keyword))) {
+            const foundBicycle = bicycleKeywords.find(keyword => name.includes(keyword));
+            if (foundBicycle) {
+                console.log(`✅ Categorized as BICYCLE (${foundBicycle}): ${productName}`);
                 return { type: 'bicycle', category: 'BISIKLET' };
             }
             
+            console.log(`⚠️ UNCATEGORIZED: "${productName}" - No matching keywords found`);
             return { type: 'accessory', category: 'UNCATEGORIZED' };
         }
         
@@ -490,10 +735,22 @@
         };
 
         // File input handling
-        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+        console.log('🔧 Setting up event listeners...');
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) {
+            fileInput.addEventListener('change', handleFileSelect);
+            console.log('✅ File input listener added');
+        } else {
+            console.error('❌ File input element not found!');
+        }
         
         // Drag and drop handling
         const uploadArea = document.querySelector('.upload-area');
+        if (uploadArea) {
+            console.log('✅ Upload area found');
+        } else {
+            console.error('❌ Upload area not found!');
+        }
         
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             uploadArea.addEventListener(eventName, preventDefaults, false);
@@ -534,12 +791,19 @@
         }
 
         function handleFiles(files) {
-            if (files.length === 0) return;
+            console.log('📂 handleFiles called with:', files.length, 'files');
+            
+            if (files.length === 0) {
+                console.log('❌ No files provided');
+                return;
+            }
             
             const file = files[0];
+            console.log('📁 Selected file:', file.name, file.size, 'bytes');
             
             // Validate file type
             if (!file.name.toLowerCase().match(/\.(xlsx|xls)$/)) {
+                console.log('❌ Invalid file type:', file.name);
                 showError('Lütfen .xlsx veya .xls formatında bir Excel dosyası seçin.');
                 return;
             }
@@ -550,6 +814,8 @@
             `;
             document.getElementById('fileInfo').style.display = 'block';
 
+            console.log('✅ Valid Excel file, starting processing...');
+            
             // Process file
             processExcelFile(file);
         }
@@ -563,6 +829,9 @@
         }
 
         async function processExcelFile(file) {
+            console.clear(); // Clear previous logs
+            console.log('🚀 STARTING EXCEL PROCESSING...');
+            
             document.getElementById('loading').style.display = 'block';
             document.getElementById('analysisSection').style.display = 'none';
 
@@ -573,25 +842,58 @@
             reader.onload = async function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
-                    // Use different parsing options to handle merged cells better
+                    // Use standard parsing but with proper options for merged cells
                     const workbook = XLSX.read(data, { 
                         type: 'array',
-                        cellDates: true,
+                        cellDates: false,
                         cellNF: false,
-                        cellText: false
+                        cellText: false,
+                        raw: false
                     });
                     
                     // Get first sheet
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
                     
-                    // Try different conversion approach - include empty cells and use defval
+                    // Check for merged cells
+                    const mergedCells = worksheet['!merges'] || [];
+                    console.log('🔗 Merged cells found:', mergedCells);
+                    
+                    // Convert to JSON with proper handling
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
                         header: 1,
-                        defval: '', // Fill empty cells with empty string instead of undefined
+                        defval: null,
                         blankrows: false,
-                        raw: false // Convert values to strings
+                        raw: false
                     });
+                    
+                    // Post-process to handle merged cells
+                    for (let i = 0; i < jsonData.length; i++) {
+                        for (let j = 0; j < jsonData[i].length; j++) {
+                            if (jsonData[i][j] === null || jsonData[i][j] === undefined || jsonData[i][j] === '') {
+                                // Look for merged cell value
+                                for (const merge of mergedCells) {
+                                    if (i >= merge.s.r && i <= merge.e.r && j >= merge.s.c && j <= merge.e.c) {
+                                        // Find the actual value in the merged range
+                                        for (let mr = merge.s.r; mr <= merge.e.r; mr++) {
+                                            for (let mc = merge.s.c; mc <= merge.e.c; mc++) {
+                                                if (jsonData[mr] && jsonData[mr][mc] && 
+                                                    jsonData[mr][mc] !== null && 
+                                                    jsonData[mr][mc] !== '') {
+                                                    jsonData[i][j] = jsonData[mr][mc];
+                                                    break;
+                                                }
+                                            }
+                                            if (jsonData[i][j] && jsonData[i][j] !== '') break;
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    console.log('📊 Processed jsonData with merged cells - First 10 rows:', jsonData.slice(0, 10));
                     
                     console.log('📊 Raw worksheet range:', worksheet['!ref']);
                     console.log('📊 Raw jsonData first 5 rows:', jsonData.slice(0, 5));
@@ -618,50 +920,55 @@
                 throw new Error('Excel dosyasında yeterli veri bulunamadı');
             }
 
-            // Find header row - look for the row with column headers
-            let headerRowIndex = -1;
-            for (let i = 0; i < Math.min(10, jsonData.length); i++) {
-                const row = jsonData[i];
-                if (row && row.length > 5) {
-                    // Check if this row contains header-like text
-                    const rowText = row.join(' ').toLowerCase();
-                    if (rowText.includes('belge') || rowText.includes('tarih') || rowText.includes('depo') || 
-                        rowText.includes('müşteri') || rowText.includes('toplam') || rowText.includes('miktar')) {
-                        headerRowIndex = i;
-                        break;
+            // Find header row - Based on Excel analysis:
+            // Row 0: "SATIŞ RAPORU"
+            // Row 1: Date range "01.07.2025 - 31.07.2025" 
+            // Row 2: Headers "Belge No", "Tarih", "Depo", etc.
+            // Row 3+: Data
+            
+            let headerRowIndex = 2; // Default to row 2 based on Excel structure
+            let dateRowIndex = 1;   // Row 1 contains the date range
+            
+            // Verify by checking if row 2 contains typical headers
+            if (jsonData.length > 2) {
+                const potentialHeaderRow = jsonData[2];
+                if (potentialHeaderRow && potentialHeaderRow.length > 5) {
+                    const headerText = potentialHeaderRow.join(' ').toLowerCase();
+                    if (headerText.includes('belge') || headerText.includes('tarih') || 
+                        headerText.includes('depo') || headerText.includes('müşteri')) {
+                        console.log('✅ Header row confirmed at index 2');
+                    } else {
+                        console.log('⚠️ Expected headers not found at row 2, using default');
                     }
                 }
-            }
-
-            // If still not found, assume row 1 is header (0-based indexing)
-            if (headerRowIndex === -1) {
-                console.log('Header row not found by keywords, assuming row 1 is header');
-                headerRowIndex = 1; // Based on your Excel analysis, header is at row 1 (0-based)
             }
             
             console.log('📍 Selected headerRowIndex:', headerRowIndex);
             console.log('📍 Raw header row:', jsonData[headerRowIndex]);
 
             const headers = jsonData[headerRowIndex];
-            // Based on Excel analysis: Row 0=date, Row 1=headers, Row 2+=data
-            // But headers are merged, so start data from row 2 (0-based indexing)
-            const dataRows = jsonData.slice(2); // Skip row 0 (date) and row 1 (headers)
+            // Data starts after the header row (row 3+ in 0-based indexing)
+            const dataRows = jsonData.slice(headerRowIndex + 1); // Skip title, date and headers
+            
+            console.log('📊 Total data rows to process:', dataRows.length);
+            console.log('📋 First 3 data rows:', dataRows.slice(0, 3));
 
-            // Map column indices - Based on Excel analysis, use fixed mapping since headers are merged
-            // From Excel analysis: ["Belge No", "Tarih", "Depo", "Müşteri", "Şube", "Ürün", "Kod", "Miktar", "Birim", "Net", "TOPLAM", currency]
+            // Map column indices based on Excel analysis
+            // Excel structure: Row 0 = Date, Row 1 = Headers, Row 2+ = Data
+            // Headers: "Belge No", "Tarih", "Depo", "Müşteri", "Şube", "Ürün", "Kod", "Miktar", "Birim", "Net", "TOPLAM", Currency
             const columnMap = {
-                belgeNo: 0,    // "SATIŞ RAPORU" -> "Belge No" (when data starts)
-                tarih: 1,      // "Unnamed: 1" -> "Tarih" 
-                depo: 2,       // "Unnamed: 2" -> "Depo"
-                musteri: 3,    // "Unnamed: 3" -> "Müşteri"  
-                sube: 4,       // "Unnamed: 4" -> "Şube"
-                urun: 5,       // "Unnamed: 5" -> "Ürün"
-                kod: 6,        // "Unnamed: 6" -> "Kod"
-                miktar: 7,     // "Unnamed: 7" -> "Miktar"
-                birim: 8,      // "Unnamed: 8" -> "Birim"
-                net: 9,        // "Unnamed: 9" -> "Net"
-                toplam: 10,    // "Unnamed: 10" -> "TOPLAM"
-                paraBirimi: 11 // "Unnamed: 11" -> Currency (TL/EUR)
+                belgeNo: 0,    // Column A: "SATIŞ RAPORU" / "Belge No" 
+                tarih: 1,      // Column B: "Unnamed: 1" / "Tarih" 
+                depo: 2,       // Column C: "Unnamed: 2" / "Depo"
+                musteri: 3,    // Column D: "Unnamed: 3" / "Müşteri"  
+                sube: 4,       // Column E: "Unnamed: 4" / "Şube"
+                urun: 5,       // Column F: "Unnamed: 5" / "Ürün"
+                kod: 6,        // Column G: "Unnamed: 6" / "Kod"
+                miktar: 7,     // Column H: "Unnamed: 7" / "Miktar"
+                birim: 8,      // Column I: "Unnamed: 8" / "Birim"
+                net: 9,        // Column J: "Unnamed: 9" / "Net"
+                toplam: 10,    // Column K: "Unnamed: 10" / "TOPLAM"
+                paraBirimi: 11 // Column L: "Unnamed: 11" / Currency (TL/EUR/USD)
             };
 
             // Try to find actual column indices if headers are available
@@ -691,6 +998,8 @@
             const stores = {};
             const dealers = {};
             const customers = new Set();
+            const categories = {}; // Track sales by category
+            const uncategorizedItems = []; // Track uncategorized items
             let totalAmount = 0;
             let totalQuantity = 0;
             let bicycleSales = 0;
@@ -698,24 +1007,42 @@
             let bicycleQuantity = 0;
             let accessoryQuantity = 0;
             let reportPeriod = '';
+            let dealerCount = 0;
+            let storeCount = 0;
             
-            // Find report period from first row
-            if (jsonData.length > 0 && jsonData[0][0]) {
-                const firstCell = String(jsonData[0][0]);
-                if (firstCell.includes('-')) {
-                    reportPeriod = firstCell;
+            // Find report period from date row (row 1)
+            if (jsonData.length > 1 && jsonData[dateRowIndex] && jsonData[dateRowIndex][0]) {
+                const dateCell = String(jsonData[dateRowIndex][0]);
+                if (dateCell.includes('-') && dateCell.includes('2025')) {
+                    reportPeriod = dateCell;
+                    console.log('📅 Report period found:', reportPeriod);
                 }
             }
             
-            // Define dealer accounts
-            const dealerAccounts = {
-                'ercem akcan usd': { dealer: 'Ercem Akcan', type: 'USD', currency: 'USD' },
-                'ercem akcan eur': { dealer: 'Ercem Akcan', type: 'EUR', currency: 'EUR' },
-                'ercem akcan sc bisiklet': { dealer: 'Ercem Akcan', type: 'SC Bisiklet', currency: 'TL' },
-                'mert bikestop tl': { dealer: 'Mert Bikestop', type: 'TL', currency: 'TL' },
-                'mert bikestop usd': { dealer: 'Mert Bikestop', type: 'USD', currency: 'USD' },
-                'mert bikestop eur': { dealer: 'Mert Bikestop', type: 'EUR', currency: 'EUR' }
-            };
+            // Fallback: check first row if not found in date row
+            if (!reportPeriod && jsonData.length > 0 && jsonData[0][0]) {
+                const firstCell = String(jsonData[0][0]);
+                if (firstCell.includes('-')) {
+                    reportPeriod = firstCell;
+                    console.log('📅 Report period from first row:', reportPeriod);
+                }
+            }
+            
+            // Define dealer detection patterns - more comprehensive matching
+            const dealerPatterns = [
+                { 
+                    names: ['ercem akcan', 'ercem', 'akcan'],
+                    dealer: 'Ercem Akcan',
+                    getCurrency: (paraBirimi) => paraBirimi || 'TL',
+                    getType: (paraBirimi) => paraBirimi === 'EUR' ? 'EUR' : paraBirimi === 'USD' ? 'USD' : 'SC Bisiklet'
+                },
+                {
+                    names: ['mert bikestop', 'mert', 'bikestop', 'bıke stop', 'bike stop', 'dalkılıç', 'mert dalkılıç', 'bıke stop (mert dalkılıç)', 'bike stop (mert dalkılıç)'],
+                    dealer: 'Mert Bikestop', 
+                    getCurrency: (paraBirimi) => paraBirimi || 'TL',
+                    getType: (paraBirimi) => paraBirimi || 'TL'
+                }
+            ];
 
 
             // Process each row
@@ -737,30 +1064,47 @@
                     continue;
                 }
                 
-                let depo = row[columnMap.depo] || '';
-                let musteri = row[columnMap.musteri] || '';
-                const toplam = parseFloat(row[columnMap.toplam]) || 0;
-                const miktar = parseInt(row[columnMap.miktar]) || 0;
-                const urun = row[columnMap.urun] || '';
-                const paraBirimi = row[columnMap.paraBirimi] || 'TL';
+                let depo = String(row[columnMap.depo] || '').trim();
+                let musteri = String(row[columnMap.musteri] || '').trim();
+                const toplam = parseFloat(String(row[columnMap.toplam] || '').replace(',', '.')) || 0;
+                const miktar = parseInt(String(row[columnMap.miktar] || '').replace(',', '.')) || 0;
+                const urun = String(row[columnMap.urun] || '').trim();
+                let paraBirimi = String(row[columnMap.paraBirimi] || 'TL').trim().toUpperCase();
                 const tarih = row[columnMap.tarih];
+                
+                // Clean and normalize currency values
+                if (!paraBirimi || paraBirimi === 'NAN' || paraBirimi === '') {
+                    paraBirimi = 'TL'; // Default to TL
+                }
+                
+                // Handle common currency variations
+                if (paraBirimi.includes('EUR')) paraBirimi = 'EUR';
+                else if (paraBirimi.includes('USD') || paraBirimi.includes('DOLAR')) paraBirimi = 'USD';
+                else paraBirimi = 'TL';
 
                 // Handle merged cells - use last valid customer/store if current is empty
-                if (musteri && musteri.trim()) {
-                    lastValidCustomer = musteri.trim();
+                if (musteri && musteri.length > 0 && musteri !== 'NaN') {
+                    lastValidCustomer = musteri;
                 } else if (lastValidCustomer && toplam > 0) {
                     musteri = lastValidCustomer;
                 }
 
-                if (depo && depo.trim()) {
-                    lastValidStore = depo.trim();
+                if (depo && depo.length > 0 && depo !== 'NaN') {
+                    lastValidStore = depo;
                 } else if (lastValidStore && toplam > 0) {
                     depo = lastValidStore;
                 }
 
-                if (i < 5) {
+                if (i < 10) {
                     console.log(`📊 Row ${i} data:`, {
-                        depo, musteri, toplam, miktar, urun, paraBirimi, tarih
+                        raw_depo: row[columnMap.depo],
+                        raw_musteri: row[columnMap.musteri], 
+                        raw_toplam: row[columnMap.toplam],
+                        raw_paraBirimi: row[columnMap.paraBirimi],
+                        raw_urun: row[columnMap.urun],
+                        raw_full_row: row,
+                        columnMap: columnMap,
+                        processed: { depo, musteri, toplam, miktar, urun, paraBirimi, tarih }
                     });
                 }
 
@@ -798,6 +1142,40 @@
                 const productKod = row[columnMap.kod] || '';
                 const categoryInfo = categorizeProduct(productKod, urun);
                 
+                // Track category-specific sales using main categories
+                const mainCategoryName = categoryInfo.mainCategory || categoryInfo.category || 'UNCATEGORIZED';
+                
+                // Track uncategorized items for debugging
+                if (mainCategoryName === 'UNCATEGORIZED') {
+                    uncategorizedItems.push({
+                        product: urun,
+                        code: productKod,
+                        amount: amountInTL,
+                        quantity: miktar,
+                        store: depo,
+                        customer: musteri
+                    });
+                }
+                
+                if (!categories[mainCategoryName]) {
+                    categories[mainCategoryName] = {
+                        name: mainCategoryName,
+                        originalCategory: categoryInfo.category,
+                        type: categoryInfo.type,
+                        totalTL: 0,
+                        quantity: 0,
+                        products: new Set(),
+                        source: categoryInfo.source || 'unknown',
+                        subcategories: new Set()
+                    };
+                }
+                categories[mainCategoryName].totalTL += amountInTL;
+                categories[mainCategoryName].quantity += miktar;
+                categories[mainCategoryName].products.add(urun);
+                if (categoryInfo.category) {
+                    categories[mainCategoryName].subcategories.add(categoryInfo.category);
+                }
+                
                 if (categoryInfo.type === 'bicycle') {
                     bicycleSales += amountInTL;
                     bicycleQuantity += miktar;
@@ -806,37 +1184,52 @@
                     accessoryQuantity += miktar;
                 }
 
-                if (i < 5) {
-                    console.log(`🏷️ Product categorized: ${urun} (${productKod}) -> ${categoryInfo.type} (${categoryInfo.category})`);
+                if (i < 15) { // More debug for first 15 items  
+                    console.log(`🏷️ Row ${i}: "${urun}" (Code: ${productKod}) → ${categoryInfo.type.toUpperCase()} | Main: ${mainCategoryName} | Sub: ${categoryInfo.category} [${categoryInfo.source}] | ₺${amountInTL.toLocaleString()} | ${miktar} adet`);
                 }
 
                 sales.push({
                     belgeNo: row[columnMap.belgeNo],
                     tarih: tarih,
-                    depo: depo || 'Bilinmeyen',
-                    musteri: musteri,
-                    urun: row[columnMap.urun],
-                    miktar: parseInt(row[columnMap.miktar]) || 1,
+                    depo: depo, // Use processed depo, not raw
+                    musteri: musteri, // Use processed musteri, not raw
+                    urun: urun, // Use processed urun, not raw
+                    miktar: miktar, // Use processed miktar
                     net: parseFloat(row[columnMap.net]) || 0,
                     toplam: toplam,
                     paraBirimi: paraBirimi,
                     amountInTL: amountInTL
                 });
 
-                // Check if this is a dealer transaction
-                const customerLower = musteri.toLowerCase();
+                // Check if this is a dealer transaction using improved pattern matching
+                const customerLower = musteri.toLowerCase().trim();
                 let isDealer = false;
+                let matchedDealer = null;
                 
-                for (const [account, info] of Object.entries(dealerAccounts)) {
-                    if (customerLower.includes(account) || customerLower.includes(info.dealer.toLowerCase())) {
+                if (i < 10) {
+                    console.log(`🤝 Checking dealer patterns for customer: "${musteri}" → "${customerLower}"`);
+                }
+                
+                for (const pattern of dealerPatterns) {
+                    // Check if any of the dealer names match
+                    const matchedName = pattern.names.find(name => customerLower.includes(name.toLowerCase()));
+                    if (matchedName) {
                         isDealer = true;
+                        matchedDealer = pattern;
                         
-                        const dealerKey = `${info.dealer} ${info.type}`;
+                        if (i < 10) {
+                            console.log(`✅ DEALER MATCH: "${musteri}" matched with pattern "${matchedName}" → ${pattern.dealer}`);
+                        }
+                        
+                        const dealerType = pattern.getType(paraBirimi);
+                        const dealerCurrency = pattern.getCurrency(paraBirimi);
+                        const dealerKey = `${pattern.dealer} (${dealerType})`;
+                        
                         if (!dealers[dealerKey]) {
                             dealers[dealerKey] = {
-                                name: info.dealer,
-                                type: info.type,
-                                currency: info.currency,
+                                name: pattern.dealer,
+                                type: dealerType,
+                                currency: dealerCurrency,
                                 totalTL: 0,
                                 orderCount: 0,
                                 customers: new Set()
@@ -846,6 +1239,9 @@
                         dealers[dealerKey].totalTL += amountInTL;
                         dealers[dealerKey].orderCount += 1;
                         dealers[dealerKey].customers.add(musteri);
+                        
+                        console.log(`🤝 DEALER: ${musteri} → ${dealerKey} (${paraBirimi}, ₺${amountInTL.toLocaleString()})`);
+                        dealerCount++;
                         break;
                     }
                 }
@@ -865,15 +1261,45 @@
                     stores[storeName].totalTL += amountInTL;
                     stores[storeName].orderCount += 1;
                     stores[storeName].customers.add(musteri);
+                    
+                    console.log(`🏪 STORE: ${storeName} | ${musteri} | ₺${amountInTL.toLocaleString()}`);
+                    storeCount++;
                 }
 
                 customers.add(musteri);
             }
 
-            return {
+            // Convert Set to Array for categories products and subcategories
+            Object.values(categories).forEach(category => {
+                category.products = Array.from(category.products);
+                category.subcategories = Array.from(category.subcategories || []);
+            });
+
+            // Log category summary
+            console.log('\n📊 MAIN CATEGORY ANALYSIS SUMMARY:');
+            Object.values(categories)
+                .sort((a, b) => b.totalTL - a.totalTL)
+                .forEach(cat => {
+                    const subCatList = cat.subcategories.length > 0 ? ` (Alt: ${cat.subcategories.join(', ')})` : '';
+                    console.log(`  ${cat.name} [${cat.source}]: ₺${cat.totalTL.toLocaleString('tr-TR')} | ${cat.quantity} adet | ${cat.products.length} çeşit${subCatList}`);
+                });
+
+            // Log detailed uncategorized items
+            if (uncategorizedItems.length > 0) {
+                console.log('\n⚠️ UNCATEGORIZED ITEMS DETAILED:');
+                uncategorizedItems.forEach((item, index) => {
+                    console.log(`  ${index + 1}. "${item.product}" (Code: ${item.code || 'NO CODE'}) | ₺${item.amount.toLocaleString()} | ${item.quantity} adet | Store: ${item.store || 'Unknown'} | Customer: ${item.customer}`);
+                });
+                console.log(`\n⚠️ Total UNCATEGORIZED: ${uncategorizedItems.length} items, ₺${uncategorizedItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}`);
+            }
+
+            console.log(`\n🏪 STORE vs DEALER COUNT: Stores: ${storeCount} transactions | Dealers: ${dealerCount} transactions`);
+
+            const processedData = {
                 sales: sales,
                 stores: stores,
                 dealers: dealers,
+                categories: categories,
                 totalAmount: totalAmount,
                 totalQuantity: totalQuantity,
                 bicycleSales: bicycleSales,
@@ -884,6 +1310,20 @@
                 orderCount: sales.length,
                 reportPeriod: reportPeriod
             };
+
+            // Add to monthly history for trend analysis
+            if (reportPeriod) {
+                // Check if this month already exists in history
+                const existingIndex = monthlyDataHistory.findIndex(item => item.reportPeriod === reportPeriod);
+                if (existingIndex >= 0) {
+                    monthlyDataHistory[existingIndex] = processedData; // Update existing
+                } else {
+                    monthlyDataHistory.push(processedData); // Add new
+                }
+                console.log(`📈 Monthly history updated. Total months: ${monthlyDataHistory.length}`);
+            }
+
+            return processedData;
         }
 
         function displayAnalysis() {
@@ -1034,6 +1474,13 @@
         }
 
         function updateChart() {
+            updateStoresChart();
+            updateCategoryChart();
+            updatePerformanceChart();
+            updateMonthlyTrendChart();
+        }
+
+        function updateStoresChart() {
             if (!currentData) return;
             
             const ctx = document.getElementById('salesChart').getContext('2d');
@@ -1046,12 +1493,12 @@
             const dealerAmounts = Object.values(currentData.dealers).map(dealer => dealer.totalTL);
             
             // Destroy existing chart if it exists
-            if (window.salesChartInstance) {
-                window.salesChartInstance.destroy();
+            if (salesChartInstance) {
+                salesChartInstance.destroy();
             }
             
             // Create new chart
-            window.salesChartInstance = new Chart(ctx, {
+            salesChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: [...storeNames, ...dealerNames],
@@ -1089,6 +1536,300 @@
                     }
                 }
             });
+        }
+
+        function updateCategoryChart() {
+            if (!currentData || !currentData.categories) return;
+            
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            
+            // Sort categories by sales amount
+            const sortedCategories = Object.values(currentData.categories)
+                .sort((a, b) => b.totalTL - a.totalTL)
+                .slice(0, 10); // Top 10 categories
+            
+            const categoryNames = sortedCategories.map(cat => cat.name);
+            const categoryAmounts = sortedCategories.map(cat => cat.totalTL);
+            const categoryColors = sortedCategories.map(cat => 
+                cat.type === 'bicycle' ? '#e74c3c' : '#3498db'
+            );
+            
+            // Destroy existing chart if it exists
+            if (categoryChartInstance) {
+                categoryChartInstance.destroy();
+            }
+            
+            // Create new chart
+            categoryChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: categoryNames,
+                    datasets: [{
+                        data: categoryAmounts,
+                        backgroundColor: categoryColors,
+                        borderColor: categoryColors,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'right'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${context.label}: ₺${value.toLocaleString('tr-TR')} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updatePerformanceChart() {
+            if (!currentData || !currentData.categories) return;
+            
+            const ctx = document.getElementById('performanceChartCanvas').getContext('2d');
+            const analysisDiv = document.getElementById('performanceAnalysis');
+            
+            // Sort categories by performance (sales amount)
+            const sortedCategories = Object.values(currentData.categories)
+                .sort((a, b) => b.totalTL - a.totalTL)
+                .slice(0, 5); // Top 5 categories
+            
+            // Update performance analysis cards
+            const rate = exchangeRates[currentCurrency];
+            const symbol = currentCurrency === 'TL' ? '₺' : currentCurrency === 'USD' ? '$' : '€';
+            
+            analysisDiv.innerHTML = sortedCategories.map((category, index) => `
+                <div class="performance-card" onclick="showCategoryDetail('${category.name}')" style="cursor: pointer;">
+                    <div class="performance-category">
+                        ${index + 1}. ${category.name} 
+                        <span style="color: ${category.type === 'bicycle' ? '#e74c3c' : '#3498db'}; font-size: 12px;">
+                            (${category.type === 'bicycle' ? '🚲 Bisiklet' : '🔧 Aksesuar'})
+                        </span>
+                        ${category.subcategories && category.subcategories.length > 0 ? 
+                            `<div style="font-size: 11px; color: #666; margin-top: 4px;">Alt: ${category.subcategories.join(', ')}</div>` : ''}
+                    </div>
+                    <div class="performance-stats">
+                        <div class="performance-amount">${symbol}${(category.totalTL / rate).toLocaleString('tr-TR', { maximumFractionDigits: 0 })}</div>
+                        <div class="performance-count">${category.quantity} adet</div>
+                        <div class="performance-count">${category.products.length} çeşit ürün</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Create bar chart
+            const categoryNames = sortedCategories.map(cat => cat.name);
+            const categoryAmounts = sortedCategories.map(cat => cat.totalTL);
+            
+            // Destroy existing chart if it exists
+            if (performanceChartInstance) {
+                performanceChartInstance.destroy();
+            }
+            
+            // Create new chart
+            performanceChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: categoryNames,
+                    datasets: [{
+                        label: 'Satış Tutarı (TL)',
+                        data: categoryAmounts,
+                        backgroundColor: '#27ae60',
+                        borderColor: '#229954',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₺' + value.toLocaleString('tr-TR');
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateMonthlyTrendChart() {
+            if (monthlyDataHistory.length < 2) {
+                // Not enough data for trend analysis
+                return;
+            }
+            
+            const ctx = document.getElementById('monthlyTrendChart').getContext('2d');
+            
+            // Get all unique categories from all months
+            const allCategories = new Set();
+            monthlyDataHistory.forEach(monthData => {
+                Object.keys(monthData.categories || {}).forEach(cat => allCategories.add(cat));
+            });
+            
+            // Prepare trend data for top categories
+            const topCategories = Array.from(allCategories).slice(0, 5);
+            const datasets = [];
+            const colors = ['#3498db', '#e74c3c', '#27ae60', '#f39c12', '#9b59b6'];
+            
+            topCategories.forEach((category, index) => {
+                const data = monthlyDataHistory.map(monthData => {
+                    return monthData.categories[category]?.totalTL || 0;
+                });
+                
+                datasets.push({
+                    label: category,
+                    data: data,
+                    borderColor: colors[index],
+                    backgroundColor: colors[index] + '20',
+                    fill: false,
+                    tension: 0.1
+                });
+            });
+            
+            // Destroy existing chart if it exists
+            if (monthlyTrendChartInstance) {
+                monthlyTrendChartInstance.destroy();
+            }
+            
+            // Create new chart
+            monthlyTrendChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: monthlyDataHistory.map(data => data.reportPeriod || 'Bilinmeyen'),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₺' + value.toLocaleString('tr-TR');
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+
+        function showChart(chartType) {
+            // Update button states
+            document.querySelectorAll('.chart-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Show/hide chart containers
+            document.getElementById('storesChart').style.display = chartType === 'stores' ? 'block' : 'none';
+            document.getElementById('categoriesChart').style.display = chartType === 'categories' ? 'block' : 'none';
+            document.getElementById('performanceChart').style.display = chartType === 'performance' ? 'block' : 'none';
+            document.getElementById('monthlyChart').style.display = chartType === 'monthly' ? 'block' : 'none';
+        }
+
+        function showCategoryDetail(categoryName) {
+            if (!currentData || !currentData.categories || !currentData.categories[categoryName]) {
+                alert('Kategori detayları bulunamadı');
+                return;
+            }
+            
+            const category = currentData.categories[categoryName];
+            const rate = exchangeRates[currentCurrency];
+            const symbol = currentCurrency === 'TL' ? '₺' : currentCurrency === 'USD' ? '$' : '€';
+            
+            // Filter sales for this category
+            const categorySales = currentData.sales.filter(sale => {
+                // Check if this sale belongs to the category
+                const productKod = sale.kod || '';
+                const categoryInfo = categorizeProduct(productKod, sale.urun);
+                const mainCategoryName = categoryInfo.mainCategory || categoryInfo.category || 'UNCATEGORIZED';
+                return mainCategoryName === categoryName;
+            });
+            
+            // Group by store/dealer
+            const salesByLocation = {};
+            categorySales.forEach(sale => {
+                const location = sale.depo || 'Bilinmeyen';
+                if (!salesByLocation[location]) {
+                    salesByLocation[location] = { sales: 0, quantity: 0, orders: 0 };
+                }
+                salesByLocation[location].sales += sale.amountInTL || 0;
+                salesByLocation[location].quantity += sale.miktar || 0;
+                salesByLocation[location].orders += 1;
+            });
+            
+            // Create detail popup
+            let detailHTML = `
+                <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                           background: white; padding: 30px; border-radius: 15px; 
+                           box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 1000; max-width: 600px; max-height: 70vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 20px;">
+                        <h2>📊 ${categoryName} Detayları</h2>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                                style="background: #e74c3c; color: white; border: none; border-radius: 50%; 
+                                       width: 30px; height: 30px; cursor: pointer; margin-left: auto;">×</button>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <strong>Toplam:</strong> ${symbol}${(category.totalTL / rate).toLocaleString('tr-TR')} | 
+                        <strong>Adet:</strong> ${category.quantity} | 
+                        <strong>Çeşit:</strong> ${category.products.length}
+                        ${category.subcategories.length > 0 ? `<br><strong>Alt Kategoriler:</strong> ${category.subcategories.join(', ')}` : ''}
+                    </div>
+                    
+                    <h3>📍 Lokasyon Bazında Satışlar:</h3>
+                    <div style="max-height: 300px; overflow-y: auto;">
+            `;
+            
+            Object.entries(salesByLocation)
+                .sort(([,a], [,b]) => b.sales - a.sales)
+                .forEach(([location, data]) => {
+                    detailHTML += `
+                        <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee;">
+                            <strong>${location}</strong>
+                            <div>
+                                ${symbol}${(data.sales / rate).toLocaleString('tr-TR')} | 
+                                ${data.quantity} adet | 
+                                ${data.orders} sipariş
+                            </div>
+                        </div>
+                    `;
+                });
+            
+            detailHTML += `</div></div>`;
+            
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999;';
+            overlay.onclick = () => overlay.remove();
+            
+            overlay.innerHTML = detailHTML;
+            document.body.appendChild(overlay);
         }
 
         function toggleCurrency(currency) {

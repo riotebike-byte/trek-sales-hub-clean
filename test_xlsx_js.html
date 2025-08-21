@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test XLSX.js Parsing</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <h2>Test XLSX.js Parsing</h2>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" />
+    <div id="output"></div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { 
+                        type: 'array',
+                        cellDates: true,
+                        cellNF: false,
+                        cellText: false
+                    });
+                    
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+                        header: 1,
+                        defval: '',
+                        blankrows: false,
+                        raw: false
+                    });
+                    
+                    console.log('📊 Sheet range:', worksheet['!ref']);
+                    console.log('📊 First 10 rows:', jsonData.slice(0, 10));
+                    
+                    // Test specific data extraction (row 5 should be: ALPER TORUN)
+                    console.log('🎯 Testing row 5 data extraction:');
+                    const testRow = jsonData[5]; // Should be ALPER TORUN row
+                    if (testRow) {
+                        console.log('Row 5 raw:', testRow);
+                        console.log('Customer (index 3):', testRow[3]);
+                        console.log('Store (index 2):', testRow[2]);  
+                        console.log('Product (index 5):', testRow[5]);
+                        console.log('Amount (index 10):', testRow[10]);
+                    }
+                    
+                    // Test row 42 which should be Mert Bikestop
+                    console.log('🎯 Testing row 42 (Mert Bikestop):');
+                    const dealerRow = jsonData[42]; 
+                    if (dealerRow) {
+                        console.log('Row 42 raw:', dealerRow);
+                        console.log('Customer (index 3):', dealerRow[3]);
+                        console.log('Store (index 2):', dealerRow[2]);
+                        console.log('Product (index 5):', dealerRow[5]);
+                        console.log('Amount (index 10):', dealerRow[10]);
+                    }
+                    
+                    document.getElementById('output').innerHTML = `
+                        <h3>Analysis Complete</h3>
+                        <p>Total rows: ${jsonData.length}</p>
+                        <p>Check console for detailed output</p>
+                        <pre>${JSON.stringify(jsonData.slice(0, 5), null, 2)}</pre>
+                    `;
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    document.getElementById('output').innerHTML = `Error: ${error.message}`;
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+    </script>
+</body>
+</html>

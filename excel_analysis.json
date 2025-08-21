@@ -1,0 +1,242 @@
+{
+  "file_info": {
+    "path": "/Users/izerkoen/Downloads/SATIŞ RAPORU-10.xlsx",
+    "sheets": [
+      "Sheet1"
+    ]
+  },
+  "sheet_analysis": {
+    "Sheet1": {
+      "shape": [
+        485,
+        12
+      ],
+      "columns": [
+        "SATIŞ RAPORU",
+        "Unnamed: 1",
+        "Unnamed: 2",
+        "Unnamed: 3",
+        "Unnamed: 4",
+        "Unnamed: 5",
+        "Unnamed: 6",
+        "Unnamed: 7",
+        "Unnamed: 8",
+        "Unnamed: 9",
+        "Unnamed: 10",
+        "Unnamed: 11"
+      ],
+      "column_types": {
+        "SATIŞ RAPORU": "object",
+        "Unnamed: 1": "object",
+        "Unnamed: 2": "object",
+        "Unnamed: 3": "object",
+        "Unnamed: 4": "object",
+        "Unnamed: 5": "object",
+        "Unnamed: 6": "object",
+        "Unnamed: 7": "object",
+        "Unnamed: 8": "object",
+        "Unnamed: 9": "object",
+        "Unnamed: 10": "object",
+        "Unnamed: 11": "object"
+      },
+      "sample_data": [
+        {
+          "SATIŞ RAPORU": "01.07.2025 - 31.07.2025",
+          "Unnamed: 1": NaN,
+          "Unnamed: 2": NaN,
+          "Unnamed: 3": NaN,
+          "Unnamed: 4": NaN,
+          "Unnamed: 5": NaN,
+          "Unnamed: 6": NaN,
+          "Unnamed: 7": NaN,
+          "Unnamed: 8": NaN,
+          "Unnamed: 9": NaN,
+          "Unnamed: 10": NaN,
+          "Unnamed: 11": NaN
+        },
+        {
+          "SATIŞ RAPORU": "Belge No",
+          "Unnamed: 1": "Tarih",
+          "Unnamed: 2": "Depo",
+          "Unnamed: 3": "Müşteri",
+          "Unnamed: 4": "Şube",
+          "Unnamed: 5": "Ürün",
+          "Unnamed: 6": "Kod",
+          "Unnamed: 7": "Miktar",
+          "Unnamed: 8": "Birim",
+          "Unnamed: 9": "Net",
+          "Unnamed: 10": "TOPLAM",
+          "Unnamed: 11": NaN
+        },
+        {
+          "SATIŞ RAPORU": NaN,
+          "Unnamed: 1": "01.07.2025",
+          "Unnamed: 2": NaN,
+          "Unnamed: 3": "MUHAMMET ÖMER ALPİ",
+          "Unnamed: 4": NaN,
+          "Unnamed: 5": "Servis Hizmet Bedeli",
+          "Unnamed: 6": "SRV-01",
+          "Unnamed: 7": 1,
+          "Unnamed: 8": "Adet",
+          "Unnamed: 9": 0,
+          "Unnamed: 10": 0,
+          "Unnamed: 11": "TL"
+        },
+        {
+          "SATIŞ RAPORU": NaN,
+          "Unnamed: 1": "01.07.2025",
+          "Unnamed: 2": NaN,
+          "Unnamed: 3": "Sezai Karakaş",
+          "Unnamed: 4": NaN,
+          "Unnamed: 5": "Servis Hizmet Bedeli",
+          "Unnamed: 6": "SRV-01",
+          "Unnamed: 7": 1,
+          "Unnamed: 8": "Adet",
+          "Unnamed: 9": 1458.33,
+          "Unnamed: 10": 1750,
+          "Unnamed: 11": "TL"
+        },
+        {
+          "SATIŞ RAPORU": "N012025000000343",
+          "Unnamed: 1": "01.07.2025",
+          "Unnamed: 2": "ORTAKÖY",
+          "Unnamed: 3": "ALPER TORUN",
+          "Unnamed: 4": NaN,
+          "Unnamed: 5": "TRİEYE  W/NOSE PAD (NUMARALİ ÇERÇEVE) Medium",
+          "Unnamed: 6": "TRIEYEINSERT_77913",
+          "Unnamed: 7": 1,
+          "Unnamed: 8": "Adet",
+          "Unnamed: 9": 785.83,
+          "Unnamed: 10": 943,
+          "Unnamed: 11": "TL"
+        },
+        {
+          "SATIŞ RAPORU": "N012025000000344",
+          "Unnamed: 1": "01.07.2025",
+          "Unnamed: 2": NaN,
+          "Unnamed: 3": "Yasemin Mutlu",
+          "Unnamed: 4": NaN,
+          "Unnamed: 5": "CHARGER POMPA EU NEW SİYAH",
+          "Unnamed: 6": 555607,
+          "Unnamed: 7": 1,
+          "Unnamed: 8": "Adet",
+          "Unnamed: 9": 2616.52,
+          "Unnamed: 10": 3139.83,
+          "Unnamed: 11": "TL"
+        },
+        {
+          "SATIŞ RAPORU": "N012025000000345",
+          "Unnamed: 1": "01.07.2025",
+          "Unnamed: 2": "ALSANCAK",
+          "Unnamed: 3": "MUHAMMET ÖMER ALPİ",
+          "Unnamed: 4": NaN,
+          "Unnamed: 5": "Bontrager BackRack Disc MIK BAGAJ LARGE",
+          "Unnamed: 6": 582181,
+          "Unnamed: 7": 1,
+          "Unnamed: 8": "Adet",
+          "Unnamed: 9": 2500,
+          "Unnamed: 10": 3000,
+          "Unnamed: 11": "TL"
+        },
+        {
+          "SATIŞ RAPORU": "N012025000000345",
+          "Unnamed: 1": "01.07.2025",
+          "Unnamed: 2": "ALSANCAK",
+          "Unnamed: 3": "MUHAMMET ÖMER ALPİ",
+          "Unnamed: 4": NaN,
+          "Unnamed: 5": "Trek Single Pannier",
+          "Unnamed: 6": 5315136,
+          "Unnamed: 7": 1,
+          "Unnamed: 8": "Adet",
+          "Unnamed: 9": 3333.33,
+          "Unnamed: 10": 4000,
+          "Unnamed: 11": "TL"
+        },
+        {
+          "SATIŞ RAPORU": "N012025000000346",
+          "Unnamed: 1": "01.07.2025",
+          "Unnamed: 2": "ALSANCAK",
+          "Unnamed: 3": "Bora Tezel",
+          "Unnamed: 4": NaN,
+          "Unnamed: 5": "Bontrager Adventure Top Tube Bag Çanta",
+          "Unnamed: 6": 5325334,
+          "Unnamed: 7": 1,
+          "Unnamed: 8": "Adet",
+          "Unnamed: 9": 2375,
+          "Unnamed: 10": 2850,
+          "Unnamed: 11": "TL"
+        },
+        {
+          "SATIŞ RAPORU": "N012025000000346",
+          "Unnamed: 1": "01.07.2025",
+          "Unnamed: 2": "ALSANCAK",
+          "Unnamed: 3": "Bora Tezel",
+          "Unnamed: 4": NaN,
+          "Unnamed: 5": "ELITE RECYCLED MATARA KAFESİ PARLAK SİYAH",
+          "Unnamed: 6": 5322911,
+          "Unnamed: 7": 1,
+          "Unnamed: 8": "Adet",
+          "Unnamed: 9": 1225,
+          "Unnamed: 10": 1470,
+          "Unnamed: 11": "TL"
+        }
+      ],
+      "summary": {
+        "total_rows": 485,
+        "total_columns": 12,
+        "has_data": true
+      },
+      "indicators": {
+        "sales_columns": [],
+        "store_columns": [],
+        "date_columns": []
+      },
+      "numeric_columns": [
+        "SATIŞ RAPORU",
+        "Unnamed: 1",
+        "Unnamed: 6",
+        "Unnamed: 7",
+        "Unnamed: 9",
+        "Unnamed: 10"
+      ],
+      "categorical_samples": {
+        "Unnamed: 2": [
+          NaN,
+          "Depo",
+          "ORTAKÖY",
+          "ALSANCAK",
+          "ALAÇATI",
+          "CADDEBOSTAN",
+          "BAHCEKOY",
+          "ONLINE"
+        ],
+        "Unnamed: 4": [
+          NaN,
+          "Şube",
+          "Club Adaköy Resort Otel Şubesi"
+        ],
+        "Unnamed: 7": [
+          NaN,
+          "Miktar",
+          1,
+          2,
+          3,
+          4,
+          5,
+          11,
+          586
+        ],
+        "Unnamed: 8": [
+          NaN,
+          "Birim",
+          "Adet"
+        ],
+        "Unnamed: 11": [
+          NaN,
+          "TL",
+          "EUR"
+        ]
+      }
+    }
+  }
+}
