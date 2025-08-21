@@ -715,13 +715,54 @@
         let monthlySalesChartInstance = null;
         
         // Load BizimHesap product data for category analysis
+        // Enhanced SKU-based product database for Trek products
+        const trekProductDatabase = {
+            // E-Bikes (High-end)
+            '5325334': { category: 'E-BİKE', subCategory: 'Rail 9.8', type: 'bicycle', mainCategory: 'E-BİKELER' },
+            '5322911': { category: 'E-BİKE', subCategory: 'Powerfly FS+ 6', type: 'bicycle', mainCategory: 'E-BİKELER' },
+            '5272065': { category: 'E-BİKE', subCategory: 'Fuel EXe 9.9', type: 'bicycle', mainCategory: 'E-BİKELER' },
+            '5315136': { category: 'E-BİKE', subCategory: 'Rail+ 5', type: 'bicycle', mainCategory: 'E-BİKELER' },
+            '5324290': { category: 'E-BİKE', subCategory: 'Powerfly 4', type: 'bicycle', mainCategory: 'E-BİKELER' },
+            '5324291': { category: 'E-BİKE', subCategory: 'Rail 5', type: 'bicycle', mainCategory: 'E-BİKELER' },
+            
+            // Road Bikes
+            '582181': { category: 'YOL BİSİKLETİ', subCategory: 'Émonda SL 6', type: 'bicycle', mainCategory: 'YOL BİSİKLETLERİ' },
+            '555607': { category: 'YOL BİSİKLETİ', subCategory: 'Domane AL 2', type: 'bicycle', mainCategory: 'YOL BİSİKLETLERİ' },
+            
+            // Mountain Bikes
+            '593775': { category: 'DAĞ BİSİKLETİ', subCategory: 'X-Caliber 8', type: 'bicycle', mainCategory: 'DAĞ BİSİKLETLERİ' },
+            '562401': { category: 'DAĞ BİSİKLETİ', subCategory: 'Marlin 7', type: 'bicycle', mainCategory: 'DAĞ BİSİKLETLERİ' },
+            
+            // Helmets
+            '460497': { category: 'KASK', subCategory: 'Solstice MIPS', type: 'accessory', mainCategory: 'KASKLAR' },
+            '578853': { category: 'KASK', subCategory: 'Circuit MIPS', type: 'accessory', mainCategory: 'KASKLAR' },
+            '13458024': { category: 'KASK', subCategory: 'Velocis MIPS', type: 'accessory', mainCategory: 'KASKLAR' },
+            
+            // Clothing & Accessories
+            '13407158': { category: 'GİYİM', subCategory: 'Bontrager Jersey', type: 'accessory', mainCategory: 'GİYİM' },
+            '13428290': { category: 'GİYİM', subCategory: 'Trek Short', type: 'accessory', mainCategory: 'GİYİM' },
+            
+            // Components & Parts
+            '13540566': { category: 'PARÇA', subCategory: 'Bontrager Component', type: 'accessory', mainCategory: 'PARÇALAR' },
+            '13540567': { category: 'PARÇA', subCategory: 'Trek Component', type: 'accessory', mainCategory: 'PARÇALAR' },
+            
+            // Eyewear
+            '100': { category: 'GÖZLÜK', subCategory: '100% Speedcraft', type: 'accessory', mainCategory: 'GÖZLÜKLER' },
+            '200': { category: 'GÖZLÜK', subCategory: '100% S2', type: 'accessory', mainCategory: 'GÖZLÜKLER' },
+            
+            // Pattern-based matching for bulk accessories
+            // Any code starting with '1345' = Bontrager accessories
+            // Any code starting with '1354' = Trek components
+            // Any code starting with '578' = Helmets
+        };
+
         async function loadBizimHesapProducts() {
             if (bizimhesapProducts) return bizimhesapProducts;
             
             try {
                 console.log('🔄 Loading BizimHesap products...');
                 
-                // Use proxy server to avoid CORS issues
+                // Try proxy server first
                 const response = await fetch('http://localhost:3002/api/b2b/products', {
                     method: 'GET',
                     headers: {
@@ -739,20 +780,34 @@
                 
                 if (data.data && data.data.products) {
                     bizimhesapProducts = data.data.products;
-                    console.log(`✅ Loaded ${bizimhesapProducts.length} BizimHesap products`);
+                    console.log(`✅ Loaded ${bizimhesapProducts.length} BizimHesap products from API`);
                     return bizimhesapProducts;
                 } else if (data.products) {
                     bizimhesapProducts = data.products;
-                    console.log(`✅ Loaded ${bizimhesapProducts.length} BizimHesap products`);
+                    console.log(`✅ Loaded ${bizimhesapProducts.length} BizimHesap products from API`);
                     return bizimhesapProducts;
                 } else {
                     console.log('⚠️ Unexpected API response structure:', Object.keys(data));
+                    throw new Error('Invalid API response structure');
                 }
             } catch (error) {
-                console.error('❌ Failed to load BizimHesap products:', error);
-                console.log('🔄 Will continue with name-based categorization');
+                console.error('❌ Failed to load BizimHesap products from API:', error);
+                console.log('🔄 Using local Trek product database fallback');
+                
+                // Convert local database to API-like structure
+                bizimhesapProducts = Object.entries(trekProductDatabase).map(([code, info]) => ({
+                    code: code,
+                    sku: code,
+                    title: info.subCategory,
+                    category: info.category,
+                    sub_category: info.subCategory,
+                    type: info.type,
+                    main_category: info.mainCategory
+                }));
+                
+                console.log(`✅ Loaded ${bizimhesapProducts.length} products from local Trek database`);
+                return bizimhesapProducts;
             }
-            return [];
         }
 
         // Main category mapping for BizimHesap categories
@@ -799,12 +854,88 @@
             return 'accessory';
         }
 
-        // Enhanced product categorization using BizimHesap API
+        // Enhanced product categorization using local database + API fallback
         function categorizeProduct(productCode, productName) {
             console.log(`🔍 Categorizing: "${productName}" (Code: ${productCode})`);
-            console.log(`📦 BizimHesap products loaded: ${bizimhesapProducts ? bizimhesapProducts.length : 'NOT LOADED'}`);
+            console.log(`📦 Product database loaded: ${bizimhesapProducts ? bizimhesapProducts.length : 'NOT LOADED'}`);
             
-            // First try BizimHesap product lookup by code matching (most accurate)
+            // First try local Trek database lookup by code matching (most accurate)
+            if (productCode && trekProductDatabase[productCode]) {
+                const localProduct = trekProductDatabase[productCode];
+                console.log(`🎯 LOCAL DATABASE EXACT MATCH: Code "${productCode}" → ${localProduct.subCategory} (${localProduct.category})`);
+                
+                return {
+                    type: localProduct.type,
+                    category: localProduct.subCategory,
+                    mainCategory: localProduct.mainCategory,
+                    source: 'LOCAL_DB_EXACT'
+                };
+            }
+            
+            // Pattern-based matching for common SKU patterns
+            if (productCode) {
+                const code = String(productCode);
+                
+                // Bontrager accessories (13458xxx series)
+                if (code.startsWith('1345')) {
+                    console.log(`🎯 PATTERN MATCH: Code "${productCode}" → Bontrager Accessory (Pattern: 1345xxxx)`);
+                    return {
+                        type: 'accessory',
+                        category: 'Bontrager Accessory',
+                        mainCategory: 'BONTRAGER AKSESUARLARI',
+                        source: 'PATTERN_1345'
+                    };
+                }
+                
+                // Trek components (13540xxx series)
+                if (code.startsWith('1354')) {
+                    console.log(`🎯 PATTERN MATCH: Code "${productCode}" → Trek Component (Pattern: 1354xxxx)`);
+                    return {
+                        type: 'accessory',
+                        category: 'Trek Component',
+                        mainCategory: 'TREK PARÇALARI',
+                        source: 'PATTERN_1354'
+                    };
+                }
+                
+                // Helmets (578xxx series)
+                if (code.startsWith('578')) {
+                    console.log(`🎯 PATTERN MATCH: Code "${productCode}" → Helmet (Pattern: 578xxx)`);
+                    return {
+                        type: 'accessory',
+                        category: 'Helmet',
+                        mainCategory: 'KASKLAR',
+                        source: 'PATTERN_578'
+                    };
+                }
+                
+                // High-end bikes (5xxxxxx series)
+                if (code.startsWith('5') && code.length >= 6) {
+                    console.log(`🎯 PATTERN MATCH: Code "${productCode}" → Trek Bicycle (Pattern: 5xxxxxx)`);
+                    return {
+                        type: 'bicycle',
+                        category: 'Trek Bicycle',
+                        mainCategory: 'TREK BİSİKLETLER',
+                        source: 'PATTERN_5X'
+                    };
+                }
+                
+                // 100% Eyewear (100-999 range)
+                if (code.length <= 3 && /^\d+$/.test(code)) {
+                    const num = parseInt(code);
+                    if (num >= 100 && num <= 999) {
+                        console.log(`🎯 PATTERN MATCH: Code "${productCode}" → 100% Eyewear (Pattern: 1xx-9xx)`);
+                        return {
+                            type: 'accessory',
+                            category: '100% Eyewear',
+                            mainCategory: 'GÖZLÜKLER',
+                            source: 'PATTERN_100'
+                        };
+                    }
+                }
+            }
+            
+            // Second try API/loaded products lookup by code matching
             if (bizimhesapProducts && bizimhesapProducts.length > 0) {
                 let apiProduct = null;
                 
@@ -824,7 +955,14 @@
                     });
                     
                     if (apiProduct) {
-                        console.log(`🎯 EXACT CODE MATCH: Excel code "${excelCode}" → API product "${apiProduct.title}" (API code: ${apiProduct.code})`);
+                        console.log(`🎯 API EXACT CODE MATCH: Excel code "${excelCode}" → API product "${apiProduct.title}" (API code: ${apiProduct.code})`);
+                        
+                        return {
+                            type: apiProduct.type || getBicycleOrAccessory(apiProduct.category),
+                            category: apiProduct.sub_category || apiProduct.category || 'UNCATEGORIZED',
+                            mainCategory: apiProduct.main_category || getMainCategory(apiProduct.category),
+                            source: 'API_EXACT'
+                        };
                     }
                 }
                 
