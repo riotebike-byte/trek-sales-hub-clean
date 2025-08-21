@@ -541,6 +541,9 @@
                 console.log('Header row not found by keywords, assuming row 1 is header');
                 headerRowIndex = 1; // Based on your Excel analysis, header is at row 1 (0-based)
             }
+            
+            console.log('📍 Selected headerRowIndex:', headerRowIndex);
+            console.log('📍 Raw header row:', jsonData[headerRowIndex]);
 
             const headers = jsonData[headerRowIndex];
             const dataRows = jsonData.slice(headerRowIndex + 1);
@@ -563,8 +566,10 @@
 
             // Try to find actual column indices if headers are available
             if (headers && headers.length > 5) {
+                console.log('🔍 Trying to map headers:', headers);
                 for (let i = 0; i < headers.length; i++) {
                     const header = String(headers[i] || '').toLowerCase();
+                    console.log(`Header ${i}: "${headers[i]}" -> "${header}"`);
                     if (header.includes('belge')) columnMap.belgeNo = i;
                     else if (header.includes('tarih')) columnMap.tarih = i;
                     else if (header.includes('depo')) columnMap.depo = i;
@@ -577,6 +582,9 @@
                     else if (header.includes('net')) columnMap.net = i;
                     else if (header.includes('toplam')) columnMap.toplam = i;
                 }
+                console.log('🎯 Final Column Map after header parsing:', columnMap);
+            } else {
+                console.log('❌ Headers not available or too short, using default mapping');
             }
 
             const sales = [];
