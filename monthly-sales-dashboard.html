@@ -573,9 +573,9 @@
                             <div style="font-size: 12px; opacity: 0.9;">kategoride satış</div>
                         </div>
                         <div style="background: linear-gradient(135deg, #45B7D1, #6CBDE0); color: white; padding: 15px; border-radius: 10px; text-align: center;">
-                            <div style="font-size: 12px; opacity: 0.9;">Bisiklet/Aksesuar</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Bisiklet/Diğer</div>
                             <div id="bikeAccessoryRatio" style="font-weight: bold; font-size: 14px;">-</div>
-                            <div style="font-size: 12px; opacity: 0.9;">oranı</div>
+                            <div style="font-size: 12px; opacity: 0.9;">oranı (6 kategori)</div>
                         </div>
                     </div>
                     
@@ -3053,6 +3053,30 @@
             };
             return emojiMap[categoryName] || '📦';
         }
+
+        function getCategoryColor(categoryName) {
+            const colorMap = {
+                'BİSİKLETLER': '#e74c3c',
+                'E-BİKELER': '#f39c12', 
+                'AKSESUAR': '#3498db',
+                'YEDEK PARÇA': '#9b59b6',
+                'TEKSTİL': '#1abc9c',
+                'BIKE FIT': '#34495e'
+            };
+            return colorMap[categoryName] || '#95a5a6';
+        }
+
+        function getCategoryIcon(categoryName) {
+            const iconMap = {
+                'BİSİKLETLER': '🚲 Normal Bisiklet',
+                'E-BİKELER': '⚡ Elektrikli Bisiklet',
+                'AKSESUAR': '📦 Aksesuar',
+                'YEDEK PARÇA': '🔧 Yedek Parça',
+                'TEKSTİL': '👕 Tekstil/Giyim',
+                'BIKE FIT': '🛠️ Hizmet/Bike Fit'
+            };
+            return iconMap[categoryName] || '📦 Diğer';
+        }
         
         function exportCategoryData() {
             if (!currentData || !currentData.categories) {
@@ -3103,8 +3127,8 @@
                 <div class="performance-card" onclick="showCategoryDetail('${category.name}')" style="cursor: pointer;">
                     <div class="performance-category">
                         ${index + 1}. ${category.name} 
-                        <span style="color: ${category.type === 'bicycle' ? '#e74c3c' : '#3498db'}; font-size: 12px;">
-                            (${category.type === 'bicycle' ? '🚲 Bisiklet' : '🔧 Aksesuar'})
+                        <span style="color: ${getCategoryColor(category.name)}; font-size: 12px;">
+                            ${getCategoryIcon(category.name)}
                         </span>
                         ${category.subcategories && category.subcategories.length > 0 ? 
                             `<div style="font-size: 11px; color: #666; margin-top: 4px;">Alt: ${category.subcategories.join(', ')}</div>` : ''}
