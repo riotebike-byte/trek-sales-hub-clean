@@ -2176,14 +2176,15 @@
                     console.log(`📊 ${mainCategoryName} Progress (Row ${i+3}): ₺${categories[mainCategoryName].totalTL.toLocaleString()} | ${categories[mainCategoryName].quantity} items | ${categories[mainCategoryName].products.size} unique products`);
                 }
                 
-                if (categoryInfo.type === 'bicycle') {
+                // Count bicycles (both regular and e-bikes) vs accessories
+                if (mainCategoryName === 'BİSİKLETLER' || mainCategoryName === 'E-BİKELER') {
                     bicycleSales += amountInTL;
                     bicycleQuantity += miktar;
-                    console.log(`🚲 BICYCLE SALE: ${urun} (${productKod}) = ₺${amountInTL} | Total bicycles: ₺${bicycleSales}`);
+                    console.log(`🚲 BICYCLE SALE: ${urun} (${productKod}) = ₺${amountInTL} | Category: ${mainCategoryName} | Total bicycles: ₺${bicycleSales} | Total quantity: ${bicycleQuantity}`);
                 } else {
                     accessorySales += amountInTL;
                     accessoryQuantity += miktar;
-                    console.log(`🔧 ACCESSORY SALE: ${urun} (${productKod}) = ₺${amountInTL} | Total accessories: ₺${accessorySales}`);
+                    console.log(`🔧 ACCESSORY SALE: ${urun} (${productKod}) = ₺${amountInTL} | Category: ${mainCategoryName} | Total accessories: ₺${accessorySales} | Total quantity: ${accessoryQuantity}`);
                 }
 
                 if (i < 15) { // More debug for first 15 items  
@@ -2380,8 +2381,9 @@
                     isDealer = true;
                 }
                 
-                // Recalculate bicycle vs accessory sales
-                if (categoryInfo.type === 'bicycle') {
+                // Recalculate bicycle vs accessory sales based on main categories
+                const mainCategoryName = categoryInfo.mainCategory || categoryInfo.category || 'AKSESUAR';
+                if (mainCategoryName === 'BİSİKLETLER' || mainCategoryName === 'E-BİKELER') {
                     newBicycleSales += sale.amountInTL;
                 } else {
                     newAccessorySales += sale.amountInTL;
