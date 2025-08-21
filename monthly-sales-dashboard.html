@@ -2371,6 +2371,8 @@
             let newDealerSales = {};
             let newBicycleSales = 0;
             let newAccessorySales = 0;
+            let newBicycleQuantity = 0;
+            let newAccessoryQuantity = 0;
             
             // Recalculate everything with updated amountInTL values
             for (const sale of data.sales) {
@@ -2397,12 +2399,14 @@
                     isDealer = true;
                 }
                 
-                // Recalculate bicycle vs accessory sales based on main categories
+                // Recalculate bicycle vs accessory sales and quantities based on main categories
                 const recalcMainCategory = categoryInfo.mainCategory || categoryInfo.category || 'AKSESUAR';
                 if (recalcMainCategory === 'BİSİKLETLER' || recalcMainCategory === 'E-BİKELER') {
                     newBicycleSales += sale.amountInTL;
+                    newBicycleQuantity += (sale.miktar || 0);
                 } else {
                     newAccessorySales += sale.amountInTL;
+                    newAccessoryQuantity += (sale.miktar || 0);
                 }
             }
             
@@ -2413,6 +2417,8 @@
             data.dealerSales = newDealerSales;
             data.bicycleSales = newBicycleSales;
             data.accessorySales = newAccessorySales;
+            data.bicycleQuantity = newBicycleQuantity;
+            data.accessoryQuantity = newAccessoryQuantity;
             
             // Update category quantities in the categories object
             if (data.categories) {
@@ -2425,6 +2431,8 @@
             }
             
             console.log(`✅ Recalculated totals: ₺${newTotalAmount.toLocaleString()}`);
+            console.log(`🚲 Recalculated bicycle quantity: ${newBicycleQuantity} (vs ${data.bicycleQuantity})`);
+            console.log(`🔧 Recalculated accessory quantity: ${newAccessoryQuantity} (vs ${data.accessoryQuantity})`);
             return data;
         }
 
