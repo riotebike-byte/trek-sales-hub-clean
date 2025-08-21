@@ -856,8 +856,10 @@
 
         // Enhanced product categorization using local database + API fallback
         function categorizeProduct(productCode, productName) {
-            console.log(`🔍 Categorizing: "${productName}" (Code: ${productCode})`);
-            console.log(`📦 Product database loaded: ${bizimhesapProducts ? bizimhesapProducts.length : 'NOT LOADED'}`);
+            console.log(`\n🔍 === CATEGORIZING PRODUCT ===`);
+            console.log(`📋 Name: "${productName}"`);
+            console.log(`🏷️  Code: "${productCode}" (type: ${typeof productCode})`);
+            console.log(`📦 BizimHesap products loaded: ${bizimhesapProducts ? bizimhesapProducts.length : 'NOT LOADED'}`);
             
             // First try local Trek database lookup by code matching (most accurate)
             if (productCode && trekProductDatabase[String(productCode)]) {
@@ -943,19 +945,41 @@
                 if (productCode) {
                     // Convert both to string and clean whitespace for comparison
                     const excelCode = String(productCode).trim();
+                    console.log(`🔍 Searching for Excel code: "${excelCode}"`);
+                    
+                    // Debug: show first few API products
+                    if (bizimhesapProducts.length > 0) {
+                        console.log(`📊 Sample API products (first 3):`);
+                        bizimhesapProducts.slice(0, 3).forEach((p, i) => {
+                            console.log(`  ${i+1}. Code: "${p.code}", Barcode: "${p.barcode}", Title: "${p.title}", Category: "${p.category}"`);
+                        });
+                    }
                     
                     apiProduct = bizimhesapProducts.find(p => {
                         const apiCode = String(p.code || '').trim();
                         const apiBarcode = String(p.barcode || '').trim();
                         const apiSku = String(p.sku || '').trim();
                         
-                        return apiCode === excelCode || 
-                               apiBarcode === excelCode || 
-                               apiSku === excelCode;
+                        const matches = apiCode === excelCode || 
+                                       apiBarcode === excelCode || 
+                                       apiSku === excelCode;
+                        
+                        if (matches) {
+                            console.log(`✅ MATCH FOUND! Excel "${excelCode}" === API "${apiCode}" (${p.title})`);
+                        }
+                        
+                        return matches;
                     });
                     
                     if (apiProduct) {
-                        console.log(`🎯 API EXACT CODE MATCH: Excel code "${excelCode}" → API product "${apiProduct.title}" (API code: ${apiProduct.code})`);
+                        console.log(`🎯 API EXACT CODE MATCH: Excel code "${excelCode}" → API product "${apiProduct.title}"`);
+                        console.log(`📋 API Product Details:`, {
+                            code: apiProduct.code,
+                            barcode: apiProduct.barcode,
+                            category: apiProduct.category,
+                            brand: apiProduct.brand,
+                            title: apiProduct.title
+                        });
                         
                         return {
                             type: apiProduct.type || getBicycleOrAccessory(apiProduct.category),
@@ -963,6 +987,8 @@
                             mainCategory: apiProduct.main_category || getMainCategory(apiProduct.category),
                             source: 'API_EXACT'
                         };
+                    } else {
+                        console.log(`❌ NO API MATCH found for Excel code: "${excelCode}"`);
                     }
                 }
                 
@@ -1075,7 +1101,8 @@
                 return { type: 'bicycle', category: 'BISIKLET' };
             }
             
-            console.log(`⚠️ UNCATEGORIZED: "${productName}" - No matching keywords found`);
+            console.log(`⚠️ UNCATEGORIZED: "${productName}" (Code: ${productCode}) - No matching keywords found`);
+            console.log(`🔍 Checked sources: Local DB, Pattern matching, API matching, Name-based matching - ALL FAILED`);
             return { type: 'accessory', category: 'UNCATEGORIZED' };
         }
         
