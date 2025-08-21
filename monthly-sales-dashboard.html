@@ -760,31 +760,64 @@
         }
 
         function updateCurrencyDisplay() {
-            if (!currentData) return;
+            if (!currentData) {
+                console.log('❌ No currentData available');
+                return;
+            }
 
+            console.log('📊 Current Data:', currentData);
+            
             const rate = exchangeRates[currentCurrency];
             const symbol = currentCurrency === 'TL' ? '₺' : currentCurrency === 'USD' ? '$' : '€';
 
             // Update report period
-            document.getElementById('periodInfo').textContent = `📅 Rapor Dönemi: ${currentData.reportPeriod || 'Belirtilmemiş'}`;
+            const periodElement = document.getElementById('periodInfo');
+            if (periodElement) {
+                periodElement.textContent = `📅 Rapor Dönemi: ${currentData.reportPeriod || 'Belirtilmemiş'}`;
+            }
 
             // Update all statistics with currency conversion
-            document.getElementById('totalSales').textContent = 
-                symbol + (currentData.totalAmount / rate).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
-            document.getElementById('totalQuantity').textContent = 
-                currentData.totalQuantity.toLocaleString('tr-TR') + ' adet';
-            document.getElementById('bicycleSales').textContent = 
-                symbol + (currentData.bicycleSales / rate).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
-            document.getElementById('accessorySales').textContent = 
-                symbol + (currentData.accessorySales / rate).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
-            document.getElementById('bicycleQuantity').textContent = 
-                currentData.bicycleQuantity.toLocaleString('tr-TR') + ' adet';
-            document.getElementById('accessoryQuantity').textContent = 
-                currentData.accessoryQuantity.toLocaleString('tr-TR') + ' adet';
-            document.getElementById('storeCount').textContent = 
-                (Object.keys(currentData.stores).length + Object.keys(currentData.dealers).length).toLocaleString('tr-TR');
-            document.getElementById('customerCount').textContent = 
-                currentData.customerCount.toLocaleString('tr-TR');
+            const totalSalesEl = document.getElementById('totalSales');
+            if (totalSalesEl && typeof currentData.totalAmount === 'number') {
+                totalSalesEl.textContent = symbol + (currentData.totalAmount / rate).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+                console.log('✅ Total Sales Updated:', totalSalesEl.textContent);
+            }
+
+            const totalQuantityEl = document.getElementById('totalQuantity');
+            if (totalQuantityEl && typeof currentData.totalQuantity === 'number') {
+                totalQuantityEl.textContent = currentData.totalQuantity.toLocaleString('tr-TR') + ' adet';
+                console.log('✅ Total Quantity Updated:', totalQuantityEl.textContent);
+            }
+
+            const bicycleSalesEl = document.getElementById('bicycleSales');
+            if (bicycleSalesEl && typeof currentData.bicycleSales === 'number') {
+                bicycleSalesEl.textContent = symbol + (currentData.bicycleSales / rate).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+            }
+
+            const accessorySalesEl = document.getElementById('accessorySales');
+            if (accessorySalesEl && typeof currentData.accessorySales === 'number') {
+                accessorySalesEl.textContent = symbol + (currentData.accessorySales / rate).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+            }
+
+            const bicycleQuantityEl = document.getElementById('bicycleQuantity');
+            if (bicycleQuantityEl && typeof currentData.bicycleQuantity === 'number') {
+                bicycleQuantityEl.textContent = currentData.bicycleQuantity.toLocaleString('tr-TR') + ' adet';
+            }
+
+            const accessoryQuantityEl = document.getElementById('accessoryQuantity');
+            if (accessoryQuantityEl && typeof currentData.accessoryQuantity === 'number') {
+                accessoryQuantityEl.textContent = currentData.accessoryQuantity.toLocaleString('tr-TR') + ' adet';
+            }
+
+            const storeCountEl = document.getElementById('storeCount');
+            if (storeCountEl && currentData.stores && currentData.dealers) {
+                storeCountEl.textContent = (Object.keys(currentData.stores).length + Object.keys(currentData.dealers).length).toLocaleString('tr-TR');
+            }
+
+            const customerCountEl = document.getElementById('customerCount');
+            if (customerCountEl && typeof currentData.customerCount === 'number') {
+                customerCountEl.textContent = currentData.customerCount.toLocaleString('tr-TR');
+            }
 
             // Update stores list
             updateStoresList();
