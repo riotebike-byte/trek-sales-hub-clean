@@ -860,8 +860,8 @@
             console.log(`📦 Product database loaded: ${bizimhesapProducts ? bizimhesapProducts.length : 'NOT LOADED'}`);
             
             // First try local Trek database lookup by code matching (most accurate)
-            if (productCode && trekProductDatabase[productCode]) {
-                const localProduct = trekProductDatabase[productCode];
+            if (productCode && trekProductDatabase[String(productCode)]) {
+                const localProduct = trekProductDatabase[String(productCode)];
                 console.log(`🎯 LOCAL DATABASE EXACT MATCH: Code "${productCode}" → ${localProduct.subCategory} (${localProduct.category})`);
                 
                 return {
@@ -968,10 +968,11 @@
                 
                 // Priority 2: Partial code match
                 if (!apiProduct && productCode) {
+                    const codeStr = String(productCode);
                     apiProduct = bizimhesapProducts.find(p => 
-                        (p.code && p.code.includes(productCode)) ||
-                        (p.sku && p.sku.includes(productCode)) ||
-                        (productCode.includes(p.code) && p.code.length > 3)
+                        (p.code && String(p.code).includes(codeStr)) ||
+                        (p.sku && String(p.sku).includes(codeStr)) ||
+                        (codeStr.includes(String(p.code)) && String(p.code).length > 3)
                     );
                     
                     if (apiProduct) {
