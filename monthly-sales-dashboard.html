@@ -780,12 +780,12 @@
             '5324291': { category: 'E-BİKE', subCategory: 'Rail 5', type: 'bicycle', mainCategory: 'E-BİKELER' },
             
             // Road Bikes
-            '582181': { category: 'YOL BİSİKLETİ', subCategory: 'Émonda SL 6', type: 'bicycle', mainCategory: 'YOL BİSİKLETLERİ' },
-            '555607': { category: 'YOL BİSİKLETİ', subCategory: 'Domane AL 2', type: 'bicycle', mainCategory: 'YOL BİSİKLETLERİ' },
+            '582181': { category: 'Road Bike', subCategory: 'Émonda SL 6', type: 'bicycle', mainCategory: 'BİSİKLETLER' },
+            '555607': { category: 'Road Bike', subCategory: 'Domane AL 2', type: 'bicycle', mainCategory: 'BİSİKLETLER' },
             
             // Mountain Bikes
-            '593775': { category: 'DAĞ BİSİKLETİ', subCategory: 'X-Caliber 8', type: 'bicycle', mainCategory: 'DAĞ BİSİKLETLERİ' },
-            '562401': { category: 'DAĞ BİSİKLETİ', subCategory: 'Marlin 7', type: 'bicycle', mainCategory: 'DAĞ BİSİKLETLERİ' },
+            '593775': { category: 'Mountain Bike', subCategory: 'X-Caliber 8', type: 'bicycle', mainCategory: 'BİSİKLETLER' },
+            '562401': { category: 'Mountain Bike', subCategory: 'Marlin 7', type: 'bicycle', mainCategory: 'BİSİKLETLER' },
             
             // Helmets
             '460497': { category: 'KASK', subCategory: 'Solstice MIPS', type: 'accessory', mainCategory: 'KASKLAR' },
@@ -909,7 +909,7 @@
             if (cat.includes('MATARA') || cat.includes('BOTTLE')) return 'MATARA';
             if (cat.includes('MATARA KAFESİ')) return 'MATARA KAFESİ';
             if (cat.includes('POMPA')) return 'POMPA';
-            if (cat.includes('BİLGİSAYAR')) return 'YOL BİLGİSAYARI';
+            if (cat.includes('BİLGİSAYAR') || cat.includes('KM SAATİ') || cat.includes('COMPUTER') || cat.includes('CYCLE COMPUTER')) return 'YOL BİLGİSAYARI';
             if (cat.includes('ZİL')) return 'ZİL';
             
             // SPARE PARTS CATEGORIES
@@ -922,6 +922,7 @@
             if (cat.includes('LASTİK') || cat.includes('TIRE')) return 'LASTİK';
             if (cat.includes('PEDAL')) return 'PEDAL';
             if (cat.includes('SELE') || cat.includes('SADDLE')) return 'SELE-SELE BORUSU';
+            if (cat.includes('KADRO') || cat.includes('FRAME')) return 'KADRO';
             
             // CLOTHING CATEGORIES
             if (cat.includes('AYAKKABI') || cat.includes('KILIF')) return 'AYAKKABI - KILIF';
@@ -937,8 +938,13 @@
             // EYEWEAR
             if (cat.includes('GÖZLÜK') || cat.includes('GLASSES')) return 'GÖZLÜK 👓';
             
-            // Return original category if no main category found
-            return category;
+            // Default fallback for unmatched categories
+            if (cat.includes('SERVİS') || cat.includes('SERVICE') || cat.includes('BAKIM') || cat.includes('TAMIR')) return 'SERVİS';
+            if (cat.includes('ÖRNEK') || cat.includes('EXAMPLE') || cat.includes('TEST')) return 'AKSESUAR';
+            
+            // Return AKSESUAR for unrecognized categories instead of original category
+            console.log(`⚠️ UNRECOGNIZED CATEGORY: "${category}" → defaulting to AKSESUAR`);
+            return 'AKSESUAR';
         }
         
         // Determine if product is bicycle or accessory based on TriEye category schema
@@ -964,8 +970,7 @@
                 'FX+', 'VERVE +', 'VERVE+', 'TOWNIE GO', 'MARLIN +', 'MARLIN+',
                 
                 // Mountain bikes
-                'DAĞ BİSİKLETİ', 'DAĞ BİSİKLET', 'MOUNTAIN',
-                'MARLIN', 'PROCALIBER', 'SUPERCALIBER', 'FUEL EX', 'TOP FUEL',
+                'MOUNTAIN', 'MARLIN', 'PROCALIBER', 'SUPERCALIBER', 'FUEL EX', 'TOP FUEL',
                 
                 // City bikes
                 'ŞEHİR BİSİKLETİ', 'ŞEHİR BİSİKLET', 'CITY',
@@ -1052,7 +1057,7 @@
                     const name = (productName || '').toLowerCase();
                     
                     // Check if this is an E-bike based on product name
-                    const ebikeKeywords = ['rail', 'powerfly', 'fuel exe', 'verve+', 'fx+', 'ds+', 'townie go', 'marlin+', 'elektrikli', 'electric', 'e-bike', '+'];
+                    const ebikeKeywords = ['rail', 'powerfly', 'fuel exe', 'verve+', 'fx+', 'ds+', 'townie go', 'marlin+', 'domane+', 'elektrikli', 'electric', 'e-bike', '+'];
                     const isEbike = ebikeKeywords.some(keyword => name.includes(keyword));
                     
                     if (isEbike) {
@@ -1140,7 +1145,7 @@
                         // Override with E-bike detection if this is a bicycle
                         if (productType === 'bicycle') {
                             const productTitle = (apiProduct.title || '').toLowerCase();
-                            const ebikeKeywords = ['rail', 'powerfly', 'fuel exe', 'verve+', 'fx+', 'ds+', 'townie go', 'marlin+', 'elektrikli', 'electric', 'e-bike', '+'];
+                            const ebikeKeywords = ['rail', 'powerfly', 'fuel exe', 'verve+', 'fx+', 'ds+', 'townie go', 'marlin+', 'domane+', 'elektrikli', 'electric', 'e-bike', '+'];
                             const isEbike = ebikeKeywords.some(keyword => productTitle.includes(keyword));
                             
                             if (isEbike) {
@@ -1233,7 +1238,7 @@
             // E-bike indicators (check first for priority)
             const ebikeKeywords = [
                 'rail', 'powerfly', 'fuel exe', 'verve+', 'fx+', 'ds+', 'townie go',
-                'marlin+', 'allant', 'distrito', 'elektrikli', 'electric', 'e-bike',
+                'marlin+', 'domane+', 'allant', 'distrito', 'elektrikli', 'electric', 'e-bike',
                 '🔋', '+', 'plus', 'elektriklı'
             ];
             
