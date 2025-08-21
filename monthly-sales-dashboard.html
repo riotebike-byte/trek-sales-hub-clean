@@ -424,39 +424,63 @@
                 throw new Error('Excel dosyasında yeterli veri bulunamadı');
             }
 
-            // Find header row (contains "Belge No", "Tarih", etc.)
+            // Find header row - look for the row with column headers
             let headerRowIndex = -1;
-            for (let i = 0; i < Math.min(5, jsonData.length); i++) {
+            for (let i = 0; i < Math.min(10, jsonData.length); i++) {
                 const row = jsonData[i];
-                if (row && row.length > 5 && 
-                    (row.includes('Belge No') || row.includes('Tarih') || row.includes('Depo'))) {
-                    headerRowIndex = i;
-                    break;
+                if (row && row.length > 5) {
+                    // Check if this row contains header-like text
+                    const rowText = row.join(' ').toLowerCase();
+                    if (rowText.includes('belge') || rowText.includes('tarih') || rowText.includes('depo') || 
+                        rowText.includes('müşteri') || rowText.includes('toplam') || rowText.includes('miktar')) {
+                        headerRowIndex = i;
+                        break;
+                    }
                 }
             }
 
+            // If still not found, assume row 1 is header (0-based indexing)
             if (headerRowIndex === -1) {
-                throw new Error('Excel dosyasında header satırı bulunamadı');
+                console.log('Header row not found by keywords, assuming row 1 is header');
+                headerRowIndex = 1; // Based on your Excel analysis, header is at row 1 (0-based)
             }
 
             const headers = jsonData[headerRowIndex];
             const dataRows = jsonData.slice(headerRowIndex + 1);
 
-            // Map column indices
+            // Map column indices - handle both exact matches and flexible matching
             const columnMap = {
-                belgeNo: headers.indexOf('Belge No') >= 0 ? headers.indexOf('Belge No') : 0,
-                tarih: headers.indexOf('Tarih') >= 0 ? headers.indexOf('Tarih') : 1,
-                depo: headers.indexOf('Depo') >= 0 ? headers.indexOf('Depo') : 2,
-                musteri: headers.indexOf('Müşteri') >= 0 ? headers.indexOf('Müşteri') : 3,
-                sube: headers.indexOf('Şube') >= 0 ? headers.indexOf('Şube') : 4,
-                urun: headers.indexOf('Ürün') >= 0 ? headers.indexOf('Ürün') : 5,
-                kod: headers.indexOf('Kod') >= 0 ? headers.indexOf('Kod') : 6,
-                miktar: headers.indexOf('Miktar') >= 0 ? headers.indexOf('Miktar') : 7,
-                birim: headers.indexOf('Birim') >= 0 ? headers.indexOf('Birim') : 8,
-                net: headers.indexOf('Net') >= 0 ? headers.indexOf('Net') : 9,
-                toplam: headers.indexOf('TOPLAM') >= 0 ? headers.indexOf('TOPLAM') : 10,
-                paraBirimi: 11
+                belgeNo: 0,    // First column is document number
+                tarih: 1,      // Second column is date
+                depo: 2,       // Third column is store/warehouse
+                musteri: 3,    // Fourth column is customer
+                sube: 4,       // Fifth column is branch
+                urun: 5,       // Sixth column is product
+                kod: 6,        // Seventh column is code
+                miktar: 7,     // Eighth column is quantity
+                birim: 8,      // Ninth column is unit
+                net: 9,        // Tenth column is net amount
+                toplam: 10,    // Eleventh column is total
+                paraBirimi: 11 // Twelfth column is currency
             };
+
+            // Try to find actual column indices if headers are available
+            if (headers && headers.length > 5) {
+                for (let i = 0; i < headers.length; i++) {
+                    const header = String(headers[i] || '').toLowerCase();
+                    if (header.includes('belge')) columnMap.belgeNo = i;
+                    else if (header.includes('tarih')) columnMap.tarih = i;
+                    else if (header.includes('depo')) columnMap.depo = i;
+                    else if (header.includes('müşteri') || header.includes('musteri')) columnMap.musteri = i;
+                    else if (header.includes('şube') || header.includes('sube')) columnMap.sube = i;
+                    else if (header.includes('ürün') || header.includes('urun')) columnMap.urun = i;
+                    else if (header.includes('kod')) columnMap.kod = i;
+                    else if (header.includes('miktar')) columnMap.miktar = i;
+                    else if (header.includes('birim')) columnMap.birim = i;
+                    else if (header.includes('net')) columnMap.net = i;
+                    else if (header.includes('toplam')) columnMap.toplam = i;
+                }
+            }
 
             const sales = [];
             const stores = {};
