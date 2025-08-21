@@ -1015,22 +1015,22 @@
                 
                 // Bontrager accessories (13458xxx series)
                 if (code.startsWith('1345')) {
-                    console.log(`🎯 PATTERN MATCH: Code "${productCode}" → Bontrager Accessory (Pattern: 1345xxxx)`);
+                    console.log(`🎯 PATTERN MATCH: Code "${productCode}" → Accessory (Pattern: 1345xxxx)`);
                     return {
                         type: 'accessory',
-                        category: 'Bontrager Accessory',
-                        mainCategory: 'BONTRAGER AKSESUARLARI',
+                        category: 'Accessory',
+                        mainCategory: 'YEDEK PARÇA',
                         source: 'PATTERN_1345'
                     };
                 }
                 
                 // Trek components (13540xxx series)
                 if (code.startsWith('1354')) {
-                    console.log(`🎯 PATTERN MATCH: Code "${productCode}" → Trek Component (Pattern: 1354xxxx)`);
+                    console.log(`🎯 PATTERN MATCH: Code "${productCode}" → Component (Pattern: 1354xxxx)`);
                     return {
                         type: 'accessory',
-                        category: 'Trek Component',
-                        mainCategory: 'TREK PARÇALARI',
+                        category: 'Component',
+                        mainCategory: 'AEROBAR - GİDON',
                         source: 'PATTERN_1354'
                     };
                 }
@@ -1048,11 +1048,11 @@
                 
                 // High-end bikes (5xxxxxx series)
                 if (code.startsWith('5') && code.length >= 6) {
-                    console.log(`🎯 PATTERN MATCH: Code "${productCode}" → Trek Bicycle (Pattern: 5xxxxxx)`);
+                    console.log(`🎯 PATTERN MATCH: Code "${productCode}" → High-end Bicycle (Pattern: 5xxxxxx)`);
                     return {
                         type: 'bicycle',
-                        category: 'Trek Bicycle',
-                        mainCategory: 'TREK BİSİKLETLER',
+                        category: 'High-end Bicycle',
+                        mainCategory: 'BİSİKLETLER',
                         source: 'PATTERN_5X'
                     };
                 }
