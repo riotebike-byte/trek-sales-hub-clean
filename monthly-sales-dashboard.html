@@ -127,6 +127,12 @@
             font-weight: bold;
             color: #3498db;
         }
+        .stat-detail {
+            font-size: 10px;
+            color: #7f8c8d;
+            margin-top: 5px;
+            text-align: center;
+        }
 
         .stores-section {
             background: white;
@@ -477,18 +483,22 @@
                 <div class="stat-card">
                     <h3>🚲 Bisiklet Satışı</h3>
                     <div class="stat-value" id="bicycleSales">-</div>
+                    <div class="stat-detail">BİSİKLETLER + E-BİKELER</div>
                 </div>
                 <div class="stat-card">
-                    <h3>🔧 Aksesuar/Parça</h3>
+                    <h3>🔧 Diğer Satışlar</h3>
                     <div class="stat-value" id="accessorySales">-</div>
+                    <div class="stat-detail">AKSESUAR + YEDEK PARÇA + TEKSTİL + BIKE FIT</div>
                 </div>
                 <div class="stat-card">
                     <h3>🚲 Bisiklet Adedi</h3>
                     <div class="stat-value" id="bicycleQuantity">-</div>
+                    <div class="stat-detail">BİSİKLETLER + E-BİKELER</div>
                 </div>
                 <div class="stat-card">
-                    <h3>🔧 Aksesuar Adedi</h3>
+                    <h3>🔧 Diğer Adetler</h3>
                     <div class="stat-value" id="accessoryQuantity">-</div>
+                    <div class="stat-detail">AKSESUAR + YEDEK PARÇA + TEKSTİL + BIKE FIT</div>
                 </div>
                 <div class="stat-card">
                     <h3>🏪 Mağaza/Bayi</h3>
@@ -537,8 +547,12 @@
                         <div style="display: flex; gap: 10px; align-items: center;">
                             <select id="categoryViewMode" style="padding: 5px 10px; border-radius: 5px; border: 1px solid #ddd;">
                                 <option value="all">Tüm Kategoriler</option>
-                                <option value="bicycles">Sadece Bisikletler</option>
-                                <option value="accessories">Sadece Aksesuarlar</option>
+                                <option value="bicycles">BİSİKLETLER</option>
+                                <option value="ebikes">E-BİKELER</option>
+                                <option value="accessories">AKSESUAR</option>
+                                <option value="spareparts">YEDEK PARÇA</option>
+                                <option value="textile">TEKSTİL</option>
+                                <option value="bikefit">BIKE FIT</option>
                             </select>
                             <button onclick="exportCategoryData()" style="padding: 5px 10px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
                                 📊 Veriyi Dışa Aktar
@@ -2602,6 +2616,31 @@
             const accessoryQuantityEl = document.getElementById('accessoryQuantity');
             if (accessoryQuantityEl && typeof currentData.accessoryQuantity === 'number') {
                 accessoryQuantityEl.textContent = currentData.accessoryQuantity.toLocaleString('tr-TR') + ' adet';
+            }
+
+            // Debug: Check individual category quantities
+            if (currentData.categories) {
+                console.log('\n📊 === CATEGORY QUANTITIES DEBUG ===');
+                const categoryNames = ['BİSİKLETLER', 'E-BİKELER', 'AKSESUAR', 'YEDEK PARÇA', 'TEKSTİL', 'BIKE FIT'];
+                for (const catName of categoryNames) {
+                    if (currentData.categories[catName]) {
+                        console.log(`📦 ${catName}: ${currentData.categories[catName].quantity} adet (₺${currentData.categories[catName].totalTL.toLocaleString()})`);
+                    } else {
+                        console.log(`📦 ${catName}: 0 adet (category not found)`);
+                    }
+                }
+                
+                // Verify bicycle + accessory totals
+                const bicycleTotal = (currentData.categories['BİSİKLETLER']?.quantity || 0) + (currentData.categories['E-BİKELER']?.quantity || 0);
+                const accessoryTotal = (currentData.categories['AKSESUAR']?.quantity || 0) + 
+                                     (currentData.categories['YEDEK PARÇA']?.quantity || 0) + 
+                                     (currentData.categories['TEKSTİL']?.quantity || 0) + 
+                                     (currentData.categories['BIKE FIT']?.quantity || 0);
+                
+                console.log(`🚲 Calculated Bicycle Total: ${bicycleTotal} (Dashboard shows: ${currentData.bicycleQuantity})`);
+                console.log(`🔧 Calculated Accessory Total: ${accessoryTotal} (Dashboard shows: ${currentData.accessoryQuantity})`);
+                console.log(`📦 Grand Total: ${bicycleTotal + accessoryTotal} (Dashboard shows: ${currentData.totalQuantity})`);
+                console.log('=================================\n');
             }
 
             const storeCountEl = document.getElementById('storeCount');
