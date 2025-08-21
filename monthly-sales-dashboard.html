@@ -702,51 +702,24 @@
             }
         }
 
-        // Check if customer is a dealer
+        // Check if customer is a dealer - EXACT MATCH ONLY
         function isDealer(customerName) {
             if (!customerName || !dealerList.length) return false;
             
             const customerLower = customerName.toLowerCase().trim();
             
-            // Check exact and partial matches
+            // Only exact matches allowed
             for (const dealer of dealerList) {
                 const dealerLower = dealer.toLowerCase().trim();
                 
-                // Exact match (highest confidence)
+                // Exact match only
                 if (customerLower === dealerLower) {
                     console.log(`✅ EXACT MATCH: "${customerName}" → "${dealer}"`);
                     return dealer;
                 }
-                
-                // High confidence partial match (customer name contains full dealer name)
-                if (customerLower.includes(dealerLower) && dealerLower.length > 10) {
-                    console.log(`✅ PARTIAL MATCH (High): "${customerName}" → "${dealer}"`);
-                    return dealer;
-                }
-                
-                // Check for common business variations (more strict)
-                const dealerWords = dealerLower.split(/[\s\(\)\.]+/).filter(w => w.length > 3);
-                const customerWords = customerLower.split(/[\s\(\)\.]+/).filter(w => w.length > 3);
-                
-                // Remove common business terms to avoid false matches
-                const businessTerms = ['ltd', 'şti', 'anonim', 'şirketi', 'ticaret', 'sanayi', 'teknik', 'cihazlar', 'tic', 'san', 'paz', 'limited', 'company'];
-                const filteredDealerWords = dealerWords.filter(w => !businessTerms.includes(w));
-                const filteredCustomerWords = customerWords.filter(w => !businessTerms.includes(w));
-                
-                // Need at least 2 specific business words to match AND minimum 8 characters each
-                const significantMatches = filteredDealerWords.filter(word => 
-                    word.length >= 4 && filteredCustomerWords.some(cw => 
-                        cw.length >= 4 && (cw.includes(word) || word.includes(cw))
-                    )
-                );
-                
-                if (significantMatches.length >= 2) {
-                    console.log(`⚠️ WORD MATCH (Medium): "${customerName}" → "${dealer}" (matched: ${significantMatches.join(', ')})`);
-                    return dealer;
-                }
             }
             
-            console.log(`❌ NO MATCH: "${customerName}"`);
+            // No match found
             return false;
         }
 
