@@ -482,12 +482,15 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        function processExcelFile(file) {
+        async function processExcelFile(file) {
             document.getElementById('loading').style.display = 'block';
             document.getElementById('analysisSection').style.display = 'none';
 
+            // Load BizimHesap products first
+            await loadBizimHesapProducts();
+
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
                     // Use different parsing options to handle merged cells better
@@ -634,9 +637,57 @@
                 'mert bikestop eur': { dealer: 'Mert Bikestop', type: 'EUR', currency: 'EUR' }
             };
 
-            // Function to determine if product is bicycle or accessory
-            function isBicycle(productName) {
-                if (!productName) return false;
+            // BizimHesap products data cache
+            let bizimhesapProducts = null;
+            
+            // Load BizimHesap product data for category analysis
+            async function loadBizimHesapProducts() {
+                if (bizimhesapProducts) return bizimhesapProducts;
+                
+                try {
+                    console.log('🔄 Loading BizimHesap products...');
+                    const response = await fetch('/api.php');
+                    const data = await response.json();
+                    
+                    if (data.data && data.data.products) {
+                        bizimhesapProducts = data.data.products;
+                        console.log(`✅ Loaded ${bizimhesapProducts.length} BizimHesap products`);
+                        return bizimhesapProducts;
+                    }
+                } catch (error) {
+                    console.error('❌ Failed to load BizimHesap products:', error);
+                }
+                return [];
+            }
+
+            // Enhanced product categorization using BizimHesap API
+            function categorizeProduct(productCode, productName) {
+                // First try BizimHesap product lookup by code
+                if (bizimhesapProducts && productCode) {
+                    const apiProduct = bizimhesapProducts.find(p => 
+                        p.sku === productCode || p.title?.includes(productCode)
+                    );
+                    
+                    if (apiProduct && apiProduct.category) {
+                        const category = apiProduct.category.toUpperCase();
+                        
+                        // BizimHesap category mapping
+                        if (category.includes('BISIKLET') || category.includes('BIKE')) {
+                            return { type: 'bicycle', category: apiProduct.category };
+                        } else {
+                            return { type: 'accessory', category: apiProduct.category };
+                        }
+                    }
+                }
+                
+                // Fallback to name-based detection
+                return categorizeByName(productName);
+            }
+
+            // Function to determine if product is bicycle or accessory by name
+            function categorizeByName(productName) {
+                if (!productName) return { type: 'accessory', category: 'UNCATEGORIZED' };
+                
                 const name = productName.toLowerCase();
                 
                 // Bicycle indicators
@@ -655,11 +706,15 @@
                 
                 // Check for accessory first (more specific)
                 if (accessoryKeywords.some(keyword => name.includes(keyword))) {
-                    return false;
+                    return { type: 'accessory', category: 'AKSESUAR' };
                 }
                 
                 // Then check for bicycle
-                return bicycleKeywords.some(keyword => name.includes(keyword));
+                if (bicycleKeywords.some(keyword => name.includes(keyword))) {
+                    return { type: 'bicycle', category: 'BISIKLET' };
+                }
+                
+                return { type: 'accessory', category: 'UNCATEGORIZED' };
             }
 
             // Process each row
@@ -738,13 +793,20 @@
                 totalAmount += amountInTL;
                 totalQuantity += miktar;
 
-                // Categorize as bicycle or accessory
-                if (isBicycle(urun)) {
+                // Categorize using enhanced method with BizimHesap API
+                const productKod = row[columnMap.kod] || '';
+                const categoryInfo = categorizeProduct(productKod, urun);
+                
+                if (categoryInfo.type === 'bicycle') {
                     bicycleSales += amountInTL;
                     bicycleQuantity += miktar;
                 } else {
                     accessorySales += amountInTL;
                     accessoryQuantity += miktar;
+                }
+
+                if (i < 5) {
+                    console.log(`🏷️ Product categorized: ${urun} (${productKod}) -> ${categoryInfo.type} (${categoryInfo.category})`);
                 }
 
                 sales.push({
