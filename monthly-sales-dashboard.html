@@ -847,10 +847,12 @@
             
             // Bicycle indicators
             if (cat.includes('BISIKLET') || cat.includes('BIKE') || cat.includes('CYCLE')) {
+                console.log(`🚲 BICYCLE DETECTED: "${category}" → bicycle`);
                 return 'bicycle';
             }
             
             // Everything else is accessory
+            console.log(`🔧 ACCESSORY DETECTED: "${category}" → accessory`);
             return 'accessory';
         }
 
@@ -1992,9 +1994,11 @@
                 if (categoryInfo.type === 'bicycle') {
                     bicycleSales += amountInTL;
                     bicycleQuantity += miktar;
+                    console.log(`🚲 BICYCLE SALE: ${urun} (${productKod}) = ₺${amountInTL} | Total bicycles: ₺${bicycleSales}`);
                 } else {
                     accessorySales += amountInTL;
                     accessoryQuantity += miktar;
+                    console.log(`🔧 ACCESSORY SALE: ${urun} (${productKod}) = ₺${amountInTL} | Total accessories: ₺${accessorySales}`);
                 }
 
                 if (i < 15) { // More debug for first 15 items  
