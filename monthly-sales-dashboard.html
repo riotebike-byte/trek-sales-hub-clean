@@ -712,26 +712,41 @@
             for (const dealer of dealerList) {
                 const dealerLower = dealer.toLowerCase().trim();
                 
-                // Exact match
-                if (customerLower === dealerLower) return dealer;
-                
-                // Partial match (customer name contains dealer name or vice versa)
-                if (customerLower.includes(dealerLower) || dealerLower.includes(customerLower)) {
+                // Exact match (highest confidence)
+                if (customerLower === dealerLower) {
+                    console.log(`✅ EXACT MATCH: "${customerName}" → "${dealer}"`);
                     return dealer;
                 }
                 
-                // Check for common variations
-                const dealerWords = dealerLower.split(/[\s\(\)]+/).filter(w => w.length > 2);
-                const customerWords = customerLower.split(/[\s\(\)]+/).filter(w => w.length > 2);
+                // High confidence partial match (customer name contains full dealer name)
+                if (customerLower.includes(dealerLower) && dealerLower.length > 10) {
+                    console.log(`✅ PARTIAL MATCH (High): "${customerName}" → "${dealer}"`);
+                    return dealer;
+                }
                 
-                // If at least 2 significant words match
-                const matches = dealerWords.filter(word => 
-                    customerWords.some(cw => cw.includes(word) || word.includes(cw))
-                ).length;
+                // Check for common business variations (more strict)
+                const dealerWords = dealerLower.split(/[\s\(\)\.]+/).filter(w => w.length > 3);
+                const customerWords = customerLower.split(/[\s\(\)\.]+/).filter(w => w.length > 3);
                 
-                if (matches >= 2) return dealer;
+                // Remove common business terms to avoid false matches
+                const businessTerms = ['ltd', 'şti', 'anonim', 'şirketi', 'ticaret', 'sanayi', 'teknik', 'cihazlar', 'tic', 'san', 'paz', 'limited', 'company'];
+                const filteredDealerWords = dealerWords.filter(w => !businessTerms.includes(w));
+                const filteredCustomerWords = customerWords.filter(w => !businessTerms.includes(w));
+                
+                // Need at least 2 specific business words to match AND minimum 8 characters each
+                const significantMatches = filteredDealerWords.filter(word => 
+                    word.length >= 4 && filteredCustomerWords.some(cw => 
+                        cw.length >= 4 && (cw.includes(word) || word.includes(cw))
+                    )
+                );
+                
+                if (significantMatches.length >= 2) {
+                    console.log(`⚠️ WORD MATCH (Medium): "${customerName}" → "${dealer}" (matched: ${significantMatches.join(', ')})`);
+                    return dealer;
+                }
             }
             
+            console.log(`❌ NO MATCH: "${customerName}"`);
             return false;
         }
 
@@ -3227,15 +3242,24 @@
             }
 
             console.log('\n🏢 === DEALER METRICS CALCULATION ===');
+            console.log(`🔍 Processing ${data.sales.length} sales records...`);
             
             let dealerSalesTotal = 0;
             let dealerQuantityTotal = 0;
             let dealerCount = 0;
             const dealerBreakdown = {}; // Track each dealer separately
+            let debugCount = 0;
             
             // Process each sale to identify dealers
             for (const sale of data.sales) {
                 const customerName = sale.musteri || '';
+                
+                // Log first 20 customer names for debugging
+                if (debugCount < 20) {
+                    console.log(`🔍 Customer ${debugCount + 1}: "${customerName}"`);
+                    debugCount++;
+                }
+                
                 const dealerMatch = isDealer(customerName);
                 
                 if (dealerMatch) {
@@ -3261,7 +3285,7 @@
                     dealerBreakdown[dealerMatch].orders += 1;
                     dealerBreakdown[dealerMatch].customers.add(customerName);
                     
-                    if (Object.keys(dealerBreakdown).length <= 5) { // Log first 5 matches
+                    if (Object.keys(dealerBreakdown).length <= 10) { // Log first 10 matches for debugging
                         console.log(`🎯 DEALER MATCH: "${customerName}" → "${dealerMatch}" | ₺${saleAmount.toLocaleString()} | ${saleQuantity} adet`);
                     }
                 }
