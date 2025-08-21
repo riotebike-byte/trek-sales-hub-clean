@@ -1047,15 +1047,31 @@
                     };
                 }
                 
-                // High-end bikes (5xxxxxx series)
+                // High-end bikes (5xxxxxx series) - check if E-bike first
                 if (code.startsWith('5') && code.length >= 6) {
-                    console.log(`🎯 PATTERN MATCH: Code "${productCode}" → High-end Bicycle (Pattern: 5xxxxxx)`);
-                    return {
-                        type: 'bicycle',
-                        category: 'High-end Bicycle',
-                        mainCategory: 'BİSİKLETLER',
-                        source: 'PATTERN_5X'
-                    };
+                    const name = (productName || '').toLowerCase();
+                    
+                    // Check if this is an E-bike based on product name
+                    const ebikeKeywords = ['rail', 'powerfly', 'fuel exe', 'verve+', 'fx+', 'ds+', 'townie go', 'marlin+', 'elektrikli', 'electric', 'e-bike', '+'];
+                    const isEbike = ebikeKeywords.some(keyword => name.includes(keyword));
+                    
+                    if (isEbike) {
+                        console.log(`⚡ PATTERN MATCH E-BIKE: Code "${productCode}" → E-bike (Pattern: 5xxxxxx, Name: ${productName})`);
+                        return {
+                            type: 'bicycle',
+                            category: 'E-BIKE',
+                            mainCategory: 'E-BİKELER',
+                            source: 'PATTERN_5X_EBIKE'
+                        };
+                    } else {
+                        console.log(`🚲 PATTERN MATCH: Code "${productCode}" → High-end Bicycle (Pattern: 5xxxxxx)`);
+                        return {
+                            type: 'bicycle',
+                            category: 'High-end Bicycle',
+                            mainCategory: 'BİSİKLETLER',
+                            source: 'PATTERN_5X'
+                        };
+                    }
                 }
                 
                 // 100% Eyewear (100-999 range)
@@ -1118,8 +1134,20 @@
                         });
                         
                         const productCategory = apiProduct.category || 'UNCATEGORIZED';
-                        const productType = getBicycleOrAccessory(productCategory);
-                        const mainCat = getMainCategory(productCategory);
+                        let productType = getBicycleOrAccessory(productCategory);
+                        let mainCat = getMainCategory(productCategory);
+                        
+                        // Override with E-bike detection if this is a bicycle
+                        if (productType === 'bicycle') {
+                            const productTitle = (apiProduct.title || '').toLowerCase();
+                            const ebikeKeywords = ['rail', 'powerfly', 'fuel exe', 'verve+', 'fx+', 'ds+', 'townie go', 'marlin+', 'elektrikli', 'electric', 'e-bike', '+'];
+                            const isEbike = ebikeKeywords.some(keyword => productTitle.includes(keyword));
+                            
+                            if (isEbike) {
+                                mainCat = 'E-BİKELER';
+                                console.log(`⚡ API E-BIKE DETECTED: "${apiProduct.title}" → E-BİKELER (matched: ${ebikeKeywords.find(k => productTitle.includes(k))})`);
+                            }
+                        }
                         
                         console.log(`🎯 CATEGORIZED: "${productCategory}" → Main: "${mainCat}", Type: "${productType}"`);
                         
