@@ -2382,8 +2382,8 @@
                 }
                 
                 // Recalculate bicycle vs accessory sales based on main categories
-                const mainCategoryName = categoryInfo.mainCategory || categoryInfo.category || 'AKSESUAR';
-                if (mainCategoryName === 'BİSİKLETLER' || mainCategoryName === 'E-BİKELER') {
+                const recalcMainCategory = categoryInfo.mainCategory || categoryInfo.category || 'AKSESUAR';
+                if (recalcMainCategory === 'BİSİKLETLER' || recalcMainCategory === 'E-BİKELER') {
                     newBicycleSales += sale.amountInTL;
                 } else {
                     newAccessorySales += sale.amountInTL;
