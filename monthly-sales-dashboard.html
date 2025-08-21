@@ -524,6 +524,22 @@
                     <div class="stat-value" id="ebikePenetration" style="color: white;">-</div>
                     <div class="stat-detail" style="color: rgba(255,255,255,0.8);">E-bike / Toplam Bisiklet</div>
                 </div>
+                <!-- Dealer Analytics Section -->
+                <div class="stat-card" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color: white;">
+                    <h3>🏢 Bayi Satışları</h3>
+                    <div class="stat-value" id="dealerSales" style="color: white;">-</div>
+                    <div class="stat-detail" style="color: rgba(255,255,255,0.8);">Toplam Bayi Tutarı</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: white;">
+                    <h3>📦 Bayi Adetleri</h3>
+                    <div class="stat-value" id="dealerQuantity" style="color: white;">-</div>
+                    <div class="stat-detail" style="color: rgba(255,255,255,0.8);">Toplam Bayi Adet</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: white;">
+                    <h3>🎯 Bayi Penetrasyonu</h3>
+                    <div class="stat-value" id="dealerPenetration" style="color: white;">-</div>
+                    <div class="stat-detail" style="color: rgba(255,255,255,0.8);">Bayi / Toplam Satış</div>
+                </div>
             </div>
 
             <div class="stores-section">
@@ -653,7 +669,72 @@
     <script>
         let currentData = null;
         let currentCurrency = 'TL';
+        let dealerList = []; // Store dealer list
         
+        // Load dealer list
+        async function loadDealerList() {
+            try {
+                const response = await fetch('./dealer_list.json');
+                const data = await response.json();
+                
+                // Filter out invalid entries (dates, headers, etc.)
+                dealerList = data.dealers.filter(dealer => {
+                    if (!dealer || typeof dealer !== 'string') return false;
+                    
+                    // Skip date entries
+                    if (dealer.match(/^\d{2}\.\d{2}\.\d{4}$/)) return false;
+                    
+                    // Skip header entries
+                    if (dealer.includes('İsim/Unvan') || dealer.includes('Unnamed:')) return false;
+                    
+                    // Must have reasonable length
+                    return dealer.length > 3;
+                });
+                
+                console.log(`✅ Loaded ${dealerList.length} dealers from list`);
+                console.log('🏢 Sample dealers:', dealerList.slice(0, 5));
+                
+                return dealerList;
+            } catch (error) {
+                console.error('❌ Error loading dealer list:', error);
+                dealerList = [];
+                return [];
+            }
+        }
+
+        // Check if customer is a dealer
+        function isDealer(customerName) {
+            if (!customerName || !dealerList.length) return false;
+            
+            const customerLower = customerName.toLowerCase().trim();
+            
+            // Check exact and partial matches
+            for (const dealer of dealerList) {
+                const dealerLower = dealer.toLowerCase().trim();
+                
+                // Exact match
+                if (customerLower === dealerLower) return dealer;
+                
+                // Partial match (customer name contains dealer name or vice versa)
+                if (customerLower.includes(dealerLower) || dealerLower.includes(customerLower)) {
+                    return dealer;
+                }
+                
+                // Check for common variations
+                const dealerWords = dealerLower.split(/[\s\(\)]+/).filter(w => w.length > 2);
+                const customerWords = customerLower.split(/[\s\(\)]+/).filter(w => w.length > 2);
+                
+                // If at least 2 significant words match
+                const matches = dealerWords.filter(word => 
+                    customerWords.some(cw => cw.includes(word) || word.includes(cw))
+                ).length;
+                
+                if (matches >= 2) return dealer;
+            }
+            
+            return false;
+        }
+
         // Memory management for multiple Excel files
         const excelMemory = {
             files: new Map(), // fileName -> {data, uploadDate, fileSize}
@@ -3133,6 +3214,67 @@
                 console.log(`⚡ E-bike Penetration: ${penetration.toFixed(1)}% (₺${ebikesSales.toLocaleString()} / ₺${data.bicycleSales.toLocaleString()})`);
             }
 
+            // 4. Dealer Analytics
+            calculateDealerMetrics(data, symbol, rate);
+
+            console.log('=================================\n');
+        }
+
+        function calculateDealerMetrics(data, symbol, rate) {
+            if (!data.sales || !dealerList.length) {
+                console.log('🏢 No dealer data or sales to process');
+                return;
+            }
+
+            console.log('\n🏢 === DEALER METRICS CALCULATION ===');
+            
+            let dealerSalesTotal = 0;
+            let dealerQuantityTotal = 0;
+            let dealerCount = 0;
+            const dealerMatches = new Set();
+            
+            // Process each sale to identify dealers
+            for (const sale of data.sales) {
+                const customerName = sale.musteri || '';
+                const dealerMatch = isDealer(customerName);
+                
+                if (dealerMatch) {
+                    dealerSalesTotal += sale.amountInTL || 0;
+                    dealerQuantityTotal += sale.miktar || 0;
+                    dealerMatches.add(dealerMatch);
+                    
+                    if (dealerMatches.size <= 5) { // Log first 5 matches
+                        console.log(`🎯 DEALER MATCH: "${customerName}" → "${dealerMatch}" | ₺${(sale.amountInTL || 0).toLocaleString()} | ${sale.miktar || 0} adet`);
+                    }
+                }
+            }
+            
+            dealerCount = dealerMatches.size;
+            
+            // Update dealer sales card
+            const dealerSalesEl = document.getElementById('dealerSales');
+            if (dealerSalesEl) {
+                dealerSalesEl.textContent = symbol + (dealerSalesTotal / rate).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+            }
+            
+            // Update dealer quantity card
+            const dealerQuantityEl = document.getElementById('dealerQuantity');
+            if (dealerQuantityEl) {
+                dealerQuantityEl.textContent = dealerQuantityTotal.toLocaleString('tr-TR') + ' adet';
+            }
+            
+            // Update dealer penetration
+            const dealerPenetrationEl = document.getElementById('dealerPenetration');
+            if (dealerPenetrationEl && data.totalAmount > 0) {
+                const penetration = (dealerSalesTotal / data.totalAmount) * 100;
+                dealerPenetrationEl.textContent = penetration.toFixed(1) + '%';
+            }
+            
+            console.log(`🏢 Total Dealers Found: ${dealerCount}`);
+            console.log(`💰 Dealer Sales: ${symbol}${(dealerSalesTotal / rate).toLocaleString()}`);
+            console.log(`📦 Dealer Quantity: ${dealerQuantityTotal.toLocaleString()} items`);
+            console.log(`🎯 Dealer Penetration: ${((dealerSalesTotal / data.totalAmount) * 100).toFixed(1)}%`);
+            console.log(`🏢 Matched Dealers: ${Array.from(dealerMatches).slice(0, 5).join(', ')}${dealerMatches.size > 5 ? '...' : ''}`);
             console.log('=================================\n');
         }
         
@@ -3626,6 +3768,11 @@
                 successDiv.remove();
             }, 3000);
         }
+
+        // Initialize app
+        window.onload = function() {
+            loadDealerList();
+        };
     </script>
 </body>
 </html>
