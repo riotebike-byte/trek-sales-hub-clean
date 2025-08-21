@@ -339,7 +339,7 @@
                     <div class="stat-value" id="totalSales">-</div>
                 </div>
                 <div class="stat-card">
-                    <h3>🏪 Aktif Mağaza Sayısı</h3>
+                    <h3>🏪 Mağaza + Bayi Sayısı</h3>
                     <div class="stat-value" id="storeCount">-</div>
                 </div>
                 <div class="stat-card">
@@ -683,10 +683,15 @@
             const rate = exchangeRates[currentCurrency];
             const symbol = currentCurrency === 'TL' ? '₺' : currentCurrency === 'USD' ? '$' : '€';
 
+            // Calculate total including both stores and dealers
+            const storesTotalTL = Object.values(currentData.stores).reduce((sum, store) => sum + store.totalTL, 0);
+            const dealersTotalTL = Object.values(currentData.dealers).reduce((sum, dealer) => sum + dealer.totalTL, 0);
+            const grandTotalTL = storesTotalTL + dealersTotalTL;
+
             // Update totals
             document.getElementById('totalSales').textContent = 
-                symbol + (currentData.totalAmount / rate).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
-            document.getElementById('storeCount').textContent = Object.keys(currentData.stores).length;
+                symbol + (grandTotalTL / rate).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+            document.getElementById('storeCount').textContent = Object.keys(currentData.stores).length + Object.keys(currentData.dealers).length;
             document.getElementById('orderCount').textContent = currentData.orderCount.toLocaleString('tr-TR');
             document.getElementById('customerCount').textContent = currentData.customerCount.toLocaleString('tr-TR');
 
