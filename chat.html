@@ -289,12 +289,8 @@
             addMessage('user', message);
             messageInput.value = '';
 
-            // Send to API - check if running locally or on production
-            const apiUrl = window.location.hostname === 'localhost' || window.location.protocol === 'file:' 
-                ? '/api/chat'  // Local Flask server
-                : '/api/chat'; // Production server
-            
-            fetch(apiUrl, {
+            // Send to API
+            fetch('/api/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
