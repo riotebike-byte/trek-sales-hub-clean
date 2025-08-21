@@ -876,6 +876,7 @@
                 cat.includes('DS+') || cat.includes('DS +') || cat.includes('FX+') || cat.includes('FX +') ||
                 cat.includes('VERVE+') || cat.includes('VERVE +') || cat.includes('TOWNIE GO') ||
                 cat.includes('MARLIN+') || cat.includes('MARLIN +')) {
+                console.log(`⚡ E-BIKE DETECTED: "${category}" → E-BİKELER`);
                 return 'E-BİKELER';
             }
             
@@ -1201,12 +1202,24 @@
             const name = productName.toLowerCase();
             console.log(`🏷️ Name-based categorization for: "${name}"`);
             
-            // Bicycle indicators (more comprehensive)
+            // E-bike indicators (check first for priority)
+            const ebikeKeywords = [
+                'rail', 'powerfly', 'fuel exe', 'verve+', 'fx+', 'ds+', 'townie go',
+                'marlin+', 'allant', 'distrito', 'elektrikli', 'electric', 'e-bike',
+                '🔋', '+', 'plus', 'elektriklı'
+            ];
+            
+            // Check for e-bike first
+            if (ebikeKeywords.some(keyword => name.includes(keyword))) {
+                console.log(`⚡ E-BIKE detected from name: "${productName}" (matched: ${ebikeKeywords.find(k => name.includes(k))})`);
+                return { type: 'bicycle', category: 'E-BIKE', mainCategory: 'E-BİKELER' };
+            }
+            
+            // Regular bicycle indicators  
             const bicycleKeywords = [
                 'bisiklet', 'bike', 'trek', 'fx', 'madone', 'domane', 'émonda', 'checkpoint',
-                'verve', 'dual sport', 'marlin', 'x-caliber', 'fuel', 'remedy', 'slash',
-                'session', 'supercaliber', 'top fuel', 'procaliber', 'roscoe', 'townie',
-                'rail', 'powerfly', 'allant', 'distrito'
+                'verve', 'dual sport', 'marlin', 'x-caliber', 'fuel ex', 'remedy', 'slash',
+                'session', 'supercaliber', 'top fuel', 'procaliber', 'roscoe', 'townie'
             ];
             
             // Accessory/spare part indicators (expanded)
