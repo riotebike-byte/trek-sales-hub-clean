@@ -523,6 +523,7 @@
                     <button class="chart-btn" onclick="showChart('categories')">📊 Kategori Analizi</button>
                     <button class="chart-btn" onclick="showChart('performance')">🏆 En İyi Performans</button>
                     <button class="chart-btn" onclick="showChart('monthly')">📈 Aylık Trend</button>
+                    <button class="chart-btn" onclick="showChart('monthlySales')">💰 USD Satış Trendi</button>
                 </div>
                 
                 <div id="storesChart" class="chart-container">
@@ -547,6 +548,17 @@
                         💡 Bu grafik birden fazla aylık veri yüklendiğinde kategori trendlerini gösterecektir
                     </p>
                     <canvas id="monthlyTrendChart" width="400" height="200"></canvas>
+                </div>
+                
+                <div id="monthlySalesChart" class="chart-container" style="display: none;">
+                    <h3 style="margin-bottom: 15px;">💰 Aylık Toplam Satış Trendi (USD)</h3>
+                    <canvas id="monthlySalesCanvas" width="400" height="200"></canvas>
+                    <div id="monthlySalesStats" style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 14px;">
+                        <div class="stats-row" style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span><strong>📊 İstatistikler:</strong></span>
+                        </div>
+                        <div id="monthlyStatsContent"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -700,6 +712,7 @@
         let categoryChartInstance = null;
         let performanceChartInstance = null;
         let monthlyTrendChartInstance = null;
+        let monthlySalesChartInstance = null;
         
         // Load BizimHesap product data for category analysis
         async function loadBizimHesapProducts() {
@@ -2482,6 +2495,175 @@
             });
         }
 
+        function updateMonthlySalesChart() {
+            // Get all files from memory to create monthly trend
+            const allData = excelMemory.getAllData();
+            const monthlyBreakdown = allData.monthlyBreakdown;
+            
+            if (Object.keys(monthlyBreakdown).length < 1) {
+                // Show message if no data
+                const statsDiv = document.getElementById('monthlyStatsContent');
+                if (statsDiv) {
+                    statsDiv.innerHTML = '<div style="color: #666; font-style: italic;">Aylık trend için en az 1 aylık veri gerekli.</div>';
+                }
+                return;
+            }
+            
+            const canvas = document.getElementById('monthlySalesCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Sort months chronologically
+            const sortedMonths = Object.entries(monthlyBreakdown)
+                .sort((a, b) => a[0].localeCompare(b[0]));
+            
+            const monthNames = {
+                '01': 'Ocak', '02': 'Şubat', '03': 'Mart', '04': 'Nisan',
+                '05': 'Mayıs', '06': 'Haziran', '07': 'Temmuz', '08': 'Ağustos',
+                '09': 'Eylül', '10': 'Ekim', '11': 'Kasım', '12': 'Aralık'
+            };
+            
+            // Convert TL amounts to USD
+            const labels = [];
+            const dataUSD = [];
+            const dataTL = [];
+            
+            for (const [monthKey, tlAmount] of sortedMonths) {
+                const [year, month] = monthKey.split('-');
+                const monthName = monthNames[month] || month;
+                labels.push(`${monthName} ${year}`);
+                
+                // Convert to USD using currency converter
+                const usdAmount = currencyConverter.convert(tlAmount, 'TL', 'USD');
+                dataUSD.push(usdAmount);
+                dataTL.push(tlAmount);
+            }
+            
+            // Calculate statistics
+            const totalUSD = dataUSD.reduce((sum, val) => sum + val, 0);
+            const avgUSD = totalUSD / dataUSD.length;
+            const maxUSD = Math.max(...dataUSD);
+            const minUSD = Math.min(...dataUSD);
+            const maxMonth = labels[dataUSD.indexOf(maxUSD)];
+            const minMonth = labels[dataUSD.indexOf(minUSD)];
+            
+            // Growth calculation
+            let growthText = '';
+            if (dataUSD.length > 1) {
+                const lastMonth = dataUSD[dataUSD.length - 1];
+                const prevMonth = dataUSD[dataUSD.length - 2];
+                const growth = ((lastMonth - prevMonth) / prevMonth * 100).toFixed(1);
+                const growthColor = growth >= 0 ? '#27ae60' : '#e74c3c';
+                const growthIcon = growth >= 0 ? '📈' : '📉';
+                growthText = `<div style="color: ${growthColor};">${growthIcon} Son aya göre: %${growth}</div>`;
+            }
+            
+            // Update statistics
+            const statsDiv = document.getElementById('monthlyStatsContent');
+            if (statsDiv) {
+                statsDiv.innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <div><strong>💰 Toplam:</strong> ${currencyConverter.format(totalUSD, 'USD')}</div>
+                            <div><strong>📊 Ortalama:</strong> ${currencyConverter.format(avgUSD, 'USD')}</div>
+                            <div><strong>📈 En Yüksek:</strong> ${currencyConverter.format(maxUSD, 'USD')} <span style="color: #666;">(${maxMonth})</span></div>
+                        </div>
+                        <div>
+                            <div><strong>📉 En Düşük:</strong> ${currencyConverter.format(minUSD, 'USD')} <span style="color: #666;">(${minMonth})</span></div>
+                            <div><strong>📅 Dönem:</strong> ${labels.length} ay</div>
+                            ${growthText}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Destroy existing chart
+            if (monthlySalesChartInstance) {
+                monthlySalesChartInstance.destroy();
+            }
+            
+            // Create gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(52, 152, 219, 0.8)');
+            gradient.addColorStop(1, 'rgba(52, 152, 219, 0.1)');
+            
+            // Create new chart
+            monthlySalesChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Aylık Satış (USD)',
+                        data: dataUSD,
+                        borderColor: '#3498db',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#3498db',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            callbacks: {
+                                label: function(context) {
+                                    const index = context.dataIndex;
+                                    const usdVal = currencyConverter.format(context.raw, 'USD');
+                                    const tlVal = currencyConverter.format(dataTL[index], 'TL');
+                                    return [
+                                        `USD: ${usdVal}`,
+                                        `TL: ${tlVal}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Aylar'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Satış Tutarı (USD)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         function updateMonthlyTrendChart() {
             if (monthlyDataHistory.length < 2) {
                 // Not enough data for trend analysis
@@ -2562,6 +2744,12 @@
             document.getElementById('categoriesChart').style.display = chartType === 'categories' ? 'block' : 'none';
             document.getElementById('performanceChart').style.display = chartType === 'performance' ? 'block' : 'none';
             document.getElementById('monthlyChart').style.display = chartType === 'monthly' ? 'block' : 'none';
+            document.getElementById('monthlySalesChart').style.display = chartType === 'monthlySales' ? 'block' : 'none';
+            
+            // Update monthly sales chart if selected
+            if (chartType === 'monthlySales') {
+                updateMonthlySalesChart();
+            }
         }
 
         function showCategoryDetail(categoryName) {
