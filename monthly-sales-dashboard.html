@@ -3356,6 +3356,31 @@
                 console.log(`🚲 Calculated Bicycle Total: ${bicycleTotal} (Dashboard shows: ${currentData.bicycleQuantity})`);
                 console.log(`🔧 Calculated Accessory Total: ${accessoryTotal} (Dashboard shows: ${currentData.accessoryQuantity})`);
                 console.log(`📦 Grand Total: ${bicycleTotal + accessoryTotal} (Dashboard shows: ${currentData.totalQuantity})`);
+                
+                // Sales amount verification
+                const bicycleSalesTotal = (currentData.categories['BİSİKLETLER']?.totalTL || 0) + (currentData.categories['E-BİKELER']?.totalTL || 0);
+                const accessorySalesTotal = (currentData.categories['AKSESUAR']?.totalTL || 0) + 
+                                          (currentData.categories['YEDEK PARÇA']?.totalTL || 0) + 
+                                          (currentData.categories['TEKSTİL']?.totalTL || 0) + 
+                                          (currentData.categories['BIKE FIT']?.totalTL || 0);
+                
+                console.log(`💰 Calculated Bicycle Sales: ₺${bicycleSalesTotal.toLocaleString()} (Dashboard shows: ₺${currentData.bicycleSales.toLocaleString()})`);
+                console.log(`💰 Calculated Accessory Sales: ₺${accessorySalesTotal.toLocaleString()} (Dashboard shows: ₺${currentData.accessorySales.toLocaleString()})`);
+                console.log(`💰 Sales Grand Total: ₺${(bicycleSalesTotal + accessorySalesTotal).toLocaleString()} (Dashboard shows: ₺${currentData.totalAmount.toLocaleString()})`);
+                
+                // Flag any discrepancies
+                if (bicycleTotal !== currentData.bicycleQuantity) {
+                    console.log(`❌ BICYCLE QUANTITY MISMATCH: Calculated ${bicycleTotal} vs Dashboard ${currentData.bicycleQuantity}`);
+                }
+                if (accessoryTotal !== currentData.accessoryQuantity) {
+                    console.log(`❌ ACCESSORY QUANTITY MISMATCH: Calculated ${accessoryTotal} vs Dashboard ${currentData.accessoryQuantity}`);
+                }
+                if (Math.abs(bicycleSalesTotal - currentData.bicycleSales) > 1) {
+                    console.log(`❌ BICYCLE SALES MISMATCH: Calculated ₺${bicycleSalesTotal.toLocaleString()} vs Dashboard ₺${currentData.bicycleSales.toLocaleString()}`);
+                }
+                if (Math.abs(accessorySalesTotal - currentData.accessorySales) > 1) {
+                    console.log(`❌ ACCESSORY SALES MISMATCH: Calculated ₺${accessorySalesTotal.toLocaleString()} vs Dashboard ₺${currentData.accessorySales.toLocaleString()}`);
+                }
                 console.log('=================================\n');
             }
 
