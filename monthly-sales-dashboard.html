@@ -2722,6 +2722,11 @@
                 // Track category-specific sales using main categories
                 const mainCategoryName = categoryInfo.mainCategory || categoryInfo.category || 'UNCATEGORIZED';
                 
+                // Debug first 20 categorizations 
+                if (i < 20) {
+                    console.log(`📝 Row ${i+1}: "${urun}" (${productKod}) → Category: ${mainCategoryName} | ₺${amountInTL} | ${miktar} adet`);
+                }
+                
                 // Track uncategorized items for debugging
                 if (mainCategoryName === 'UNCATEGORIZED') {
                     uncategorizedItems.push({
