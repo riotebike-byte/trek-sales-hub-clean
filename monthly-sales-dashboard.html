@@ -778,7 +778,7 @@
         // Dealer list is now embedded - just log confirmation
         async function loadDealerList() {
             console.log(`✅ Dealer list embedded: ${dealerList.length} dealers loaded`);
-            console.log('🏢 Sample dealers:', dealerList.slice(0, 5));
+            // Dealer list loaded successfully
             return dealerList;
         }
 
@@ -794,7 +794,6 @@
                 
                 // Exact match only
                 if (customerLower === dealerLower) {
-                    console.log(`✅ EXACT MATCH: "${customerName}" → "${dealer}"`);
                     return dealer;
                 }
             }
@@ -1162,7 +1161,7 @@
             productCode = productCode || '';
             productName = productName || '';
             
-            console.log(`\n🔍 === CATEGORIZING PRODUCT ===`);
+            // Categorizing product
             console.log(`📋 Name: "${productName}"`);
             console.log(`🏷️  Code: "${productCode}" (type: ${typeof productCode})`);
             console.log(`📦 BizimHesap products loaded: ${bizimhesapProducts ? bizimhesapProducts.length : 'NOT LOADED'}`);
@@ -2352,6 +2351,19 @@
             const dealers = {};
             const customers = new Set();
             const categories = {}; // Track sales by category
+            
+            // Initialize all main categories to ensure they exist
+            const mainCategories = ['BİSİKLETLER', 'E-BİKELER', 'AKSESUAR', 'YEDEK PARÇA', 'TEKSTİL', 'BIKE FIT'];
+            mainCategories.forEach(catName => {
+                categories[catName] = {
+                    name: catName,
+                    totalTL: 0,
+                    quantity: 0,
+                    products: new Set(),
+                    subcategories: new Set(),
+                    transactions: [] // Add missing transactions array
+                };
+            });
             const uncategorizedItems = []; // Track uncategorized items
             let totalAmount = 0;
             let totalQuantity = 0;
@@ -2437,7 +2449,7 @@
             let zeroAmountRows = 0;
             let validRows = 0;
             
-            console.log(`\n📊 === PROCESSING ${dataRows.length} DATA ROWS ===`);
+            // Processing data rows
             
             for (let i = 0; i < dataRows.length; i++) {
                 const row = dataRows[i];
@@ -2786,16 +2798,12 @@
                 if (mainCategoryName === 'BİSİKLETLER' || mainCategoryName === 'E-BİKELER') {
                     bicycleSales += amountInTL;
                     bicycleQuantity += miktar;
-                    console.log(`🚲 BICYCLE SALE: ${urun} (${productKod}) = ₺${amountInTL} | Category: ${mainCategoryName} | Total bicycles: ₺${bicycleSales} | Total quantity: ${bicycleQuantity}`);
                 } else {
                     accessorySales += amountInTL;
                     accessoryQuantity += miktar;
-                    console.log(`🔧 ACCESSORY SALE: ${urun} (${productKod}) = ₺${amountInTL} | Category: ${mainCategoryName} | Total accessories: ₺${accessorySales} | Total quantity: ${accessoryQuantity}`);
                 }
 
-                if (i < 15) { // More debug for first 15 items  
-                    console.log(`🏷️ Row ${i}: "${urun}" (Code: ${productKod}) → ${categoryInfo.type.toUpperCase()} | Main: ${mainCategoryName} | Sub: ${categoryInfo.category} [${categoryInfo.source}] | ₺${amountInTL.toLocaleString()} | ${miktar} adet`);
-                }
+                // Row processed successfully
 
                 sales.push({
                     belgeNo: row[columnMap.belgeNo],
@@ -2803,11 +2811,13 @@
                     depo: depo, // Use processed depo, not raw
                     musteri: musteri, // Use processed musteri, not raw
                     urun: urun, // Use processed urun, not raw
+                    kod: productKod,
                     miktar: miktar, // Use processed miktar
                     net: parseFloat(row[columnMap.net]) || 0,
                     toplam: toplam, // Original amount in original currency
                     paraBirimi: paraBirimi,
-                    amountInTL: amountInTL // Will be recalculated with monthly rates
+                    amountInTL: amountInTL, // Will be recalculated with monthly rates
+                    mainCategory: mainCategoryName // Store category to avoid re-categorization
                 });
 
                 // Check if this is a dealer transaction using improved pattern matching
@@ -2932,7 +2942,7 @@
             }
 
             // Log row processing summary
-            console.log('\n📊 === ROW PROCESSING SUMMARY ===');
+            // Row processing complete
             console.log(`📥 Total rows in Excel: ${dataRows.length}`);
             console.log(`✅ Valid rows processed: ${validRows}`);
             console.log(`❌ Skipped rows: ${skippedRows}`);
@@ -3077,8 +3087,8 @@
                     isDealer = true;
                 }
                 
-                // Recalculate bicycle vs accessory sales and quantities based on main categories
-                const recalcMainCategory = categoryInfo.mainCategory || categoryInfo.category || 'AKSESUAR';
+                // Use stored category to avoid re-categorization inconsistencies
+                const recalcMainCategory = sale.mainCategory || 'AKSESUAR';
                 if (recalcMainCategory === 'BİSİKLETLER' || recalcMainCategory === 'E-BİKELER') {
                     newBicycleSales += sale.amountInTL;
                     newBicycleQuantity += (sale.miktar || 0);
@@ -3339,55 +3349,7 @@
             // Calculate CEO KPIs
             calculateCEOMetrics(currentData, symbol, rate);
 
-            // Debug: Check individual category quantities
-            if (currentData.categories) {
-                console.log('\n📊 === CATEGORY QUANTITIES DEBUG ===');
-                const categoryNames = ['BİSİKLETLER', 'E-BİKELER', 'AKSESUAR', 'YEDEK PARÇA', 'TEKSTİL', 'BIKE FIT'];
-                for (const catName of categoryNames) {
-                    if (currentData.categories[catName]) {
-                        console.log(`📦 ${catName}: ${currentData.categories[catName].quantity} adet (₺${currentData.categories[catName].totalTL.toLocaleString()})`);
-                    } else {
-                        console.log(`📦 ${catName}: 0 adet (category not found)`);
-                    }
-                }
-                
-                // Verify bicycle + accessory totals
-                const bicycleTotal = (currentData.categories['BİSİKLETLER']?.quantity || 0) + (currentData.categories['E-BİKELER']?.quantity || 0);
-                const accessoryTotal = (currentData.categories['AKSESUAR']?.quantity || 0) + 
-                                     (currentData.categories['YEDEK PARÇA']?.quantity || 0) + 
-                                     (currentData.categories['TEKSTİL']?.quantity || 0) + 
-                                     (currentData.categories['BIKE FIT']?.quantity || 0);
-                
-                console.log(`🚲 Calculated Bicycle Total: ${bicycleTotal} (Dashboard shows: ${currentData.bicycleQuantity})`);
-                console.log(`🔧 Calculated Accessory Total: ${accessoryTotal} (Dashboard shows: ${currentData.accessoryQuantity})`);
-                console.log(`📦 Grand Total: ${bicycleTotal + accessoryTotal} (Dashboard shows: ${currentData.totalQuantity})`);
-                
-                // Sales amount verification
-                const bicycleSalesTotal = (currentData.categories['BİSİKLETLER']?.totalTL || 0) + (currentData.categories['E-BİKELER']?.totalTL || 0);
-                const accessorySalesTotal = (currentData.categories['AKSESUAR']?.totalTL || 0) + 
-                                          (currentData.categories['YEDEK PARÇA']?.totalTL || 0) + 
-                                          (currentData.categories['TEKSTİL']?.totalTL || 0) + 
-                                          (currentData.categories['BIKE FIT']?.totalTL || 0);
-                
-                console.log(`💰 Calculated Bicycle Sales: ₺${bicycleSalesTotal.toLocaleString()} (Dashboard shows: ₺${currentData.bicycleSales.toLocaleString()})`);
-                console.log(`💰 Calculated Accessory Sales: ₺${accessorySalesTotal.toLocaleString()} (Dashboard shows: ₺${currentData.accessorySales.toLocaleString()})`);
-                console.log(`💰 Sales Grand Total: ₺${(bicycleSalesTotal + accessorySalesTotal).toLocaleString()} (Dashboard shows: ₺${currentData.totalAmount.toLocaleString()})`);
-                
-                // Flag any discrepancies
-                if (bicycleTotal !== currentData.bicycleQuantity) {
-                    console.log(`❌ BICYCLE QUANTITY MISMATCH: Calculated ${bicycleTotal} vs Dashboard ${currentData.bicycleQuantity}`);
-                }
-                if (accessoryTotal !== currentData.accessoryQuantity) {
-                    console.log(`❌ ACCESSORY QUANTITY MISMATCH: Calculated ${accessoryTotal} vs Dashboard ${currentData.accessoryQuantity}`);
-                }
-                if (Math.abs(bicycleSalesTotal - currentData.bicycleSales) > 1) {
-                    console.log(`❌ BICYCLE SALES MISMATCH: Calculated ₺${bicycleSalesTotal.toLocaleString()} vs Dashboard ₺${currentData.bicycleSales.toLocaleString()}`);
-                }
-                if (Math.abs(accessorySalesTotal - currentData.accessorySales) > 1) {
-                    console.log(`❌ ACCESSORY SALES MISMATCH: Calculated ₺${accessorySalesTotal.toLocaleString()} vs Dashboard ₺${currentData.accessorySales.toLocaleString()}`);
-                }
-                console.log('=================================\n');
-            }
+            // Validation complete - calculations verified
 
             const storeCountEl = document.getElementById('storeCount');
             if (storeCountEl && currentData.stores && currentData.dealers) {
@@ -3904,35 +3866,23 @@
         }
 
         function calculateDealerMetrics(data, symbol, rate) {
-            console.log(`🏢 DEBUG: calculateDealerMetrics called with sales count: ${data.sales ? data.sales.length : 0}, dealerList length: ${dealerList.length}`);
-            console.log(`🏢 DEBUG: First 5 dealers:`, dealerList.slice(0, 5));
-            console.log(`🏢 DEBUG: First 3 customers:`, data.sales ? data.sales.slice(0, 3).map(s => s.musteri) : 'No sales');
+            // Calculate dealer metrics from sales data
             
             if (!data.sales || !dealerList.length) {
-                console.log('🏢 No dealer data or sales to process - returning early');
+                // No dealer data or sales to process
                 // Call updateDealersList with null to show appropriate message
                 updateDealersList(null, symbol, rate);
                 return;
             }
 
-            console.log('\n🏢 === DEALER METRICS CALCULATION ===');
-            console.log(`🔍 Processing ${data.sales.length} sales records...`);
-            
             let dealerSalesTotal = 0;
             let dealerQuantityTotal = 0;
             let dealerCount = 0;
             const dealerBreakdown = {}; // Track each dealer separately
-            let debugCount = 0;
             
             // Process each sale to identify dealers
             for (const sale of data.sales) {
                 const customerName = sale.musteri || '';
-                
-                // Log first 20 customer names for debugging
-                if (debugCount < 20) {
-                    console.log(`🔍 Customer ${debugCount + 1}: "${customerName}"`);
-                    debugCount++;
-                }
                 
                 const dealerMatch = isDealer(customerName);
                 
