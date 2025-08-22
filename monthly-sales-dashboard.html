@@ -2798,6 +2798,48 @@
             const symbol = currentCurrency === 'TL' ? '₺' : currentCurrency === 'USD' ? '$' : '€';
             
             const dealersList = document.getElementById('dealersList');
+            
+            // Check if dealers data exists - if not, show dealer list from CAR\u0130 RAPORU
+            if (!currentData.dealers || typeof currentData.dealers !== 'object') {
+                // Show dealer list from CAR\u0130 RAPORU.xlsx even without Excel sales data
+                if (dealerList && dealerList.length > 0) {
+                    dealersList.innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: #666; border-bottom: 1px solid #eee;">
+                            <h4>🏢 Bayi Listesi (CARİ RAPORU)</h4>
+                            <p>Excel satış raporu yüklendiğinde satış tutarları güncellenecektir.</p>
+                        </div>
+                    `;
+                    
+                    // Show all dealers with 0 sales
+                    dealerList.forEach(dealerName => {
+                        const dealerDiv = document.createElement('div');
+                        dealerDiv.className = 'dealer-item';
+                        
+                        dealerDiv.innerHTML = `
+                            <div>
+                                <span class="dealer-name">${dealerName}</span>
+                                <span class="dealer-type">Bayi</span>
+                            </div>
+                            <div class="store-stats">
+                                <div class="store-amount">${symbol}0</div>
+                                <div class="store-details">0 adet • 0 sipariş</div>
+                            </div>
+                        `;
+                        
+                        dealersList.appendChild(dealerDiv);
+                    });
+                    return;
+                } else {
+                    dealersList.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            <h4>📁 Bayi Listesi Yükleniyor...</h4>
+                            <p>dealer_list.json yüklenmeyi bekliyor.</p>
+                        </div>
+                    `;
+                    return;
+                }
+            }
+            
             dealersList.innerHTML = '';
 
             // Sort dealers by sales amount
@@ -3209,8 +3251,11 @@
         }
 
         function calculateDealerMetrics(data, symbol, rate) {
+            console.log(`🏢 DEBUG: calculateDealerMetrics called with sales count: ${data.sales ? data.sales.length : 0}, dealerList length: ${dealerList.length}`);
             if (!data.sales || !dealerList.length) {
-                console.log('🏢 No dealer data or sales to process');
+                console.log('🏢 No dealer data or sales to process - returning early');
+                // Call updateDealersList with null to show appropriate message
+                updateDealersList(null, symbol, rate);
                 return;
             }
 
@@ -3305,6 +3350,17 @@
         function updateDealersList(dealerBreakdown, symbol, rate) {
             const dealersList = document.getElementById('dealersList');
             if (!dealersList) return;
+            
+            // Check if dealerBreakdown is valid
+            if (!dealerBreakdown || typeof dealerBreakdown !== 'object') {
+                dealersList.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <h4>📁 Excel Dosyası Yükleyin</h4>
+                        <p>Bayi analizleri için Excel satış raporunu yükleyiniz.</p>
+                    </div>
+                `;
+                return;
+            }
             
             // Sort dealers by total sales (descending)
             const sortedDealers = Object.values(dealerBreakdown).sort((a, b) => b.totalTL - a.totalTL);

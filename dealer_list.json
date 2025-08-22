@@ -1,7 +1,5 @@
 {
   "dealers": [
-    "21.08.2025",
-    "İsim/Unvan",
     "Antalya Doğa Sporları (hakan Çakır)",
     "Aras Bisiklet Sanayi Ticaret Ve Pazarlama (ercüment Ar…",
     "Arca Bisiklet (murat Arca)",
@@ -91,6 +89,6 @@
     "Zehra Erbil (tarkan Bisiklet)",
     "Zirve Bisiklet (ali Özkan)"
   ],
-  "total_count": 90,
+  "total_count": 88,
   "source_column": "CARİ RAPORU"
 }
